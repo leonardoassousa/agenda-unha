@@ -17,8 +17,17 @@ Substitua os arquivos (menos o seu `config.php`; copie dele só o bloco novo `av
 - veio da versão 3: só `sql/atualizar-v4.sql`
 (versão 1: rode os três, v2, v3 e v4, nessa ordem.)
 
+## Telas da cliente
+Barra fixa no topo com três abas: **Serviços**, **Horários** (meus horários) e **Conta**.
+1. Serviços: escolhe serviço, dia e horário e toca em **Avançar**.
+2. Se não estiver logada, abre a tela **Falta pouco** (entrar ou criar conta), mostrando o horário escolhido.
+3. Tela **Confira e confirme**: resumo, observação e o botão **Confirmar agendamento**.
+4. **Horário marcado**.
+O botão voltar do celular funciona entre as telas.
+
 ## Conta da cliente
 - O login é obrigatório só na hora de confirmar. Ela pode olhar serviços e horários sem conta.
+- Na aba Conta ela vê nome, celular e e-mail, troca a senha e sai.
 - Cadastro: nome completo, celular (WhatsApp), e-mail e senha (mínimo 6). Celular e e-mail não se repetem entre contas.
 - Fica logada por 30 dias no mesmo celular.
 - "Meus horários" (no topo, quando logada): mostra os próximos horários e deixa cancelar até `cancelar_ate_horas` antes (padrão 2 h). O estúdio recebe aviso do cancelamento no WhatsApp.

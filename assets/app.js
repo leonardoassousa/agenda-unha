@@ -4,15 +4,13 @@
   const elDias = document.getElementById('dias');
   const elEquipe = document.getElementById('equipe');
   const elResumo = document.getElementById('resumo');
-  const elErro = document.getElementById('erro');
-  const btn = document.getElementById('btn-confirmar');
+  const btn = document.getElementById('btn-avancar');
   const SEM = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
   const MES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
   const suave = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
 
   const estado = { servico: null, profissional: null, data: null, hora: null };
   let pedido = 0;
-  let jaRolouProsDados = false;
 
   const isoLocal = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const servico = () => A.servicos.find((s) => s.id === estado.servico);
@@ -127,40 +125,22 @@
     }
   });
 
-  // ---------- Resumo e envio ----------
+  // ---------- Resumo do rodapé ----------
   function atualizarResumo() {
     const s = servico();
     const p = prof(estado.profissional);
     if (!s) elResumo.textContent = 'Escolha o serviço.';
-    else if (!estado.hora) elResumo.innerHTML = `<strong>${esc(s.nome)}</strong> ${preco(s.preco)}<br>Agora toque num horário.`;
+    else if (!estado.hora) elResumo.innerHTML = `<strong>${esc(s.nome)}</strong>, ${preco(s.preco)}<br>Agora toque num horário.`;
     else {
       const [, m, d] = estado.data.split('-');
       elResumo.innerHTML = `<strong>${esc(s.nome)}</strong>, ${preco(s.preco)}<br>${d}/${m} às ${estado.hora} com ${esc(p.nome)}`;
     }
-    if (btn.textContent !== 'Confirmando…') btn.textContent = A.cliente ? 'Confirmar agendamento' : 'Entrar pra confirmar';
     document.querySelectorAll('.prof').forEach((c) => c.classList.toggle('escolhida', Number(c.dataset.prof) === estado.profissional));
     btn.disabled = !(estado.servico && estado.data && estado.hora);
   }
 
-  // ---------- Máscara de celular ----------
-  document.querySelectorAll('.mascara-tel').forEach((inp) => inp.addEventListener('input', () => {
-    let v = inp.value.replace(/\D/g, '').replace(/^0+/, '');
-    if (v.length > 11 && v.startsWith('55')) v = v.slice(2); // colou com +55
-    v = v.slice(0, 11);
-    if (v.length > 6) v = `(${v.slice(0, 2)}) ${v.slice(2, v.length - 4)}-${v.slice(-4)}`;
-    else if (v.length > 2) v = `(${v.slice(0, 2)}) ${v.slice(2)}`;
-    inp.value = v;
-  }));
-
-  // ---------- Conta da cliente ----------
-  const elAuth = document.getElementById('auth');
-  const elLogada = document.getElementById('logada');
-  const elConta = document.getElementById('conta');
-  const elErroAuth = document.getElementById('erro-auth');
-  const abaEntrar = document.getElementById('aba-entrar');
-  const abaCriar = document.getElementById('aba-criar');
+  // ---------- Utilidades ----------
   const $ = (id) => document.getElementById(id);
-  let meusHorarios = null;
 
   async function api(acao, dados) {
     const opcoes = dados === undefined ? {} : {
@@ -172,37 +152,18 @@
     return { ok: r.ok, status: r.status, j };
   }
 
-  function renderConta() {
-    const c = A.cliente;
-    elAuth.hidden = !!c;
-    elLogada.hidden = !c;
-    if (c) {
-      $('logada-nome').textContent = c.nome;
-      $('logada-info').textContent = `${c.telefone}, ${c.email}`;
-      elConta.innerHTML = `<span>Olá, ${esc(c.primeiro_nome)}</span>
-        <button type="button" class="link" data-conta="meus">Meus horários</button>
-        <button type="button" class="link" data-conta="sair">Sair</button>`;
-    } else {
-      elConta.innerHTML = `<button type="button" class="link" data-conta="entrar">Entrar na minha conta</button>`;
-    }
-    atualizarResumo();
+  function mensagem(el, texto) {
+    el.textContent = texto || '';
+    el.hidden = !texto;
   }
 
-  function trocarAba(criar) {
-    abaEntrar.setAttribute('aria-selected', String(!criar));
-    abaCriar.setAttribute('aria-selected', String(criar));
-    abaEntrar.tabIndex = criar ? -1 : 0;
-    abaCriar.tabIndex = criar ? 0 : -1;
-    $('painel-entrar').hidden = criar;
-    $('painel-criar').hidden = !criar;
-    elErroAuth.hidden = true;
-  }
-  abaEntrar.addEventListener('click', () => trocarAba(false));
-  abaCriar.addEventListener('click', () => trocarAba(true));
-  [abaEntrar, abaCriar].forEach((t) => t.addEventListener('keydown', (ev) => {
-    if (ev.key === 'ArrowRight' || ev.key === 'ArrowLeft') {
-      const criar = t === abaEntrar; trocarAba(criar); (criar ? abaCriar : abaEntrar).focus();
-    }
+  document.querySelectorAll('.mascara-tel').forEach((inp) => inp.addEventListener('input', () => {
+    let v = inp.value.replace(/\D/g, '').replace(/^0+/, '');
+    if (v.length > 11 && v.startsWith('55')) v = v.slice(2); // colou com +55
+    v = v.slice(0, 11);
+    if (v.length > 6) v = `(${v.slice(0, 2)}) ${v.slice(2, v.length - 4)}-${v.slice(-4)}`;
+    else if (v.length > 2) v = `(${v.slice(0, 2)}) ${v.slice(2)}`;
+    inp.value = v;
   }));
 
   document.querySelectorAll('.ver-senha').forEach((b) => b.addEventListener('click', () => {
@@ -214,198 +175,220 @@
     b.setAttribute('aria-label', mostrar ? 'Esconder senha' : 'Mostrar senha');
   }));
 
-  function erroAuth(msg, campo) {
-    elErroAuth.textContent = msg;
-    elErroAuth.hidden = false;
-    if (campo) campo.focus();
+  // ---------- Telas (com o botão voltar do celular funcionando) ----------
+  const TELAS = ['agendar', 'login', 'revisao', 'confirmado', 'meus', 'conta'];
+  const ABA_DA_TELA = { agendar: 'agendar', revisao: 'agendar', confirmado: 'agendar', meus: 'meus', conta: 'conta' };
+  let telaAtual = 'agendar';
+  let destinoLogin = 'conta';
+  let scrollAgendar = 0;
+
+  function irPara(tela, { push = true, replace = false, destino } = {}) {
+    if (!TELAS.includes(tela)) tela = 'agendar';
+    // Regras de acesso
+    if (tela === 'revisao' && !estado.hora) tela = 'agendar';
+    if (['meus', 'conta', 'revisao'].includes(tela) && !A.cliente) { destino = tela; tela = 'login'; }
+    if (tela === 'login' && A.cliente) tela = destino || 'conta';
+    if (tela === 'login') destinoLogin = destino || destinoLogin;
+
+    if (telaAtual === 'agendar' && tela !== 'agendar') scrollAgendar = window.scrollY;
+    TELAS.forEach((t) => { $('tela-' + t).hidden = t !== tela; });
+    telaAtual = tela;
+
+    const aba = tela === 'login' ? (ABA_DA_TELA[destinoLogin] || 'conta') : ABA_DA_TELA[tela];
+    document.querySelectorAll('.nav-item').forEach((n) => {
+      if (n.dataset.ir === aba) n.setAttribute('aria-current', 'page'); else n.removeAttribute('aria-current');
+    });
+
+    if (replace) history.replaceState({ tela }, '', '#' + tela);
+    else if (push) history.pushState({ tela }, '', '#' + tela);
+
+    if (tela === 'login') renderLogin();
+    if (tela === 'revisao') renderRevisao();
+    if (tela === 'meus') carregarMeus();
+    if (tela === 'conta') renderPerfil();
+
+    if (tela === 'agendar') {
+      window.scrollTo(0, scrollAgendar);
+    } else {
+      window.scrollTo(0, 0);
+      $('tela-' + tela).focus({ preventScroll: true });
+    }
   }
 
-  function mostrarAuth(msg) {
-    rolarAte($('t-dados'));
-    if (msg) erroAuth(msg);
-    setTimeout(() => ($('painel-entrar').hidden ? $('cad-nome') : $('ent-tel')).focus({ preventScroll: true }), 350);
+  window.addEventListener('popstate', (ev) => irPara((ev.state && ev.state.tela) || 'agendar', { push: false }));
+
+  document.addEventListener('click', (ev) => {
+    const ir = ev.target.closest('[data-ir]');
+    if (ir) { irPara(ir.dataset.ir, { destino: ir.dataset.ir }); return; }
+    if (ev.target.closest('[data-voltar]')) {
+      if (history.state && history.state.tela && history.state.tela !== 'agendar') history.back();
+      else irPara('agendar');
+    }
+  });
+
+  // ---------- Conta na barra ----------
+  function renderNav() {
+    const c = A.cliente;
+    $('nav-avatar').hidden = !c;
+    $('nav-icone-conta').style.display = c ? 'none' : '';
+    $('nav-conta-rotulo').textContent = c ? c.primeiro_nome : 'Entrar';
+    if (c) $('nav-avatar').textContent = c.primeiro_nome.charAt(0).toUpperCase();
+  }
+
+  // ---------- Login / cadastro ----------
+  const elErroAuth = $('erro-auth');
+  const abaEntrar = $('aba-entrar');
+  const abaCriar = $('aba-criar');
+
+  function trocarAba(criar) {
+    abaEntrar.setAttribute('aria-selected', String(!criar));
+    abaCriar.setAttribute('aria-selected', String(criar));
+    abaEntrar.tabIndex = criar ? -1 : 0;
+    abaCriar.tabIndex = criar ? 0 : -1;
+    $('painel-entrar').hidden = criar;
+    $('painel-criar').hidden = !criar;
+    mensagem(elErroAuth, '');
+  }
+  abaEntrar.addEventListener('click', () => trocarAba(false));
+  abaCriar.addEventListener('click', () => trocarAba(true));
+  [abaEntrar, abaCriar].forEach((t) => t.addEventListener('keydown', (ev) => {
+    if (ev.key === 'ArrowRight' || ev.key === 'ArrowLeft') {
+      const criar = t === abaEntrar; trocarAba(criar); (criar ? abaCriar : abaEntrar).focus();
+    }
+  }));
+
+  function cartaoEscolha() {
+    const s = servico(); const p = prof(estado.profissional);
+    if (!s || !p || !estado.hora) return '';
+    const [y, m, d] = estado.data.split('-').map(Number);
+    const dt = new Date(y, m - 1, d);
+    const dia = `${['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'][dt.getDay()]}, ${d}/${String(m).padStart(2, '0')}`;
+    return `<div class="escolha-cartao" style="--cor:${esc(p.cor)}">
+      ${fotoHtml(p)}
+      <div><p class="escolha-titulo">${esc(s.nome)}, ${preco(s.preco)}</p>
+      <p class="escolha-info">${dia} às ${estado.hora} com ${esc(p.nome)}</p></div>
+    </div>`;
+  }
+
+  function renderLogin() {
+    const marcando = destinoLogin === 'revisao' && estado.hora;
+    $('t-login').textContent = marcando ? 'Falta pouco' : 'Entre na sua conta';
+    $('login-sub').textContent = marcando
+      ? 'Entre na sua conta ou crie uma pra confirmar o horário que você escolheu.'
+      : 'Pra marcar e acompanhar seus horários.';
+    $('login-escolha').innerHTML = marcando ? cartaoEscolha() : '';
+    $('login-escolha').hidden = !marcando;
+    trocarAba(false);
   }
 
   async function autenticar(acao, dados, botao, rotulo) {
-    elErroAuth.hidden = true;
+    mensagem(elErroAuth, '');
     botao.disabled = true;
     botao.textContent = 'Aguarde…';
     try {
       const { ok, j } = await api(acao, dados);
-      if (!ok) return erroAuth(j.erro || 'Não deu certo. Tente de novo.');
+      if (!ok) return mensagem(elErroAuth, j.erro || 'Não deu certo. Tente de novo.');
       A.cliente = j.cliente;
-      meusHorarios = j.horarios || [];
+      meusHorarios = j.horarios || null;
       ['ent-senha', 'cad-senha'].forEach((id) => { $(id).value = ''; });
-      renderConta();
-      elErro.hidden = true;
-      if (estado.hora) {
-        btn.focus({ preventScroll: true });
-        btn.scrollIntoView({ behavior: suave, block: 'nearest' });
-      } else {
-        rolarAte($('t-servico'));
-      }
+      renderNav();
+      irPara(destinoLogin === 'revisao' && !estado.hora ? 'agendar' : destinoLogin, { replace: true });
     } catch (e) {
-      erroAuth('Sem conexão. Verifique a internet e tente de novo.');
+      mensagem(elErroAuth, 'Sem conexão. Verifique a internet e tente de novo.');
     } finally {
       botao.disabled = false;
       botao.textContent = rotulo;
     }
   }
 
-  $('btn-entrar').addEventListener('click', () => {
+  $('painel-entrar').addEventListener('submit', (ev) => {
+    ev.preventDefault();
     const tel = $('ent-tel').value.replace(/\D/g, '');
-    if (tel.length < 10) return erroAuth('Digite o celular com DDD.', $('ent-tel'));
-    if (!$('ent-senha').value) return erroAuth('Digite sua senha.', $('ent-senha'));
+    if (tel.length < 10) { mensagem(elErroAuth, 'Digite o celular com DDD.'); return $('ent-tel').focus(); }
+    if (!$('ent-senha').value) { mensagem(elErroAuth, 'Digite sua senha.'); return $('ent-senha').focus(); }
     autenticar('entrar', { telefone: tel, senha: $('ent-senha').value }, $('btn-entrar'), 'Entrar');
   });
 
-  $('btn-criar').addEventListener('click', () => {
+  $('painel-criar').addEventListener('submit', (ev) => {
+    ev.preventDefault();
     const nome = $('cad-nome').value.trim().replace(/\s+/g, ' ');
     const tel = $('cad-tel').value.replace(/\D/g, '');
     const email = $('cad-email').value.trim();
     const senha = $('cad-senha').value;
-    if (nome.split(' ').length < 2) return erroAuth('Digite seu nome completo (nome e sobrenome).', $('cad-nome'));
-    if (tel.length < 10) return erroAuth('Digite o celular com DDD.', $('cad-tel'));
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return erroAuth('Digite um e-mail válido, ex.: maria@gmail.com.', $('cad-email'));
-    if (senha.length < 6) return erroAuth('A senha precisa ter pelo menos 6 caracteres.', $('cad-senha'));
+    const falha = (msg, campo) => { mensagem(elErroAuth, msg); campo.focus(); };
+    if (nome.split(' ').length < 2) return falha('Digite seu nome completo (nome e sobrenome).', $('cad-nome'));
+    if (tel.length < 10) return falha('Digite o celular com DDD.', $('cad-tel'));
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return falha('Digite um e-mail válido, ex.: maria@gmail.com.', $('cad-email'));
+    if (senha.length < 6) return falha('A senha precisa ter pelo menos 6 caracteres.', $('cad-senha'));
     autenticar('cadastrar', { nome, telefone: tel, email, senha }, $('btn-criar'), 'Criar conta');
   });
 
-  // Enter dentro do login/cadastro aciona o botão dele (e não o "Confirmar agendamento")
-  elAuth.addEventListener('keydown', (ev) => {
-    if (ev.key !== 'Enter' || ev.target.tagName !== 'INPUT') return;
-    ev.preventDefault();
-    ev.target.closest('.auth-painel').querySelector('[data-enter]').click();
-  });
-
-  async function sair() {
+  async function sair(proxima = 'agendar', destino) {
     await api('sair', {}).catch(() => {});
     A.cliente = null;
     meusHorarios = null;
-    fecharMeus();
-    renderConta();
-  }
-  $('trocar-conta').addEventListener('click', sair);
-
-  elConta.addEventListener('click', (ev) => {
-    const b = ev.target.closest('[data-conta]');
-    if (!b) return;
-    if (b.dataset.conta === 'entrar') { fecharMeus(); trocarAba(false); mostrarAuth(); }
-    if (b.dataset.conta === 'sair') sair();
-    if (b.dataset.conta === 'meus') abrirMeus();
-  });
-
-  // ---------- Meus horários ----------
-  const elMeus = $('meus');
-  const elConf = $('confirmado');
-
-  async function abrirMeus() {
-    form.hidden = true; elConf.hidden = true; elMeus.hidden = false;
-    window.scrollTo(0, 0); elMeus.focus();
-    $('meus-info').textContent = 'Carregando…';
-    $('meus-lista').innerHTML = '';
-    const { ok, status, j } = await api('eu').catch(() => ({ ok: false, j: {} }));
-    if (status === 200 && !j.cliente) { A.cliente = null; renderConta(); fecharMeus(); mostrarAuth('Sua sessão expirou. Entre de novo.'); return; }
-    if (!ok) { $('meus-info').textContent = 'Não carregou. Verifique a internet.'; return; }
-    meusHorarios = j.horarios;
-    renderMeus();
+    renderNav();
+    irPara(proxima, { replace: true, destino });
   }
 
-  function renderMeus() {
-    const lista = meusHorarios || [];
-    $('meus-info').textContent = lista.length
-      ? `Dá pra cancelar pelo site até ${A.cancelarAteHoras} h antes do horário.`
-      : 'Você não tem horários marcados.';
-    $('meus-lista').innerHTML = lista.map((h) => {
-      const p = prof(h.profissional_id) || { cor: '#9B1B3A', iniciais: '?', nome: h.profissional };
-      return `<li class="meu" style="--cor:${esc(p.cor)}">
-        ${fotoHtml(p)}
-        <div class="meu-corpo">
-          <p class="meu-quando">${esc(h.data_extenso)}, às ${esc(h.hora)}</p>
-          <p class="meu-det">${esc(h.servico)} com ${esc(h.profissional)}, <span class="nowrap">${esc(h.preco_fmt)}</span></p>
-          ${h.pode_cancelar
-            ? `<button type="button" class="link link-perigo" data-cancelar="${h.id}">Cancelar horário</button>`
-            : `<p class="meu-det">Pra cancelar agora, fale com o estúdio pelo WhatsApp.</p>`}
-          <p class="meu-confirma" hidden>Cancelar mesmo?
-            <button type="button" class="link link-perigo" data-sim="${h.id}">Sim, cancelar</button>
-            <button type="button" class="link" data-nao>Não</button></p>
-        </div>
-      </li>`;
-    }).join('');
+  function sessaoExpirou(destino) {
+    A.cliente = null;
+    renderNav();
+    irPara('login', { destino });
+    mensagem(elErroAuth, 'Sua sessão expirou. Entre de novo.');
   }
 
-  $('meus-lista').addEventListener('click', async (ev) => {
-    const t = ev.target;
-    const li = t.closest('.meu');
-    if (t.dataset.cancelar) { li.querySelector('.meu-confirma').hidden = false; t.hidden = true; return; }
-    if (t.hasAttribute('data-nao')) { li.querySelector('.meu-confirma').hidden = true; li.querySelector('[data-cancelar]').hidden = false; return; }
-    if (t.dataset.sim) {
-      t.disabled = true; t.textContent = 'Cancelando…';
-      const { ok, status, j } = await api('cancelar', { id: Number(t.dataset.sim) }).catch(() => ({ ok: false, j: {} }));
-      if (status === 401) { A.cliente = null; renderConta(); fecharMeus(); mostrarAuth('Sua sessão expirou. Entre de novo.'); return; }
-      if (!ok) { $('meus-info').textContent = j.erro || 'Não deu pra cancelar. Tente de novo.'; t.disabled = false; t.textContent = 'Sim, cancelar'; return; }
-      meusHorarios = j.horarios;
-      renderMeus();
-      $('meus-info').textContent = 'Horário cancelado. O estúdio já foi avisado.';
-      if (estado.servico) carregarHorarios();
-    }
-  });
-
-  function fecharMeus() {
-    elMeus.hidden = true;
-    form.hidden = false;
-  }
-  $('meus-voltar').addEventListener('click', () => { fecharMeus(); window.scrollTo(0, 0); });
-
-  // ---------- Etapas ----------
-  form.addEventListener('change', (ev) => {
-    const t = ev.target;
-    elErro.hidden = true;
-    if (t.name === 'servico') {
-      const primeira = estado.servico === null;
-      estado.servico = Number(t.value);
-      carregarHorarios();
-      if (primeira) rolarAte(document.getElementById('t-dia'));
-    }
-    if (t.name === 'data') { estado.data = t.value; carregarHorarios(); }
-    if (t.name === 'hora') {
-      const [id, h] = t.value.split('|');
-      estado.profissional = Number(id); estado.hora = h;
-      atualizarResumo();
-      if (!jaRolouProsDados) { jaRolouProsDados = true; rolarAte(document.getElementById('t-dados')); }
-    }
-  });
-
-  function mostrarErro(msg) {
-    elErro.textContent = msg;
-    elErro.hidden = false;
-  }
-
-  form.addEventListener('submit', async (ev) => {
+  // ---------- Agendar: Avançar ----------
+  form.addEventListener('submit', (ev) => {
     ev.preventDefault();
     if (!estado.hora) return;
-    if (!A.cliente) return mostrarAuth();
+    irPara('revisao', { destino: 'revisao' });
+  });
 
-    btn.disabled = true;
-    btn.textContent = 'Confirmando…';
+  // ---------- Revisão e confirmação ----------
+  function renderRevisao() {
+    const s = servico(); const p = prof(estado.profissional);
+    const [y, m, d] = estado.data.split('-').map(Number);
+    const dt = new Date(y, m - 1, d);
+    const dia = `${['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'][dt.getDay()]}, ${d} de ${['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'][m - 1]}`;
+    $('rev-cartao').innerHTML = `
+      <div class="rev-prof" style="--cor:${esc(p.cor)}">${fotoHtml(p)}<div><p class="rev-com">Com</p><p class="rev-prof-nome">${esc(p.nome)}</p></div></div>
+      <dl>
+        <dt>Serviço</dt><dd>${esc(s.nome)}</dd>
+        <dt>Quando</dt><dd class="primeira-maiuscula">${dia}, às ${estado.hora}</dd>
+        <dt>Duração</dt><dd>${s.duracao} min</dd>
+        <dt>Valor</dt><dd>${preco(s.preco)}</dd>
+      </dl>`;
+    $('rev-nome').textContent = A.cliente.nome;
+    mensagem($('erro-rev'), '');
+  }
+
+  $('rev-trocar').addEventListener('click', () => sair('login', 'revisao'));
+
+  $('btn-confirmar').addEventListener('click', async () => {
+    const b = $('btn-confirmar');
+    if (b.disabled) return;
+    b.disabled = true;
+    b.textContent = 'Confirmando…';
+    mensagem($('erro-rev'), '');
     try {
       const { ok, status, j } = await api('agendar', {
         servico: estado.servico, profissional: estado.profissional, data: estado.data, hora: estado.hora,
-        observacao: form.observacao.value.trim(), site: form.site.value,
+        observacao: $('rev-obs').value.trim(), site: $('rev-site').value,
       });
-      if (status === 401) { A.cliente = null; renderConta(); return mostrarAuth('Sua sessão expirou. Entre de novo pra confirmar.'); }
+      if (status === 401) return sessaoExpirou('revisao');
       if (!ok) {
-        mostrarErro(j.erro || 'Não deu pra agendar.');
-        if (status === 409) carregarHorarios();
+        mensagem($('erro-rev'), j.erro || 'Não deu pra agendar.');
+        if (status === 409) carregarHorarios(); // atualiza a lista pra quando ela voltar
         return;
       }
       meusHorarios = null;
       mostrarConfirmacao(j.agendamento);
     } catch (e) {
-      mostrarErro('Sem conexão. Verifique a internet e tente de novo.');
+      mensagem($('erro-rev'), 'Sem conexão. Verifique a internet e tente de novo.');
     } finally {
-      btn.textContent = '';
-      atualizarResumo();
+      b.disabled = false;
+      b.textContent = 'Confirmar agendamento';
     }
   });
 
@@ -420,7 +403,7 @@
       const dd = document.createElement('dd'); dd.textContent = v;
       dl.append(dt, dd);
     });
-    $('conf-nota').textContent = `Seu horário fica em "Meus horários", lá no topo. Dá pra cancelar por lá até ${A.cancelarAteHoras} h antes.`;
+    $('conf-nota').textContent = `Se precisar, dá pra cancelar em "Meus horários" até ${A.cancelarAteHoras} h antes.`;
     const w = $('conf-whats');
     if (A.whatsapp && !A.avisoAutomatico) {
       const msg = `Oi! Sou ${A.cliente.nome} e acabei de agendar: ${ag.servico}, ${ag.data_extenso} às ${ag.hora}, com ${ag.profissional}.`;
@@ -429,21 +412,119 @@
     } else {
       w.hidden = true;
     }
-    form.observacao.value = '';
-    form.hidden = true;
-    elConf.hidden = false;
-    window.scrollTo(0, 0);
-    elConf.focus();
+    // Limpa a escolha pra um próximo agendamento começar do zero
+    $('rev-obs').value = '';
+    estado.hora = null; estado.profissional = null;
+    scrollAgendar = 0;
+    carregarHorarios();
+    irPara('confirmado', { replace: true });
   }
 
-  $('conf-novo').addEventListener('click', () => {
-    elConf.hidden = true;
-    form.hidden = false;
-    window.scrollTo(0, 0);
-    carregarHorarios();
+  $('conf-novo').addEventListener('click', () => irPara('agendar'));
+
+  // ---------- Meus horários ----------
+  let meusHorarios = null;
+
+  async function carregarMeus() {
+    if (meusHorarios) renderMeus(); else { $('meus-info').textContent = 'Carregando…'; $('meus-lista').innerHTML = ''; }
+    const { ok, status, j } = await api('eu').catch(() => ({ ok: false, j: {} }));
+    if (telaAtual !== 'meus') return;
+    if (status === 200 && !j.cliente) return sessaoExpirou('meus');
+    if (!ok) { $('meus-info').textContent = 'Não carregou. Verifique a internet.'; return; }
+    meusHorarios = j.horarios;
+    renderMeus();
+  }
+
+  function renderMeus(aviso) {
+    const lista = meusHorarios || [];
+    $('meus-info').textContent = aviso || (lista.length
+      ? `Dá pra cancelar pelo site até ${A.cancelarAteHoras} h antes do horário.`
+      : 'Você não tem horários marcados.');
+    $('meus-agendar').hidden = lista.length > 0;
+    $('meus-lista').innerHTML = lista.map((h) => {
+      const p = prof(h.profissional_id) || { cor: '#9B1B3A', iniciais: '?', nome: h.profissional };
+      return `<li class="meu" style="--cor:${esc(p.cor)}">
+        ${fotoHtml(p)}
+        <div class="meu-corpo">
+          <p class="meu-quando">${esc(h.data_extenso)}, às ${esc(h.hora)}</p>
+          <p class="meu-det">${esc(h.servico)} com ${esc(h.profissional)}, <span class="nowrap">${esc(h.preco_fmt)}</span></p>
+          ${h.pode_cancelar
+            ? `<button type="button" class="link link-perigo" data-cancelar="${h.id}">Cancelar horário</button>`
+            : '<p class="meu-det">Pra cancelar agora, fale com o estúdio pelo WhatsApp.</p>'}
+          <p class="meu-confirma" hidden>Cancelar mesmo?
+            <button type="button" class="link link-perigo" data-sim="${h.id}">Sim, cancelar</button>
+            <button type="button" class="link" data-nao>Não</button></p>
+        </div>
+      </li>`;
+    }).join('');
+  }
+
+  $('meus-lista').addEventListener('click', async (ev) => {
+    const t = ev.target;
+    const li = t.closest('.meu');
+    if (!li) return;
+    if (t.dataset.cancelar) { li.querySelector('.meu-confirma').hidden = false; t.hidden = true; return; }
+    if (t.hasAttribute('data-nao')) { li.querySelector('.meu-confirma').hidden = true; li.querySelector('[data-cancelar]').hidden = false; return; }
+    if (t.dataset.sim) {
+      t.disabled = true; t.textContent = 'Cancelando…';
+      const { ok, status, j } = await api('cancelar', { id: Number(t.dataset.sim) }).catch(() => ({ ok: false, j: {} }));
+      if (status === 401) return sessaoExpirou('meus');
+      if (!ok) { $('meus-info').textContent = j.erro || 'Não deu pra cancelar. Tente de novo.'; t.disabled = false; t.textContent = 'Sim, cancelar'; return; }
+      meusHorarios = j.horarios;
+      renderMeus('Horário cancelado. O estúdio já foi avisado.');
+      if (estado.servico) carregarHorarios();
+    }
   });
 
+  // ---------- Conta ----------
+  function renderPerfil() {
+    const c = A.cliente;
+    $('perfil-avatar').textContent = c.primeiro_nome.charAt(0).toUpperCase();
+    $('perfil-nome').textContent = c.nome;
+    $('perfil-tel').textContent = c.telefone;
+    $('perfil-email').textContent = c.email;
+    mensagem($('erro-senha'), ''); $('ok-senha').hidden = true;
+  }
+
+  $('form-senha').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const atual = $('senha-atual').value; const nova = $('senha-nova').value;
+    $('ok-senha').hidden = true;
+    if (!atual) { mensagem($('erro-senha'), 'Digite a senha atual.'); return $('senha-atual').focus(); }
+    if (nova.length < 6) { mensagem($('erro-senha'), 'A nova senha precisa ter pelo menos 6 caracteres.'); return $('senha-nova').focus(); }
+    const { ok, status, j } = await api('senha', { atual, nova }).catch(() => ({ ok: false, j: {} }));
+    if (status === 401) return sessaoExpirou('conta');
+    if (!ok) return mensagem($('erro-senha'), j.erro || 'Não deu pra trocar a senha.');
+    mensagem($('erro-senha'), '');
+    $('senha-atual').value = ''; $('senha-nova').value = '';
+    $('ok-senha').hidden = false;
+  });
+
+  $('btn-sair').addEventListener('click', () => sair('agendar'));
+
+  // ---------- Etapas do agendamento ----------
+  form.addEventListener('change', (ev) => {
+    const t = ev.target;
+    if (t.name === 'servico') {
+      const primeira = estado.servico === null;
+      estado.servico = Number(t.value);
+      carregarHorarios();
+      if (primeira) rolarAte($('t-dia'));
+    }
+    if (t.name === 'data') { estado.data = t.value; carregarHorarios(); }
+    if (t.name === 'hora') {
+      const [id, h] = t.value.split('|');
+      estado.profissional = Number(id); estado.hora = h;
+      atualizarResumo();
+    }
+  });
+
+  // ---------- Início ----------
   montarDias();
   renderEspera('Escolha o serviço pra ver os horários');
-  renderConta();
+  atualizarResumo();
+  renderNav();
+  const inicial = (location.hash || '').slice(1);
+  history.replaceState({ tela: 'agendar' }, '', location.pathname + location.search);
+  if (['meus', 'conta'].includes(inicial)) irPara(inicial, { destino: inicial });
 })();

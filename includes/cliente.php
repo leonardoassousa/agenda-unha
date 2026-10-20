@@ -174,3 +174,20 @@ function cancelarPelaCliente(int $clienteId, int $agId): array
     db()->prepare("UPDATE agendamentos SET status = 'cancelado' WHERE id = ? AND status = 'confirmado'")->execute([$agId]);
     return dadosDoAgendamento($agId);
 }
+
+function trocarSenhaCliente(int $clienteId, string $atual, string $nova): void
+{
+    $st = db()->prepare('SELECT telefone, senha_hash FROM clientes WHERE id = ?');
+    $st->execute([$clienteId]);
+    $c = $st->fetch();
+    if (!$c) throw new RuntimeException('Conta não encontrada.');
+    if (loginBloqueado($c['telefone'])) throw new RuntimeException('Muitas tentativas erradas. Espere 15 minutos.');
+    if (!password_verify($atual, $c['senha_hash'])) {
+        registrarErroLogin($c['telefone']);
+        throw new RuntimeException('A senha atual está errada.');
+    }
+    if (mb_strlen($nova) < 6) throw new InvalidArgumentException('A nova senha precisa ter pelo menos 6 caracteres.');
+    if (mb_strlen($nova) > 72) throw new InvalidArgumentException('Senha muito longa.');
+    db()->prepare('UPDATE clientes SET senha_hash = ? WHERE id = ?')->execute([password_hash($nova, PASSWORD_DEFAULT), $clienteId]);
+    session_regenerate_id(true);
+}

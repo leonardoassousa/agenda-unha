@@ -48,7 +48,7 @@ function corpoJson(): array
 try {
     // Só abre sessão quando precisa (e não cria cookie pra quem só está olhando horários)
     $temCookie = isset($_COOKIE['agenda_cliente']);
-    if (in_array($acao, ['entrar', 'cadastrar'], true) || ($temCookie && in_array($acao, ['eu', 'sair', 'agendar', 'cancelar'], true))) {
+    if (in_array($acao, ['entrar', 'cadastrar'], true) || ($temCookie && in_array($acao, ['eu', 'sair', 'agendar', 'cancelar', 'senha'], true))) {
         iniciarSessaoCliente();
     }
 
@@ -72,6 +72,14 @@ try {
     if ($acao === 'sair' && $ehPost) {
         corpoJson();
         sairCliente();
+        responder(['ok' => true]);
+    }
+
+    if ($acao === 'senha' && $ehPost) {
+        $in = corpoJson();
+        $c = clienteAtual();
+        if (!$c) responder(['erro' => 'Entre na sua conta de novo.', 'precisa_login' => true], 401);
+        trocarSenhaCliente((int) $c['id'], (string) ($in['atual'] ?? ''), (string) ($in['nova'] ?? ''));
         responder(['ok' => true]);
     }
 
