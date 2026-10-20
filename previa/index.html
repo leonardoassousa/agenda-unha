@@ -1,0 +1,1612 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#3A0E1E">
+<title>Agenda de Unhas · Prévia</title>
+<meta name="description" content="Prévia do sistema de agendamento online: a cliente escolhe serviço, profissional e horário, e o estúdio acompanha tudo num calendário.">
+<meta property="og:title" content="Agenda de Unhas · Prévia">
+<meta property="og:description" content="Veja como fica o agendamento online e o painel do estúdio.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gloock&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>/* Agenda de unhas: tela da cliente.
+   Ideia: capa vinho com o nome do estúdio, "folha" clara por cima com os passos,
+   barra de abas embaixo (onde o dedão alcança) e botão de continuar logo acima dela. */
+:root {
+  --fundo: #FBF3F4;
+  --cartao: #FFFFFF;
+  --tinta: #2B1620;
+  --suave: #7D6670;
+  --linha: #EDD8DE;
+  --verniz: #9B1B3A;
+  --verniz-forte: #7A1530;
+  --verniz-claro: #F6E1E7;
+  --sobre-verniz: #FFFFFF;
+  --vinho: #3A0E1E;
+  --creme: #FBEFF2;
+  --creme-suave: #D7B5C0;
+  --erro: #B3261E;
+  --ok: #2E7D4F;
+  --ok-claro: #E3F2E8;
+  --sombra: 0 1px 2px rgba(58, 14, 30, .05), 0 8px 24px rgba(58, 14, 30, .07);
+  --raio: 18px;
+  --tab-h: 64px;
+  --display: "Gloock", Georgia, serif;
+  --texto: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fundo: #1A1014; --cartao: #251A1F; --tinta: #F6E9ED; --suave: #B9A2AB; --linha: #3A2A31;
+    --verniz: #E0577A; --verniz-forte: #EC7090; --verniz-claro: #3B2029; --sobre-verniz: #1A1014;
+    --vinho: #2A0A16; --erro: #FF8A80; --ok: #7FD3A0; --ok-claro: #1F3328;
+    --sombra: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --fundo: #1A1014; --cartao: #251A1F; --tinta: #F6E9ED; --suave: #B9A2AB; --linha: #3A2A31;
+  --verniz: #E0577A; --verniz-forte: #EC7090; --verniz-claro: #3B2029; --sobre-verniz: #1A1014;
+  --vinho: #2A0A16; --erro: #FF8A80; --ok: #7FD3A0; --ok-claro: #1F3328;
+  --sombra: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }
+body {
+  margin: 0; min-height: 100vh;
+  background: var(--fundo); color: var(--tinta);
+  font: 400 16px/1.5 var(--texto);
+  padding-bottom: calc(var(--tab-h) + env(safe-area-inset-bottom, 0px));
+}
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--verniz); outline-offset: 2px; }
+
+/* ---------- Estrutura ---------- */
+.tela:focus { outline: none; }
+.folha { max-width: 560px; margin: 0 auto; padding: 22px 16px 32px; display: grid; gap: 18px; align-content: start; }
+.folha-solta { padding-top: calc(18px + env(safe-area-inset-top, 0px)); }
+#tela-horario .folha { padding-bottom: 120px; }
+
+/* Capa */
+.capa {
+  background: var(--vinho);
+  background:
+    radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--verniz) 55%, transparent), transparent 60%),
+    var(--vinho);
+  color: var(--creme);
+  padding: calc(28px + env(safe-area-inset-top, 0px)) 16px 54px;
+}
+.capa-in { max-width: 560px; margin: 0 auto; display: grid; gap: 8px; }
+.capa h1 { margin: 0; font: 400 clamp(2.3rem, 10vw, 3.2rem)/1 var(--display); letter-spacing: -.01em; text-wrap: balance; }
+.capa-status {
+  margin: 0; justify-self: start; display: inline-flex; align-items: center; gap: 8px;
+  font-size: .85rem; font-weight: 600; padding: 5px 12px; border-radius: 999px;
+  background: rgba(255, 255, 255, .1); color: var(--creme-suave);
+}
+.capa-status .ponto { width: 8px; height: 8px; border-radius: 50%; background: var(--creme-suave); }
+.capa-status.aberto { color: #CFF3DC; }
+.capa-status.aberto .ponto { background: #6FD497; box-shadow: 0 0 0 4px rgba(111, 212, 151, .2); }
+.capa-info { margin: 0; color: var(--creme-suave); font-size: .92rem; display: flex; flex-wrap: wrap; gap: 2px 16px; }
+#tela-servico .folha {
+  position: relative; margin-top: -28px; background: var(--fundo);
+  border-radius: 26px 26px 0 0; padding-top: 22px;
+}
+
+/* Passos (é uma sequência de verdade, por isso os números) */
+.passos { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; counter-reset: passo; }
+.passos li {
+  counter-increment: passo; font-size: .78rem; font-weight: 600; color: var(--suave);
+  padding-top: 8px; border-top: 3px solid var(--linha);
+}
+.passos li::before { content: counter(passo) ". "; }
+.passos li.feito { color: var(--tinta); border-color: var(--verniz); }
+.passos li[aria-current="step"] { color: var(--verniz); border-color: var(--verniz); }
+
+.titulo { margin: 4px 0 -6px; font: 700 1.2rem/1.25 var(--texto); scroll-margin-top: 16px; }
+.titulo-menor { margin-top: 8px; }
+.titulo-grande { margin: 0; font: 400 2.1rem/1.08 var(--display); text-wrap: balance; }
+.subtitulo { margin: -8px 0 0; color: var(--suave); }
+.vazio { color: var(--suave); margin: 0; }
+
+.cartao { background: var(--cartao); border: 1px solid var(--linha); border-radius: var(--raio); box-shadow: var(--sombra); }
+
+/* ---------- Serviços ---------- */
+.servicos { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.servico {
+  width: 100%; text-align: left; display: grid; grid-template-columns: 1fr auto 18px; align-items: center; gap: 12px;
+  padding: 16px 14px 16px 18px; border-radius: var(--raio);
+  background: var(--cartao); border: 1px solid var(--linha); box-shadow: var(--sombra);
+  transition: border-color .15s, transform .1s;
+}
+.servico:hover { border-color: var(--verniz); }
+.servico:active { transform: scale(.99); }
+.servico-texto { display: grid; gap: 2px; min-width: 0; }
+.servico-nome { font-weight: 700; font-size: 1.02rem; }
+.servico-desc { color: var(--suave); font-size: .88rem; }
+.servico-valor { display: grid; justify-items: end; gap: 2px; font-variant-numeric: tabular-nums; }
+.servico-preco { font-weight: 700; white-space: nowrap; }
+.servico-dur { color: var(--suave); font-size: .82rem; white-space: nowrap; }
+.seta { width: 18px; height: 18px; fill: none; stroke: var(--suave); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Serviço escolhido (topo do passo 2) */
+.escolhido {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 14px 12px 16px; border-radius: 14px; background: var(--verniz-claro);
+}
+.escolhido p { margin: 0; }
+.escolhido-nome { font-weight: 700; }
+.escolhido-info { color: var(--suave); font-size: .88rem; }
+
+/* ---------- Dias ---------- */
+.dias {
+  display: flex; gap: 8px; overflow-x: auto; margin: 0 -16px; padding: 4px 16px 6px;
+  scroll-snap-type: x proximity; scroll-padding-inline: 16px; scrollbar-width: none;
+}
+.dias::-webkit-scrollbar { display: none; }
+.dia { position: relative; flex: none; scroll-snap-align: start; }
+.dia input, .hora input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.dia-caixa {
+  display: grid; justify-items: center; width: 62px; padding: 10px 0 9px; cursor: pointer;
+  background: var(--cartao); border: 1px solid var(--linha); border-radius: 16px;
+}
+.dia-sem { font-size: .76rem; color: var(--suave); }
+.dia-num { font-size: 1.35rem; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.dia-mes { font-size: .72rem; color: var(--suave); }
+.dia:has(input:disabled) .dia-caixa { opacity: .38; cursor: not-allowed; }
+.dia:has(input:checked) .dia-caixa { background: var(--tinta); border-color: var(--tinta); color: var(--fundo); }
+.dia:has(input:checked) .dia-sem, .dia:has(input:checked) .dia-mes { color: inherit; opacity: .75; }
+.dia:has(input:focus-visible) .dia-caixa { outline: 2px solid var(--verniz); outline-offset: 2px; }
+
+/* ---------- Profissionais (abas com foto) ---------- */
+.pros { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; }
+.pro {
+  --cor: var(--verniz);
+  display: grid; justify-items: center; gap: 6px; padding: 12px 6px 10px;
+  background: var(--cartao); border: 1px solid var(--linha); border-radius: var(--raio);
+  transition: border-color .15s, box-shadow .15s;
+}
+.pro[aria-selected="true"] { border-color: var(--cor); box-shadow: 0 0 0 1px var(--cor), var(--sombra); }
+.pro-nome { font-weight: 700; font-size: .95rem; line-height: 1.2; }
+.pro-vagas { font-size: .78rem; color: var(--suave); line-height: 1.2; }
+.pro[aria-selected="true"] .pro-vagas { color: var(--tinta); }
+.pro.lotada .foto { filter: grayscale(.8); opacity: .6; }
+
+.foto {
+  --cor: var(--verniz);
+  width: 58px; height: 58px; border-radius: 50%; flex: none; object-fit: cover;
+  background: var(--cor); color: #FFFFFF; font-weight: 700; font-size: 1.3rem;
+  display: grid; place-items: center;
+  box-shadow: 0 0 0 2px var(--cartao), 0 0 0 4px var(--cor);
+}
+.foto-p { width: 44px; height: 44px; font-size: 1rem; }
+.foto-g { width: 84px; height: 84px; font-size: 1.8rem; }
+
+/* ---------- Horários ---------- */
+.horas { display: grid; gap: 14px; min-height: 120px; align-content: start; }
+.periodo { display: grid; gap: 8px; }
+.periodo-nome { margin: 0; font-size: .82rem; font-weight: 600; color: var(--suave); }
+.grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 8px; }
+.hora { position: relative; }
+.hora span {
+  display: block; text-align: center; padding: 11px 0; cursor: pointer;
+  background: var(--cartao); border: 1px solid var(--linha); border-radius: 12px;
+  font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.hora:has(input:checked) span { background: var(--cor, var(--verniz)); border-color: var(--cor, var(--verniz)); color: #FFFFFF; }
+.hora:has(input:focus-visible) span { outline: 2px solid var(--verniz); outline-offset: 2px; }
+.aviso {
+  margin: 0; padding: 18px; border-radius: var(--raio); text-align: center;
+  background: var(--cartao); border: 1px dashed var(--linha); color: var(--suave);
+}
+.aviso .link { display: block; margin: 8px auto 0; }
+.carregando { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.carregando span { height: 44px; border-radius: 12px; background: var(--linha); animation: pisca 1.1s ease-in-out infinite alternate; }
+@keyframes pisca { from { opacity: .45; } to { opacity: .9; } }
+
+/* ---------- Barra de continuar ---------- */
+.cta {
+  position: fixed; left: 0; right: 0; z-index: 15;
+  bottom: calc(var(--tab-h) + env(safe-area-inset-bottom, 0px));
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px;
+  padding: 12px 16px; background: var(--cartao); border-top: 1px solid var(--linha);
+  box-shadow: 0 -8px 24px rgba(58, 14, 30, .06);
+}
+@media (min-width: 600px) {
+  .cta { left: 50%; right: auto; width: 560px; transform: translateX(-50%); border: 1px solid var(--linha); border-bottom: 0; border-radius: 18px 18px 0 0; }
+}
+.cta-resumo { margin: 0; font-size: .9rem; color: var(--suave); line-height: 1.35; min-width: 0; }
+.cta-resumo strong { color: var(--tinta); }
+
+/* ---------- Botões e links ---------- */
+.botao {
+  appearance: none; border: 0; border-radius: 999px; padding: 14px 24px;
+  background: var(--verniz); color: var(--sobre-verniz); font-weight: 700; text-align: center; text-decoration: none;
+  transition: background .15s, transform .1s;
+}
+.botao:hover { background: var(--verniz-forte); }
+.botao:active { transform: scale(.98); }
+.botao:disabled { background: var(--linha); color: var(--suave); cursor: not-allowed; transform: none; }
+.botao-largo { width: 100%; display: block; }
+.botao-alto { padding-block: 17px; font-size: 1.05rem; }
+.botao-leve { background: transparent; color: var(--tinta); box-shadow: inset 0 0 0 1.5px var(--linha); }
+.botao-leve:hover { background: var(--cartao); box-shadow: inset 0 0 0 1.5px var(--tinta); }
+.link {
+  background: none; border: 0; padding: 6px 0; color: var(--verniz); font-weight: 600;
+  text-decoration: underline; text-underline-offset: 3px; white-space: nowrap;
+}
+.link-perigo { color: var(--erro); }
+.link-centro { justify-self: center; }
+.voltar {
+  justify-self: start; border: 0; background: none; padding: 6px 0; color: var(--suave); font-weight: 600;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.voltar::before { content: ""; width: 9px; height: 9px; border-left: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); margin-right: 4px; }
+.voltar:hover { color: var(--tinta); }
+
+/* ---------- Formulários ---------- */
+.form { display: grid; gap: 14px; }
+.campo { display: grid; gap: 6px; }
+.campo > span:first-child { font-size: .9rem; font-weight: 600; }
+.campo em { font-style: normal; font-weight: 400; color: var(--suave); }
+.campo input {
+  width: 100%; padding: 13px 14px; border-radius: 12px;
+  background: var(--fundo); border: 1px solid var(--linha);
+}
+.campo input:focus { outline: 2px solid var(--verniz); outline-offset: 0; border-color: transparent; }
+.senha-caixa { position: relative; display: block; }
+.senha-caixa input { padding-right: 92px; }
+.ver-senha {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  border: 0; background: none; color: var(--verniz); font-weight: 600; font-size: .85rem; padding: 8px 10px;
+}
+.erro { margin: 0; color: var(--erro); font-size: .92rem; font-weight: 600; }
+.ok { margin: 0; color: var(--ok); font-weight: 600; }
+.isca { position: absolute; left: -9999px; }
+
+.auth { padding: 16px; display: grid; gap: 16px; }
+.abas { display: grid; grid-template-columns: 1fr 1fr; padding: 4px; border-radius: 999px; background: var(--fundo); }
+.abas button { border: 0; background: none; padding: 10px 6px; border-radius: 999px; font-weight: 600; color: var(--suave); }
+.abas button[aria-selected="true"] { background: var(--tinta); color: var(--fundo); }
+.esqueci { font-size: .92rem; color: var(--suave); }
+.esqueci summary { cursor: pointer; color: var(--verniz); font-weight: 600; width: max-content; }
+.esqueci p { margin: 8px 0 0; }
+.esqueci a { color: var(--verniz); font-weight: 600; }
+
+/* Cartão do horário escolhido (no login) */
+.escolha {
+  display: flex; align-items: center; gap: 14px; padding: 14px;
+  background: var(--cartao); border: 1px solid var(--linha); border-left: 4px solid var(--cor); border-radius: var(--raio);
+}
+.escolha p { margin: 0; }
+.escolha-titulo { font-weight: 700; }
+.escolha-info { color: var(--suave); font-size: .9rem; }
+
+/* ---------- Revisão / confirmado ---------- */
+.revisao { padding: 16px; display: grid; gap: 16px; }
+.rev-prof { display: flex; align-items: center; gap: 14px; }
+.rev-prof p { margin: 0; }
+.rev-com { color: var(--suave); font-size: .85rem; }
+.rev-prof-nome { font-weight: 700; font-size: 1.1rem; }
+.revisao dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 10px 16px; padding-top: 14px; border-top: 1px solid var(--linha); }
+.revisao dt { color: var(--suave); }
+.revisao dd { margin: 0; font-weight: 600; }
+.revisao dd::first-letter { text-transform: uppercase; }
+.rev-conta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 2px 12px; font-size: .95rem; }
+.rev-conta p { margin: 0; color: var(--suave); }
+.rev-conta strong { color: var(--tinta); }
+.confirmado { justify-items: stretch; text-align: left; }
+.selo-ok {
+  justify-self: start; width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--ok-claro); animation: aparece .4s ease-out;
+}
+.selo-ok svg { width: 32px; height: 32px; fill: none; stroke: var(--ok); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+@keyframes aparece { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* ---------- Meus horários ---------- */
+.meus { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.meu { display: flex; gap: 14px; align-items: flex-start; padding: 14px; }
+.meu-corpo { min-width: 0; display: grid; gap: 2px; }
+.meu-corpo p { margin: 0; }
+.meu-corpo > .link { justify-self: start; }
+.meu-quando { font-weight: 700; }
+.meu-quando::first-letter { text-transform: uppercase; }
+.meu-det { color: var(--suave); font-size: .92rem; }
+.meu-confirma { display: flex; flex-wrap: wrap; align-items: center; gap: 0 14px; font-size: .92rem; }
+.nowrap { white-space: nowrap; }
+
+/* ---------- Conta ---------- */
+.perfil { display: flex; align-items: center; gap: 16px; padding: 16px; }
+.perfil > div { min-width: 0; }
+.perfil p { margin: 0; overflow-wrap: anywhere; }
+.perfil-avatar {
+  width: 60px; height: 60px; border-radius: 50%; flex: none; display: grid; place-items: center;
+  background: var(--verniz); color: var(--sobre-verniz); font: 400 1.6rem/1 var(--display);
+}
+.perfil-nome { font-weight: 700; font-size: 1.1rem; }
+.perfil-info { color: var(--suave); font-size: .92rem; }
+.sanfona { padding: 14px 16px; }
+.sanfona summary { font-weight: 600; cursor: pointer; }
+.sanfona form { margin-top: 14px; }
+.linha-acao { display: flex; justify-content: space-between; align-items: center; padding: 16px; color: var(--tinta); font-weight: 600; text-decoration: none; }
+
+/* ---------- Barra de abas ---------- */
+.tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  height: calc(var(--tab-h) + env(safe-area-inset-bottom, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: var(--cartao); border-top: 1px solid var(--linha);
+}
+@media (min-width: 600px) { .tabbar { padding-inline: calc(50% - 280px); } }
+.tab {
+  display: grid; justify-items: center; align-content: center; gap: 3px; border: 0; background: none;
+  color: var(--suave); font-size: .74rem; font-weight: 600; padding: 6px 2px;
+}
+.tab svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.tab[aria-current="page"] { color: var(--verniz); }
+.tab[aria-current="page"] svg { width: 52px; padding: 0 14px; background: var(--verniz-claro); border-radius: 999px; }
+.tab[aria-current="page"] .tab-avatar { box-shadow: 0 0 0 3px var(--verniz-claro); }
+.tab-avatar {
+  width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--verniz); color: var(--sobre-verniz) !important; font-size: .8rem; font-weight: 700;
+}
+.tab span:last-child { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+}
+
+#painel .admin { padding-bottom: 60px; }
+#painel .admin h1 { font: 400 2.4rem/1 "Gloock", Georgia, serif; margin: 0; }
+#painel .admin h2 { font: 600 1.15rem/1.3 "Figtree", sans-serif; margin: 0 0 4px; }
+#painel .login { display: grid; gap: 16px; max-width: 340px; margin-top: 12vh; }
+#painel .login .erro { order: 0; }
+#painel .admin-topo { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 20px; }
+#painel .abas { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-left: -2px; padding: 2px; }
+#painel .abas::-webkit-scrollbar { display: none; }
+#painel .abas a { white-space: nowrap; flex: none; }
+#painel .abas a {
+  padding: 8px 16px; border-radius: 999px; text-decoration: none; color: var(--tinta);
+  border: 1px solid var(--linha); background: var(--branco); font-weight: 600; font-size: .95rem;
+}
+#painel .abas a[aria-current="page"] { background: var(--tinta); color: var(--leite); border-color: var(--tinta); }
+#painel .abas a:focus-visible { outline: 2px solid var(--verniz); outline-offset: 2px; }
+#painel .nota { margin: 12px 0 0; padding: 10px 14px; border-radius: 10px; background: var(--branco); border: 1px solid var(--linha); }
+#painel .selo { font-size: .75rem; font-weight: 700; color: var(--erro); border: 1px solid currentColor; border-radius: 999px; padding: 1px 8px; vertical-align: 2px; }
+#painel .item-faltou .item-cliente, #painel .item-faltou p { color: var(--cinza); }
+#painel .item-acoes form { display: flex; gap: 16px; }
+#painel .form-teste { margin-top: 12px; }
+#painel .link { background: none; border: 0; padding: 4px 0; cursor: pointer; color: var(--cinza); text-decoration: underline; text-underline-offset: 3px; }
+#painel .link:hover { color: var(--tinta); }
+#painel .link-perigo:hover { color: var(--erro); }
+#painel .navdia { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; gap: 8px; margin-top: 24px; }
+#painel .seta {
+  display: grid; place-items: center; height: 44px; border-radius: 50%;
+  border: 1px solid var(--linha); background: var(--branco);
+  color: var(--tinta); text-decoration: none; font-size: 1.5rem; line-height: 1;
+}
+#painel .navdia-data { display: grid; justify-items: center; gap: 4px; }
+#painel .navdia-data strong { display: block; }
+#painel .navdia-data strong::first-letter { text-transform: uppercase; }
+#painel .navdia-data input { border: 1px solid var(--linha); border-radius: 8px; padding: 4px 8px; background: var(--branco); }
+#painel .filtro { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 20px; }
+#painel .filtro a {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 999px; border: 1px solid var(--linha);
+  background: var(--branco); color: var(--tinta); text-decoration: none; font-size: .9rem;
+}
+#painel .filtro a.ativo { background: var(--tinta); color: var(--leite); border-color: var(--tinta); }
+#painel .bolinha { width: 10px; height: 10px; border-radius: 50%; background: var(--cor); display: inline-block; }
+#painel .totais { color: var(--cinza); margin: 20px 0 8px; }
+#painel .lista { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--linha); }
+#painel .item { display: grid; grid-template-columns: 64px 1fr; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--linha); }
+#painel .item-hora { display: grid; align-content: start; border-left: 4px solid var(--cor); padding-left: 10px; font-variant-numeric: tabular-nums; }
+#painel .item-hora span { color: var(--cinza); font-size: .85rem; }
+#painel .item-corpo p { margin: 0; }
+#painel .item-cliente { font-weight: 700; }
+#painel .item-obs { color: var(--cinza); font-size: .9rem; font-style: italic; }
+#painel .item-acoes { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center; margin-top: 6px; }
+#painel .item-acoes a, #painel .nowrap { white-space: nowrap; }
+#painel .item-acoes a { color: var(--verniz); font-weight: 600; }
+#painel .lista .vazio { padding: 24px 0; }
+#painel .bloqueios { margin-top: 48px; }
+#painel .lista-bloq { list-style: none; padding: 0; margin: 14px 0; }
+#painel .lista-bloq li { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--linha); }
+#painel .form-bloq { margin-top: 16px; }
+#painel .campo select { width: 100%; padding: 12px 14px; background: var(--branco); border: 1px solid var(--linha); border-radius: 10px; font: inherit; }
+#painel .lista-equipe { list-style: none; padding: 0; margin: 16px 0 0; display: grid; gap: 14px; }
+#painel .lista-equipe li { display: flex; align-items: center; gap: 14px; }
+#painel .equipe-dados { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+#painel .equipe-dados strong { flex-basis: 100%; }
+#painel .botao-peq { padding: 8px 16px; font-size: .9rem; position: relative; }
+#painel .arquivo { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+#painel .botao-peq:focus-within { outline: 2px solid var(--verniz); outline-offset: 3px; }
+#painel .periodo-outro { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 12px; color: var(--cinza); font-size: .9rem; }
+#painel .periodo-outro input { border: 1px solid var(--linha); border-radius: 8px; padding: 6px 8px; background: var(--branco); font: inherit; color: var(--tinta); }
+#painel .periodo-atual { margin: 24px 0 12px; font-weight: 700; }
+#painel .numeros { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+#painel .numero { background: var(--branco); border: 1px solid var(--linha); border-radius: var(--raio); padding: 14px; min-width: 0; }
+#painel .numero-grande { grid-column: 1 / -1; }
+#painel .numero p { margin: 0; }
+#painel .numero-rotulo { color: var(--cinza); font-size: .85rem; }
+#painel .numero-valor { font: 400 1.7rem/1.15 "Gloock", Georgia, serif; margin-top: 4px !important; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+#painel .numero-grande .numero-valor { font-size: 2.6rem; }
+#painel .numero-detalhe { color: var(--cinza); font-size: .82rem; margin-top: 6px !important; line-height: 1.35; }
+#painel @media (max-width: 480px) {
+  .numeros { grid-template-columns: 1fr 1fr; }
+#painel .numero:last-child { grid-column: 1 / -1; }
+#painel }
+.bloco { margin-top: 36px; }
+#painel .bloco h2 { margin-bottom: 12px; }
+#painel .ranking { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
+#painel .ranking li { display: flex; gap: 14px; align-items: center; }
+#painel .ranking .foto { width: 52px; height: 52px; font-size: 1.1rem; }
+#painel .ranking-corpo { flex: 1; min-width: 0; display: grid; gap: 6px; }
+#painel .ranking-linha { display: flex; justify-content: space-between; gap: 12px; }
+#painel .ranking-valor { font-variant-numeric: tabular-nums; }
+#painel .ranking-detalhe { margin: 0; color: var(--cinza); font-size: .85rem; }
+#painel .barra { height: 8px; border-radius: 4px; background: var(--linha); overflow: hidden; }
+#painel .barra span { display: block; height: 100%; background: var(--cor); border-radius: 4px; min-width: 2px; }
+#painel .barra-neutra span { background: var(--tinta); }
+#painel .tabela-rolagem { overflow-x: auto; }
+#painel .tabela { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+#painel .tabela th { text-align: left; font-size: .82rem; color: var(--cinza); font-weight: 600; padding: 8px 0; border-bottom: 1px solid var(--linha); }
+#painel .tabela td { padding: 10px 0; border-bottom: 1px solid var(--linha); }
+#painel .tabela th:not(:first-child), #painel .tabela td:not(:first-child) { text-align: right; padding-left: 12px; }
+#painel .dias-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+#painel .dias-lista li { display: grid; grid-template-columns: 76px 1fr auto; gap: 12px; align-items: center; }
+#painel .dias-lista a { color: var(--tinta); font-weight: 600; text-decoration: none; font-variant-numeric: tabular-nums; }
+#painel .dias-lista a span { color: var(--cinza); font-weight: 400; font-size: .85rem; }
+#painel .dias-valor { font-variant-numeric: tabular-nums; text-align: right; font-weight: 600; }
+#painel .dias-valor small { display: block; color: var(--cinza); font-weight: 400; }
+#painel .rodape-nota { margin-top: 32px; color: var(--cinza); font-size: .82rem; }
+#painel .busca { margin: 20px 0 8px; }
+#painel .busca input { width: 100%; padding: 12px 14px; background: var(--branco); border: 1px solid var(--linha); border-radius: 10px; font: inherit; color: var(--tinta); }
+#painel .lista-clientes { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--linha); }
+#painel .lista-clientes li { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--linha); }
+#painel .cli-corpo { min-width: 0; }
+#painel .cli-corpo p { margin: 0; }
+#painel .cli-nome { font-weight: 700; }
+#painel .cli-info { color: var(--cinza); font-size: .9rem; display: flex; flex-wrap: wrap; gap: 0 12px; overflow-wrap: anywhere; }
+#painel .cli-info a { color: var(--verniz); font-weight: 600; white-space: nowrap; }
+#painel .lista-clientes form { flex: none; }
+#painel .nota-senha { display: grid; gap: 8px; justify-items: start; margin-top: 16px; }
+#painel .nota-senha p { margin: 0; }
+#painel .senha-gerada { font: 700 1.6rem/1.2 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; letter-spacing: .08em; user-select: all; }
+#painel .foto {
+  --cor: var(--verniz);
+  width: 44px; height: 44px; border-radius: 50%; flex: none; object-fit: cover;
+  background: var(--cor); color: #FFFFFF; font-weight: 700; display: grid; place-items: center;
+  box-shadow: 0 0 0 2px var(--leite), 0 0 0 4px var(--cor);
+}
+#painel .quem { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 4px 16px 8px; }
+#painel .quem::-webkit-scrollbar { display: none; }
+#painel .quem-item {
+  flex: none; min-width: 74px; display: grid; justify-items: center; gap: 6px; padding: 10px 8px 8px;
+  border-radius: 16px; text-decoration: none; color: var(--cinza); font-weight: 600; font-size: .88rem;
+  border: 1px solid transparent;
+}
+#painel .quem-item .foto { opacity: .55; transition: opacity .15s; }
+#painel .quem-item:hover .foto { opacity: .85; }
+#painel .quem-item.ativo { background: var(--branco); border-color: var(--linha); color: var(--tinta); }
+#painel .quem-item.ativo .foto { opacity: 1; }
+#painel .foto-todas { --cor: var(--tinta); font-size: .95rem; }
+#painel .quem-item:focus-visible { outline: 2px solid var(--verniz); outline-offset: 2px; }
+#painel .calendario { margin-top: 10px; background: var(--branco); border: 1px solid var(--linha); border-radius: 20px; padding: 14px 12px 12px; }
+#painel .cal-topo { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; gap: 8px; }
+#painel .cal-titulo { text-align: center; }
+#painel .cal-titulo h1 { font: 400 1.7rem/1.1 "Gloock", Georgia, serif; margin: 0; }
+#painel .cal-titulo p { margin: 2px 0 0; color: var(--cinza); font-size: .88rem; font-variant-numeric: tabular-nums; }
+#painel .cal-hoje { margin: 6px 0 0; text-align: center; font-size: .88rem; }
+#painel .cal-hoje a { color: var(--verniz); font-weight: 600; }
+#painel .cal-grade { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 14px; }
+#painel .cal-sem { text-align: center; font-size: .72rem; font-weight: 600; color: var(--cinza); padding-bottom: 4px; }
+#painel .cal-dia {
+  position: relative; aspect-ratio: 1 / 1.08; min-width: 0; border-radius: 12px;
+  display: grid; grid-template-rows: auto 1fr; justify-items: center; align-items: center;
+  padding: 5px 2px 4px; text-decoration: none; color: var(--tinta);
+  background: var(--leite); border: 1px solid transparent;
+}
+#painel .cal-num { font-size: .8rem; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+#painel .cal-qtd { font-size: 1.15rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+#painel .cal-dia.nivel-1 { background: color-mix(in srgb, var(--cor) 14%, var(--branco)); }
+#painel .cal-dia.nivel-2 { background: color-mix(in srgb, var(--cor) 30%, var(--branco)); }
+#painel .cal-dia.nivel-3 { background: color-mix(in srgb, var(--cor) 52%, var(--branco)); }
+#painel .cal-dia.nivel-4 { background: var(--cor); color: #FFFFFF; }
+#painel .cal-dia.fechado { background: repeating-linear-gradient(135deg, transparent 0 5px, var(--linha) 5px 6px); color: var(--cinza); }
+#painel .cal-dia.passado .cal-num { opacity: .7; }
+#painel .cal-dia.hoje { border-color: var(--tinta); }
+#painel .cal-dia.hoje .cal-num::after { content: ""; display: block; width: 4px; height: 4px; border-radius: 50%; background: currentColor; margin: 2px auto 0; }
+#painel .cal-dia.escolhido { outline: 3px solid var(--tinta); outline-offset: 1px; z-index: 1; }
+#painel .cal-dia:hover { border-color: var(--tinta); }
+#painel .cal-dia:focus-visible { outline: 3px solid var(--verniz); outline-offset: 1px; }
+#painel .cal-bloq { position: absolute; top: 5px; right: 5px; width: 7px; height: 7px; border-radius: 50%; background: var(--tinta); box-shadow: 0 0 0 2px var(--branco); }
+#painel .cal-vazio { aspect-ratio: 1 / 1.08; }
+#painel .cal-legenda { margin: 12px 4px 0; color: var(--cinza); font-size: .8rem; line-height: 1.45; }
+#painel .cal-legenda-bloq { display: inline-flex; align-items: center; gap: 6px; margin-right: 12px; white-space: nowrap; }
+#painel .cal-legenda .cal-bloq { position: static; box-shadow: none; }
+#painel .cal-legenda-fechado { width: 12px; height: 12px; border-radius: 3px; background: repeating-linear-gradient(135deg, transparent 0 3px, var(--cinza) 3px 4px); border: 1px solid var(--linha); }
+#painel .vazio-dia { text-align: center; color: var(--cinza); margin: 24px 0; }
+#painel .detalhe { margin-top: 28px; scroll-margin-top: 12px; display: grid; gap: 22px; }
+#painel .detalhe-topo h2 { font: 400 1.9rem/1.1 "Gloock", Georgia, serif !important; margin: 0 !important; }
+#painel .detalhe-topo p { margin: 4px 0 0; color: var(--cinza); }
+#painel .tag { font: 700 .75rem/1 "Figtree", sans-serif; vertical-align: middle; background: var(--tinta); color: var(--leite); padding: 4px 8px; border-radius: 999px; }
+#painel .numeros-dia { grid-template-columns: repeat(3, 1fr) !important; }
+#painel .numeros-dia .numero:last-child { grid-column: auto !important; }
+#painel .numeros-dia .numero-valor { font-size: 1.45rem; }
+#painel @media (max-width: 400px) { .numeros-dia .numero { padding: 12px 10px; }
+#painel .numeros-dia .numero-valor { font-size: 1.2rem; }
+#painel }
+.bloco-dia h3 { margin: 0 0 10px; font-size: 1rem; }
+#painel .servicos-dia { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+#painel .servicos-dia li { background: var(--branco); border: 1px solid var(--linha); border-radius: 999px; padding: 6px 14px; font-size: .92rem; }
+#painel .servicos-dia strong { color: var(--verniz); font-variant-numeric: tabular-nums; }
+#painel .ranking-link { border-radius: 50%; }
+#painel .bloq-dia { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 6px; }
+#painel .bloq-dia li { padding: 8px 12px; border-radius: 10px; background: var(--branco); border: 1px dashed var(--linha); color: var(--cinza); font-size: .9rem; }
+#painel .bloquear-dia { display: inline-block; margin-top: 14px; text-decoration: none; }
+#painel .sub { margin: 24px 0 0; font-size: 1rem; }
+#painel .admin-topo { justify-content: flex-start; }
+#painel .abas a { padding: 8px 11px; font-size: .86rem; }
+#painel .numeros-dia .numero-valor { font: 700 1.25rem/1.2 "Figtree", sans-serif !important; white-space: nowrap; }
+#painel @media (max-width: 400px) { .numeros-dia .numero-valor { font-size: 1.05rem !important; }
+#painel }
+.numeros-dia .numero { padding: 12px 10px 12px 12px; }
+#painel .numeros-dia .numero-rotulo { font-size: .78rem; }
+#painel .cal-dia.hoje .cal-num::after { display: none; }
+#painel .cal-dia.hoje { border: 2px solid var(--tinta); }
+#painel .cal-bloq { top: auto; bottom: 4px; right: 4px; width: 6px; height: 6px; }
+
+:root { --leite: var(--fundo); --branco: var(--cartao); --cinza: var(--suave); --raio: 16px; }
+.demo { background: var(--vinho); color: var(--creme); }
+.demo-in { max-width: 560px; margin: 0 auto; padding: 10px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.demo-in p { margin: 0; flex: 1 1 220px; font-size: .8rem; color: var(--creme-suave); }
+.demo-tab { border: 1px solid rgba(255,255,255,.25); background: transparent; color: var(--creme); padding: 6px 14px; border-radius: 999px; font-weight: 600; font-size: .88rem; }
+.demo-tab[aria-pressed="true"] { background: var(--creme); color: var(--vinho); border-color: var(--creme); }
+#painel { max-width: 560px; margin: 0 auto; padding: 20px 16px 40px; }
+#painel .painel-titulo { font: 400 2rem/1.1 var(--display); margin: 0 0 4px; }
+#painel .painel-sub { margin: 0 0 14px; color: var(--suave); font-size: .9rem; }
+#painel .cal-dia, #painel .quem-item { cursor: pointer; font: inherit; }
+#painel .quem-item { background: none; }
+#painel .quem-item.ativo { background: var(--cartao); }
+#painel .seta { background: var(--cartao); color: var(--tinta); }
+#painel .foto-todas { color: var(--fundo); }
+#painel .numero { background: var(--cartao); border: 1px solid var(--linha); border-radius: 16px; padding: 14px; min-width: 0; }
+#painel .numero p { margin: 0; }
+#painel .numeros { display: grid; gap: 10px; }
+#painel .ranking .foto { width: 44px; height: 44px; font-size: 1rem; }
+#painel .seta { cursor: pointer; font: inherit; font-size: 1.5rem; }
+
+#painel .selo-novo { color: var(--ok); }</style>
+</head>
+<body>
+<div class="demo">
+  <div class="demo-in">
+    <button type="button" class="demo-tab" id="demo-cliente" aria-pressed="true">Tela da cliente</button>
+    <button type="button" class="demo-tab" id="demo-painel" aria-pressed="false">Painel do estúdio</button>
+    <p>Prévia do sistema de agendamento. Os horários são de exemplo e nada fica salvo. Pra testar o login: celular (73) 99999-0000, senha 123456, ou crie uma conta.</p>
+  </div>
+</div>
+<div id="cliente">
+<main id="app">
+
+  <!-- ============ 1. SERVIÇO ============ -->
+  <section class="tela" id="tela-servico" aria-labelledby="t-servico">
+    <header class="capa">
+      <div class="capa-in">
+        <p class="capa-status "><span class="ponto" aria-hidden="true"></span>Fechado agora. Abre amanhã às 09:00</p>
+        <h1>Studio de Unhas</h1>
+        <p class="capa-info">
+          <span>@studiodeunhas</span>          <span>Rua Exemplo, 123 - Centro</span>        </p>
+      </div>
+    </header>
+    <div class="folha">
+      <ol class="passos" aria-label="Etapas do agendamento">
+        <li aria-current="step">Serviço</li><li>Horário</li><li>Confirmar</li>
+      </ol>
+      <h2 class="titulo" id="t-servico">Qual serviço você quer?</h2>
+      <ul class="servicos">
+                  <li>
+            <button type="button" class="servico" data-servico="1">
+              <span class="servico-texto">
+                <span class="servico-nome">Mão</span>
+                <span class="servico-desc">Cutilagem e esmaltação</span>              </span>
+              <span class="servico-valor">
+                <span class="servico-preco">R$ 25,00</span>
+                <span class="servico-dur">45 min</span>
+              </span>
+              <svg class="seta" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+          </li>
+                  <li>
+            <button type="button" class="servico" data-servico="2">
+              <span class="servico-texto">
+                <span class="servico-nome">Pé</span>
+                <span class="servico-desc">Cutilagem e esmaltação</span>              </span>
+              <span class="servico-valor">
+                <span class="servico-preco">R$ 30,00</span>
+                <span class="servico-dur">45 min</span>
+              </span>
+              <svg class="seta" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+          </li>
+                  <li>
+            <button type="button" class="servico" data-servico="3">
+              <span class="servico-texto">
+                <span class="servico-nome">Pé e mão</span>
+                <span class="servico-desc">Os dois no mesmo horário</span>              </span>
+              <span class="servico-valor">
+                <span class="servico-preco">R$ 50,00</span>
+                <span class="servico-dur">90 min</span>
+              </span>
+              <svg class="seta" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+          </li>
+                  <li>
+            <button type="button" class="servico" data-servico="4">
+              <span class="servico-texto">
+                <span class="servico-nome">Esmaltação em gel</span>
+                <span class="servico-desc">Dura até 3 semanas</span>              </span>
+              <span class="servico-valor">
+                <span class="servico-preco">R$ 60,00</span>
+                <span class="servico-dur">60 min</span>
+              </span>
+              <svg class="seta" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+          </li>
+                  <li>
+            <button type="button" class="servico" data-servico="5">
+              <span class="servico-texto">
+                <span class="servico-nome">Alongamento em fibra</span>
+                <span class="servico-desc">Aplicação completa</span>              </span>
+              <span class="servico-valor">
+                <span class="servico-preco">R$ 130,00</span>
+                <span class="servico-dur">120 min</span>
+              </span>
+              <svg class="seta" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+          </li>
+                  <li>
+            <button type="button" class="servico" data-servico="6">
+              <span class="servico-texto">
+                <span class="servico-nome">Manutenção</span>
+                <span class="servico-desc">Manutenção de alongamento</span>              </span>
+              <span class="servico-valor">
+                <span class="servico-preco">R$ 80,00</span>
+                <span class="servico-dur">90 min</span>
+              </span>
+              <svg class="seta" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+          </li>
+              </ul>
+          </div>
+  </section>
+
+  <!-- ============ 2. DIA, PROFISSIONAL E HORÁRIO ============ -->
+  <section class="tela" id="tela-horario" hidden tabindex="-1" aria-labelledby="t-horario">
+    <div class="folha folha-solta">
+      <ol class="passos" aria-label="Etapas do agendamento">
+        <li class="feito">Serviço</li><li aria-current="step">Horário</li><li>Confirmar</li>
+      </ol>
+      <div class="escolhido" id="escolhido"></div>
+
+      <h2 class="titulo" id="t-horario">Escolha o dia</h2>
+      <div class="dias" id="dias" role="radiogroup" aria-labelledby="t-horario"></div>
+
+      <h2 class="titulo titulo-menor" id="t-pros">Com quem?</h2>
+      <div class="pros" id="pros" role="tablist" aria-labelledby="t-pros"></div>
+
+      <div class="horas" id="horas" role="radiogroup" aria-label="Horários livres" aria-live="polite"></div>
+    </div>
+
+    <div class="cta" id="cta">
+      <p class="cta-resumo" id="cta-resumo">Toque num horário</p>
+      <button type="button" class="botao" id="btn-continuar" disabled>Continuar</button>
+    </div>
+  </section>
+
+  <!-- ============ LOGIN / CADASTRO ============ -->
+  <section class="tela" id="tela-login" hidden tabindex="-1" aria-labelledby="t-login">
+    <div class="folha folha-solta">
+      <button type="button" class="voltar" data-voltar>Voltar</button>
+      <h2 class="titulo titulo-grande" id="t-login">Entre na sua conta</h2>
+      <p class="subtitulo" id="login-sub">Pra marcar e acompanhar seus horários.</p>
+      <div id="login-escolha"></div>
+
+      <div class="cartao auth">
+        <div class="abas" role="tablist" aria-label="Conta">
+          <button type="button" role="tab" id="aba-entrar" aria-controls="painel-entrar" aria-selected="true">Já tenho conta</button>
+          <button type="button" role="tab" id="aba-criar" aria-controls="painel-criar" aria-selected="false" tabindex="-1">Criar conta</button>
+        </div>
+
+        <form id="painel-entrar" role="tabpanel" aria-labelledby="aba-entrar" class="form" novalidate>
+          <label class="campo">
+            <span>Celular</span>
+            <input type="tel" id="ent-tel" class="mascara-tel" autocomplete="username" inputmode="numeric" placeholder="(73) 99999-9999">
+          </label>
+          <label class="campo">
+            <span>Senha</span>
+            <span class="senha-caixa">
+              <input type="password" id="ent-senha" autocomplete="current-password">
+              <button type="button" class="ver-senha" aria-label="Mostrar senha" aria-pressed="false">Mostrar</button>
+            </span>
+          </label>
+          <button type="submit" class="botao botao-largo" id="btn-entrar">Entrar</button>
+          <details class="esqueci">
+            <summary>Esqueci a senha</summary>
+            <p>Fale com o estúdio pelo WhatsApp e elas geram uma senha nova pra você.
+              <a href="https://wa.me/5573999999999?text=Oi%21%20Esqueci%20a%20senha%20da%20minha%20conta%20de%20agendamento." target="_blank" rel="noopener">Abrir conversa</a>            </p>
+          </details>
+        </form>
+
+        <form id="painel-criar" role="tabpanel" aria-labelledby="aba-criar" class="form" novalidate hidden>
+          <label class="campo">
+            <span>Nome completo</span>
+            <input type="text" id="cad-nome" autocomplete="name" maxlength="100" placeholder="Ex.: Maria Souza Lima">
+          </label>
+          <label class="campo">
+            <span>Celular (WhatsApp)</span>
+            <input type="tel" id="cad-tel" class="mascara-tel" autocomplete="tel-national" inputmode="numeric" placeholder="(73) 99999-9999">
+          </label>
+          <label class="campo">
+            <span>E-mail</span>
+            <input type="email" id="cad-email" autocomplete="email" maxlength="150" placeholder="maria@gmail.com">
+          </label>
+          <label class="campo">
+            <span>Crie uma senha <em>(mínimo 6 caracteres)</em></span>
+            <span class="senha-caixa">
+              <input type="password" id="cad-senha" autocomplete="new-password" minlength="6">
+              <button type="button" class="ver-senha" aria-label="Mostrar senha" aria-pressed="false">Mostrar</button>
+            </span>
+          </label>
+          <button type="submit" class="botao botao-largo" id="btn-criar">Criar conta</button>
+        </form>
+
+        <p class="erro" id="erro-auth" role="alert" hidden></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 3. CONFIRMAR ============ -->
+  <section class="tela" id="tela-revisao" hidden tabindex="-1" aria-labelledby="t-rev">
+    <div class="folha folha-solta">
+      <ol class="passos" aria-label="Etapas do agendamento">
+        <li class="feito">Serviço</li><li class="feito">Horário</li><li aria-current="step">Confirmar</li>
+      </ol>
+      <h2 class="titulo titulo-grande" id="t-rev">Confira e confirme</h2>
+      <div class="cartao revisao" id="rev-cartao"></div>
+      <div class="rev-conta">
+        <p>Agendando como <strong id="rev-nome"></strong></p>
+        <button type="button" class="link" id="rev-trocar">Trocar de conta</button>
+      </div>
+      <label class="campo">
+        <span>Observação <em>(opcional)</em></span>
+        <input type="text" id="rev-obs" maxlength="255" placeholder="Ex.: quero tirar o gel antigo">
+      </label>
+      <input type="text" id="rev-site" class="isca" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <p class="erro" id="erro-rev" role="alert" hidden></p>
+      <button type="button" class="botao botao-largo botao-alto" id="btn-confirmar">Confirmar agendamento</button>
+      <button type="button" class="link link-centro" data-voltar>Alterar horário</button>
+    </div>
+  </section>
+
+  <!-- ============ CONFIRMADO ============ -->
+  <section class="tela" id="tela-confirmado" hidden tabindex="-1" aria-labelledby="t-ok">
+    <div class="folha folha-solta confirmado">
+      <div class="selo-ok" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+      <h2 class="titulo titulo-grande" id="t-ok">Horário marcado!</h2>
+      <div class="cartao revisao" id="conf-cartao"></div>
+      <p class="subtitulo" id="conf-nota"></p>
+      <a class="botao botao-largo" id="conf-whats" target="_blank" rel="noopener" hidden>Avisar o estúdio no WhatsApp</a>
+      <button type="button" class="botao botao-largo botao-leve" data-ir="meus">Ver meus horários</button>
+      <button type="button" class="link link-centro" id="conf-novo">Marcar outro horário</button>
+    </div>
+  </section>
+
+  <!-- ============ MEUS HORÁRIOS ============ -->
+  <section class="tela" id="tela-meus" hidden tabindex="-1" aria-labelledby="t-meus">
+    <div class="folha folha-solta">
+      <h2 class="titulo titulo-grande" id="t-meus">Meus horários</h2>
+      <p class="subtitulo" id="meus-info"></p>
+      <ul class="meus" id="meus-lista"></ul>
+      <button type="button" class="botao botao-largo" data-ir="servico" id="meus-agendar" hidden>Marcar um horário</button>
+    </div>
+  </section>
+
+  <!-- ============ CONTA ============ -->
+  <section class="tela" id="tela-conta" hidden tabindex="-1" aria-labelledby="t-conta">
+    <div class="folha folha-solta">
+      <h2 class="titulo titulo-grande" id="t-conta">Minha conta</h2>
+      <div class="cartao perfil">
+        <span class="perfil-avatar" id="perfil-avatar" aria-hidden="true"></span>
+        <div>
+          <p class="perfil-nome" id="perfil-nome"></p>
+          <p class="perfil-info" id="perfil-tel"></p>
+          <p class="perfil-info" id="perfil-email"></p>
+        </div>
+      </div>
+      <details class="cartao sanfona">
+        <summary>Trocar senha</summary>
+        <form id="form-senha" class="form" novalidate>
+          <label class="campo">
+            <span>Senha atual</span>
+            <input type="password" id="senha-atual" autocomplete="current-password">
+          </label>
+          <label class="campo">
+            <span>Nova senha <em>(mínimo 6 caracteres)</em></span>
+            <input type="password" id="senha-nova" autocomplete="new-password">
+          </label>
+          <p class="erro" id="erro-senha" role="alert" hidden></p>
+          <p class="ok" id="ok-senha" role="status" hidden>Senha trocada.</p>
+          <button type="submit" class="botao botao-leve botao-largo">Salvar nova senha</button>
+        </form>
+      </details>
+              <a class="cartao linha-acao" href="https://wa.me/5573999999999" target="_blank" rel="noopener">
+          <span>Falar com o estúdio no WhatsApp</span>
+          <svg class="seta" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+        </a>
+            <button type="button" class="botao botao-leve botao-largo" id="btn-sair">Sair da conta</button>
+    </div>
+  </section>
+
+</main>
+<nav class="tabbar" aria-label="Menu">
+  <button type="button" class="tab" data-ir="servico" data-aba="agendar" aria-current="page">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 2.5h5v4l1.5 2.2v11.3a1.5 1.5 0 0 1-1.5 1.5h-5a1.5 1.5 0 0 1-1.5-1.5V8.7l1.5-2.2z"/><path d="M8 12h8"/></svg>
+    <span>Agendar</span>
+  </button>
+  <button type="button" class="tab" data-ir="meus" data-aba="meus">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
+    <span>Meus horários</span>
+  </button>
+  <button type="button" class="tab" data-ir="conta" data-aba="conta" id="tab-conta">
+    <span class="tab-avatar" id="tab-avatar" hidden></span>
+    <svg viewBox="0 0 24 24" aria-hidden="true" id="tab-icone-conta"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1.2-3.8 4-5.5 7.5-5.5s6.3 1.7 7.5 5.5"/></svg>
+    <span id="tab-conta-rotulo">Entrar</span>
+  </button>
+</nav>
+</div>
+<div id="painel" hidden></div>
+<script>window.AGENDA = {"servicos": [{"id": 1, "nome": "Mão", "descricao": "Cutilagem e esmaltação", "duracao": 45, "preco": 25}, {"id": 2, "nome": "Pé", "descricao": "Cutilagem e esmaltação", "duracao": 45, "preco": 30}, {"id": 3, "nome": "Pé e mão", "descricao": "Os dois no mesmo horário", "duracao": 90, "preco": 50}, {"id": 4, "nome": "Esmaltação em gel", "descricao": "Dura até 3 semanas", "duracao": 60, "preco": 60}, {"id": 5, "nome": "Alongamento em fibra", "descricao": "Aplicação completa", "duracao": 120, "preco": 130}, {"id": 6, "nome": "Manutenção", "descricao": "Manutenção de alongamento", "duracao": 90, "preco": 80}], "profissionais": [{"id": 1, "nome": "Ana", "cor": "#9B1B3A", "foto": null, "iniciais": "A"}, {"id": 2, "nome": "Bruna", "cor": "#C2577A", "foto": null, "iniciais": "B"}, {"id": 3, "nome": "Camila", "cor": "#6E3B5C", "foto": null, "iniciais": "C"}], "diasAbertos": [1, 2, 3, 4, 5, 6], "diasAFrente": 30, "hoje": "2026-10-20", "whatsapp": "5573999999999", "estudio": "Studio de Unhas", "cliente": null, "avisoAutomatico": true, "cancelarAteHoras": 2};</script>
+<script>
+(function () {
+  const A = window.AGENDA;
+  const pad = (n) => String(n).padStart(2, '0');
+  const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  A.hoje = iso(hoje);
+  const HOR = { 1: ['09:00', '19:00'], 2: ['09:00', '19:00'], 3: ['09:00', '19:00'], 4: ['09:00', '19:00'], 5: ['09:00', '19:00'], 6: ['08:00', '14:00'] };
+  const min = (h) => { const [a, b] = h.split(':').map(Number); return a * 60 + b; };
+  const hhmm = (m) => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
+  const SERV = Object.fromEntries(A.servicos.map((s) => [s.id, s]));
+  const PROF = Object.fromEntries(A.profissionais.map((p) => [p.id, p]));
+  const brl = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const SEMANA = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+  const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+  const extenso = (d) => { const x = new Date(d + 'T00:00'); return `${SEMANA[x.getDay()]}, ${x.getDate()} de ${MESES[x.getMonth()]}`; };
+  window.DEMO = { HOR, SERV, PROF, iso, min, hhmm, brl, extenso, MESES };
+
+  // Agenda de exemplo: do começo do mês até 45 dias depois
+  let semente = 7;
+  const rnd = () => { semente = (semente * 16807) % 2147483647; return semente / 2147483647; };
+  const nomes = ['Paula Ribeiro', 'Jéssica Lima', 'Rafaela Costa', 'Tainá Alves', 'Mariana Rocha', 'Lívia Santos', 'Carla Menezes', 'Bianca Freitas', 'Sara Nunes', 'Débora Reis', 'Kelly Souza', 'Vitória Melo'];
+  const ag = []; let seq = 1;
+  const agoraMin = new Date().getHours() * 60 + new Date().getMinutes();
+  const ini = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  for (let d = new Date(ini); d < new Date(hoje.getTime() + 45 * 864e5); d.setDate(d.getDate() + 1)) {
+    const h = HOR[d.getDay()]; if (!h) continue;
+    const dia = iso(d); const dias = Math.round((d - hoje) / 864e5);
+    const prob = dias > 7 ? 0.15 : dias >= 0 ? 0.3 : 0.75;
+    A.profissionais.forEach((p) => {
+      let t = min(h[0]) + (rnd() < 0.5 ? 0 : 30);
+      while (t < min(h[1])) {
+        if (t >= 720 && t < 780) { t = 780; continue; }
+        if (rnd() < prob) {
+          const sid = A.servicos[Math.floor(rnd() * A.servicos.length)].id; const dur = SERV[sid].duracao;
+          if (t < 720 && t + dur > 720) { t = 780; continue; }
+          if (t + dur > min(h[1])) break;
+          const passado = dias < 0 || (dias === 0 && t + dur <= agoraMin);
+          ag.push({ id: seq++, prof: p.id, serv: sid, data: dia, ini: t, fim: t + dur, nome: nomes[Math.floor(rnd() * nomes.length)],
+            status: passado && rnd() < 0.05 ? 'faltou' : 'confirmado', cli: null });
+          t += dur;
+        } else t += 30;
+      }
+    });
+  }
+  window.DEMO_AG = ag;
+
+  const CLIENTES = [{ id: 1, nome: 'Cliente Teste', tel: '73999990000', email: 'teste@exemplo.com', senha: '123456' }];
+  let logada = null;
+
+  function slots(data, dur, profs) {
+    const d = new Date(data + 'T00:00'); const h = HOR[d.getDay()]; if (!h) return [];
+    const hojeIso = iso(new Date());
+    if (data < hojeIso) return [];
+    const minimo = data === hojeIso ? new Date().getHours() * 60 + new Date().getMinutes() + 60 : -1;
+    const out = [];
+    for (let t = min(h[0]); t + dur <= min(h[1]); t += 30) {
+      if (t < minimo) continue;
+      if (t < 780 && 720 < t + dur) continue;
+      const livres = profs.filter((p) => !ag.some((a) => a.prof === p && a.data === data && a.status === 'confirmado' && t < a.fim && a.ini < t + dur));
+      if (livres.length) out.push({ hora: hhmm(t), livres });
+    }
+    return out;
+  }
+  const resp = (o, st = 200) => new Response(JSON.stringify(o), { status: st, headers: { 'Content-Type': 'application/json' } });
+  const soDig = (t) => String(t || '').replace(/\D/g, '').replace(/^0+/, '').replace(/^55(?=\d{10,11}$)/, '');
+  const telFmt = (t) => t.length === 11 ? `(${t.slice(0, 2)}) ${t.slice(2, 7)}-${t.slice(7)}` : `(${t.slice(0, 2)}) ${t.slice(2, 6)}-${t.slice(6)}`;
+  const pub = (c) => c && { nome: c.nome, primeiro_nome: c.nome.split(' ')[0], telefone: telFmt(c.tel), email: c.email };
+  const meus = () => !logada ? [] : ag.filter((a) => a.cli === logada.id && a.status === 'confirmado')
+    .sort((x, y) => x.data.localeCompare(y.data) || x.ini - y.ini)
+    .map((a) => ({ id: a.id, servico: SERV[a.serv].nome, profissional: PROF[a.prof].nome, profissional_id: a.prof,
+      data_extenso: extenso(a.data), hora: hhmm(a.ini), preco_fmt: brl(SERV[a.serv].preco), pode_cancelar: true }));
+
+  window.fetch = async (url, opt = {}) => {
+    await new Promise((r) => setTimeout(r, 220));
+    const u = new URL(url, 'https://demo.local/');
+    const acao = u.searchParams.get('acao');
+    const corpo = opt.body ? JSON.parse(opt.body) : {};
+    const todas = A.profissionais.map((p) => p.id);
+    if (acao === 'horarios') {
+      const s = SERV[+u.searchParams.get('servico')]; const data = u.searchParams.get('data');
+      const sl = slots(data, s.duracao, todas);
+      return resp({ data, profissionais: todas.map((id) => ({ id, horarios: sl.filter((x) => x.livres.includes(id)).map((x) => x.hora) })) });
+    }
+    if (acao === 'proximo') {
+      const s = SERV[+u.searchParams.get('servico')]; const p = +u.searchParams.get('profissional');
+      const d0 = new Date(u.searchParams.get('depois') + 'T00:00');
+      for (let i = 1; i <= 30; i++) { const d = new Date(d0); d.setDate(d0.getDate() + i); if (slots(iso(d), s.duracao, p ? [p] : todas).length) return resp({ data: iso(d) }); }
+      return resp({ data: null });
+    }
+    if (acao === 'eu') return resp({ cliente: pub(logada), horarios: meus() });
+    if (acao === 'sair') { logada = null; return resp({ ok: true }); }
+    if (acao === 'entrar') {
+      const c = CLIENTES.find((c) => c.tel === soDig(corpo.telefone));
+      if (!c) return resp({ erro: 'Não achamos conta com esse celular. Toque em "Criar conta".' }, 409);
+      if (c.senha !== corpo.senha) return resp({ erro: 'Senha incorreta. Se esqueceu, fale com o estúdio pelo WhatsApp que elas geram uma nova.' }, 409);
+      logada = c; return resp({ ok: true, cliente: pub(c), horarios: meus() });
+    }
+    if (acao === 'cadastrar') {
+      const tel = soDig(corpo.telefone), email = String(corpo.email || '').trim().toLowerCase(), nome = String(corpo.nome || '').trim().replace(/\s+/g, ' ');
+      if (nome.split(' ').length < 2) return resp({ erro: 'Digite seu nome completo (nome e sobrenome).' }, 422);
+      if (CLIENTES.some((c) => c.tel === tel)) return resp({ erro: 'Já existe uma conta com esse celular. Toque em "Entrar".' }, 409);
+      if (CLIENTES.some((c) => c.email === email)) return resp({ erro: 'Esse e-mail já está em outra conta. Use outro ou toque em "Entrar".' }, 409);
+      const c = { id: CLIENTES.length + 1, nome, tel, email, senha: corpo.senha }; CLIENTES.push(c); logada = c;
+      return resp({ ok: true, cliente: pub(c), horarios: [] });
+    }
+    if (acao === 'senha') {
+      if (!logada) return resp({ erro: 'Entre na sua conta de novo.' }, 401);
+      if (corpo.atual !== logada.senha) return resp({ erro: 'A senha atual está errada.' }, 409);
+      logada.senha = corpo.nova; return resp({ ok: true });
+    }
+    if (acao === 'cancelar') {
+      const a = ag.find((a) => a.id === corpo.id && logada && a.cli === logada.id && a.status === 'confirmado');
+      if (!a) return resp({ erro: 'Esse horário não foi encontrado ou já foi cancelado.' }, 409);
+      a.status = 'cancelado'; return resp({ ok: true, horarios: meus() });
+    }
+    if (acao === 'agendar') {
+      if (!logada) return resp({ erro: 'Entre na sua conta ou crie uma pra confirmar o horário.', precisa_login: true }, 401);
+      const s = SERV[corpo.servico];
+      const sl = slots(corpo.data, s.duracao, [corpo.profissional]).find((x) => x.hora === corpo.hora);
+      if (!sl) return resp({ erro: 'Esse horário não está mais disponível. Escolha outro.' }, 409);
+      ag.push({ id: ++seq, cli: logada.id, prof: corpo.profissional, serv: s.id, data: corpo.data, ini: min(corpo.hora), fim: min(corpo.hora) + s.duracao, nome: logada.nome, status: 'confirmado', novo: true });
+      return resp({ ok: true, agendamento: { servico: s.nome, profissional: PROF[corpo.profissional].nome, profissional_id: corpo.profissional,
+        data: corpo.data, hora: corpo.hora, data_extenso: extenso(corpo.data), preco_fmt: brl(s.preco) } });
+    }
+    return resp({ erro: 'Ação inválida.' }, 404);
+  };
+})();
+</script>
+<script>// Agenda de unhas: tela da cliente.
+// Telas: servico -> horario -> (login) -> revisao -> confirmado; mais "meus" e "conta" na barra de baixo.
+(function () {
+  'use strict';
+  const A = window.AGENDA;
+  const $ = (id) => document.getElementById(id);
+
+  const SEM = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+  const SEMANA = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+  const MES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+  const suave = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+
+  // O que a cliente escolheu
+  const estado = { servico: null, data: null, profVista: null, profissional: null, hora: null };
+  let vagas = null;          // { profId: ['09:00', ...] } do dia escolhido
+  let pedidoHorarios = 0;    // descarta respostas atrasadas
+  let meusHorarios = null;
+
+  // ---------- Utilidades ----------
+  const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const preco = (v) => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const isoLocal = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const dataDe = (iso) => { const [y, m, d] = iso.split('-').map(Number); return new Date(y, m - 1, d); };
+  const servico = () => A.servicos.find((s) => s.id === estado.servico);
+  const prof = (id) => A.profissionais.find((p) => p.id === id);
+  const diaCurto = (iso) => { const d = dataDe(iso); return `${SEMANA[d.getDay()]}, ${d.getDate()}/${String(d.getMonth() + 1).padStart(2, '0')}`; };
+  const diaLongo = (iso) => { const d = dataDe(iso); return `${SEMANA[d.getDay()]}, ${d.getDate()} de ${MESES[d.getMonth()]}`; };
+
+  function fotoHtml(p, classe = '') {
+    if (!p) return '';
+    return p.foto
+      ? `<img class="foto ${classe}" src="${esc(p.foto)}" alt="" style="--cor:${esc(p.cor)}">`
+      : `<span class="foto ${classe}" style="--cor:${esc(p.cor)}" aria-hidden="true">${esc(p.iniciais)}</span>`;
+  }
+
+  function mensagem(el, texto) { el.textContent = texto || ''; el.hidden = !texto; }
+
+  async function api(acao, dados, params = {}) {
+    const q = new URLSearchParams({ acao, ...params });
+    const opcoes = dados === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dados) };
+    const r = await fetch('api.php?' + q, { credentials: 'same-origin', ...opcoes });
+    let j = {};
+    try { j = await r.json(); } catch (e) { /* sem corpo */ }
+    return { ok: r.ok, status: r.status, j };
+  }
+  const semRede = () => ({ ok: false, status: 0, j: { erro: 'Sem conexão. Verifique a internet e tente de novo.' } });
+
+  // ---------- Telas (o voltar do celular funciona) ----------
+  const TELAS = ['servico', 'horario', 'login', 'revisao', 'confirmado', 'meus', 'conta'];
+  const ABA = { servico: 'agendar', horario: 'agendar', revisao: 'agendar', confirmado: 'agendar', meus: 'meus', conta: 'conta' };
+  let telaAtual = 'servico';
+  let destinoLogin = 'conta';
+  const rolagem = {};
+
+  function irPara(tela, { push = true, replace = false, destino } = {}) {
+    if (!TELAS.includes(tela)) tela = 'servico';
+    if (tela === 'horario' && !estado.servico) tela = 'servico';
+    if (tela === 'revisao' && !estado.hora) tela = estado.servico ? 'horario' : 'servico';
+    if (['meus', 'conta', 'revisao'].includes(tela) && !A.cliente) { destino = tela; tela = 'login'; }
+    if (tela === 'login' && A.cliente) tela = destino || 'conta';
+    if (tela === 'login') destinoLogin = destino || destinoLogin;
+
+    rolagem[telaAtual] = window.scrollY;
+    TELAS.forEach((t) => { $('tela-' + t).hidden = t !== tela; });
+    const veioDe = telaAtual;
+    telaAtual = tela;
+
+    const aba = tela === 'login' ? (ABA[destinoLogin] || 'conta') : ABA[tela];
+    document.querySelectorAll('.tab').forEach((t) => {
+      if (t.dataset.aba === aba) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current');
+    });
+
+    if (replace) history.replaceState({ tela }, '', '#' + tela);
+    else if (push) history.pushState({ tela }, '', '#' + tela);
+
+    if (tela === 'horario') renderEscolhido();
+    if (tela === 'login') renderLogin();
+    if (tela === 'revisao') renderRevisao();
+    if (tela === 'meus') carregarMeus();
+    if (tela === 'conta') renderPerfil();
+
+    // Volta pro lugar onde estava nas telas de escolha; nas outras, começa do topo
+    const manter = (tela === 'servico' || tela === 'horario') && !push;
+    window.scrollTo(0, manter ? (rolagem[tela] || 0) : 0);
+    if (tela !== 'servico' && veioDe !== tela) $('tela-' + tela).focus({ preventScroll: true });
+  }
+
+  window.addEventListener('popstate', (ev) => irPara((ev.state && ev.state.tela) || 'servico', { push: false }));
+
+  document.addEventListener('click', (ev) => {
+    const ir = ev.target.closest('[data-ir]');
+    if (ir) { irPara(ir.dataset.ir, { destino: ir.dataset.ir }); return; }
+    if (ev.target.closest('[data-voltar]')) {
+      if (history.state && history.state.tela && history.state.tela !== 'servico') history.back();
+      else irPara('servico');
+    }
+  });
+
+  // ---------- 1. Serviço ----------
+  document.querySelectorAll('[data-servico]').forEach((b) => b.addEventListener('click', () => {
+    const id = Number(b.dataset.servico);
+    if (estado.servico !== id) { estado.servico = id; limparHora(); carregarHorarios(); }
+    irPara('horario');
+  }));
+
+  function renderEscolhido() {
+    const s = servico();
+    $('escolhido').innerHTML = s ? `<div><p class="escolhido-nome">${esc(s.nome)}</p>
+      <p class="escolhido-info">${s.duracao} min, ${preco(s.preco)}</p></div>
+      <button type="button" class="link" data-ir="servico">Trocar</button>` : '';
+  }
+
+  // ---------- 2. Dia ----------
+  function montarDias() {
+    const base = dataDe(A.hoje);
+    let primeiro = null;
+    const elDias = $('dias');
+    for (let i = 0; i <= A.diasAFrente; i++) {
+      const dt = new Date(base); dt.setDate(base.getDate() + i);
+      const iso = isoLocal(dt);
+      const aberto = A.diasAbertos.includes(dt.getDay());
+      const rotulo = i === 0 ? 'hoje' : i === 1 ? 'amanhã' : SEM[dt.getDay()];
+      const lbl = document.createElement('label');
+      lbl.className = 'dia';
+      lbl.innerHTML = `<input type="radio" name="data" value="${iso}" ${aberto ? '' : 'disabled'}
+          aria-label="${rotulo}, ${dt.getDate()} de ${MESES[dt.getMonth()]}${aberto ? '' : ', fechado'}">
+        <span class="dia-caixa"><span class="dia-sem">${rotulo}</span><span class="dia-num">${dt.getDate()}</span><span class="dia-mes">${MES[dt.getMonth()]}</span></span>`;
+      elDias.appendChild(lbl);
+      if (aberto && !primeiro) primeiro = lbl.querySelector('input');
+    }
+    if (primeiro) { primeiro.checked = true; estado.data = primeiro.value; }
+    elDias.addEventListener('change', (ev) => {
+      if (ev.target.name !== 'data') return;
+      estado.data = ev.target.value;
+      limparHora();
+      carregarHorarios();
+    });
+  }
+
+  function selecionarDia(iso) {
+    const input = $('dias').querySelector(`input[value="${iso}"]`);
+    if (!input) return;
+    input.checked = true;
+    input.closest('.dia').scrollIntoView({ behavior: suave, inline: 'center', block: 'nearest' });
+    estado.data = iso;
+    limparHora();
+    carregarHorarios();
+  }
+
+  // ---------- 2. Profissional e horário ----------
+  function limparHora() { estado.hora = null; estado.profissional = null; atualizarCta(); }
+
+  async function carregarHorarios() {
+    if (!estado.servico || !estado.data) return;
+    const meu = ++pedidoHorarios;
+    vagas = null;
+    renderPros();
+    $('horas').innerHTML = '<div class="carregando" aria-label="Carregando horários"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>';
+    const { ok, j } = await api('horarios', undefined, { servico: estado.servico, data: estado.data }).catch(semRede);
+    if (meu !== pedidoHorarios) return;
+    if (!ok) { $('horas').innerHTML = `<p class="aviso">${esc(j.erro || 'Não carregou os horários.')} <button type="button" class="link" data-recarregar>Tentar de novo</button></p>`; return; }
+    vagas = {};
+    (j.profissionais || []).forEach((p) => { vagas[p.id] = p.horarios; });
+    // Mostra a profissional que já estava aberta; senão, a primeira com vaga
+    if (!estado.profVista || !(estado.profVista in vagas)) {
+      const comVaga = A.profissionais.find((p) => (vagas[p.id] || []).length);
+      estado.profVista = (comVaga || A.profissionais[0] || {}).id ?? null;
+    }
+    renderPros();
+    renderHoras();
+  }
+
+  function renderPros() {
+    $('pros').innerHTML = A.profissionais.map((p) => {
+      const n = vagas ? (vagas[p.id] || []).length : null;
+      const txt = n === null ? '…' : n === 0 ? 'Sem vaga' : `${n} ${n === 1 ? 'vaga' : 'vagas'}`;
+      const sel = p.id === estado.profVista;
+      return `<button type="button" class="pro${n === 0 ? ' lotada' : ''}" role="tab" data-pro="${p.id}"
+          aria-selected="${sel}" tabindex="${sel ? 0 : -1}" style="--cor:${esc(p.cor)}" aria-controls="horas">
+        ${fotoHtml(p)}<span class="pro-nome">${esc(p.nome)}</span><span class="pro-vagas">${txt}</span></button>`;
+    }).join('');
+  }
+
+  $('pros').addEventListener('click', (ev) => {
+    const b = ev.target.closest('[data-pro]');
+    if (!b) return;
+    estado.profVista = Number(b.dataset.pro);
+    renderPros();
+    renderHoras();
+    $('pros').querySelector(`[data-pro="${estado.profVista}"]`).focus();
+  });
+  $('pros').addEventListener('keydown', (ev) => {
+    if (!['ArrowRight', 'ArrowLeft'].includes(ev.key)) return;
+    const ids = A.profissionais.map((p) => p.id);
+    const i = ids.indexOf(estado.profVista);
+    const novo = ids[(i + (ev.key === 'ArrowRight' ? 1 : ids.length - 1)) % ids.length];
+    $('pros').querySelector(`[data-pro="${novo}"]`).click();
+  });
+
+  function renderHoras() {
+    const p = prof(estado.profVista);
+    const lista = vagas && p ? (vagas[p.id] || []) : [];
+    if (!p) { $('horas').innerHTML = '<p class="aviso">Nenhuma profissional disponível.</p>'; return; }
+    if (!lista.length) {
+      $('horas').innerHTML = `<p class="aviso">${esc(p.nome)} não tem horário livre nesse dia.
+        <button type="button" class="link" data-proximo="${p.id}">Ver o próximo dia livre dela</button></p>`;
+      return;
+    }
+    const grupos = [['Manhã', (h) => h < '12:00'], ['Tarde', (h) => h >= '12:00' && h < '18:00'], ['Noite', (h) => h >= '18:00']];
+    $('horas').innerHTML = grupos.map(([nome, f]) => {
+      const hs = lista.filter(f);
+      if (!hs.length) return '';
+      return `<div class="periodo"><p class="periodo-nome">${nome}</p><div class="grade">${hs.map((h) => {
+        const marcado = estado.profissional === p.id && estado.hora === h;
+        return `<label class="hora" style="--cor:${esc(p.cor)}"><input type="radio" name="hora" value="${h}" ${marcado ? 'checked' : ''}
+          aria-label="${h} com ${esc(p.nome)}"><span>${h}</span></label>`;
+      }).join('')}</div></div>`;
+    }).join('');
+  }
+
+  $('horas').addEventListener('change', (ev) => {
+    if (ev.target.name !== 'hora') return;
+    estado.profissional = estado.profVista;
+    estado.hora = ev.target.value;
+    atualizarCta();
+  });
+
+  $('horas').addEventListener('click', async (ev) => {
+    if (ev.target.closest('[data-recarregar]')) { carregarHorarios(); return; }
+    const b = ev.target.closest('[data-proximo]');
+    if (!b) return;
+    b.disabled = true; b.textContent = 'Procurando…';
+    const { ok, j } = await api('proximo', undefined, { servico: estado.servico, profissional: b.dataset.proximo, depois: estado.data }).catch(semRede);
+    if (ok && j.data) { selecionarDia(j.data); return; }
+    b.replaceWith(Object.assign(document.createElement('span'), { textContent: ok ? ' Ela não tem vaga nos próximos dias.' : ' Não deu pra procurar agora.' }));
+  });
+
+  function atualizarCta() {
+    const s = servico(); const p = prof(estado.profissional);
+    const pronto = !!(s && estado.hora && p);
+    $('btn-continuar').disabled = !pronto;
+    $('cta-resumo').innerHTML = pronto
+      ? `<strong>${esc(diaCurto(estado.data))} às ${estado.hora}</strong><br>com ${esc(p.nome)}, ${preco(s.preco)}`
+      : 'Toque num horário';
+  }
+
+  $('btn-continuar').addEventListener('click', () => { if (estado.hora) irPara('revisao', { destino: 'revisao' }); });
+
+  // ---------- Barra de baixo: conta ----------
+  function renderTab() {
+    const c = A.cliente;
+    $('tab-avatar').hidden = !c;
+    $('tab-icone-conta').style.display = c ? 'none' : '';
+    $('tab-conta-rotulo').textContent = c ? c.primeiro_nome : 'Entrar';
+    if (c) $('tab-avatar').textContent = c.primeiro_nome.charAt(0).toUpperCase();
+  }
+
+  // ---------- Login e cadastro ----------
+  const elErroAuth = $('erro-auth');
+
+  document.querySelectorAll('.mascara-tel').forEach((inp) => inp.addEventListener('input', () => {
+    let v = inp.value.replace(/\D/g, '').replace(/^0+/, '');
+    if (v.length > 11 && v.startsWith('55')) v = v.slice(2); // colou com +55
+    v = v.slice(0, 11);
+    if (v.length > 6) v = `(${v.slice(0, 2)}) ${v.slice(2, v.length - 4)}-${v.slice(-4)}`;
+    else if (v.length > 2) v = `(${v.slice(0, 2)}) ${v.slice(2)}`;
+    inp.value = v;
+  }));
+
+  document.querySelectorAll('.ver-senha').forEach((b) => b.addEventListener('click', () => {
+    const inp = b.previousElementSibling;
+    const mostrar = inp.type === 'password';
+    inp.type = mostrar ? 'text' : 'password';
+    b.textContent = mostrar ? 'Esconder' : 'Mostrar';
+    b.setAttribute('aria-pressed', String(mostrar));
+    b.setAttribute('aria-label', mostrar ? 'Esconder senha' : 'Mostrar senha');
+  }));
+
+  function trocarAba(criar) {
+    $('aba-entrar').setAttribute('aria-selected', String(!criar));
+    $('aba-criar').setAttribute('aria-selected', String(criar));
+    $('aba-entrar').tabIndex = criar ? -1 : 0;
+    $('aba-criar').tabIndex = criar ? 0 : -1;
+    $('painel-entrar').hidden = criar;
+    $('painel-criar').hidden = !criar;
+    mensagem(elErroAuth, '');
+  }
+  $('aba-entrar').addEventListener('click', () => trocarAba(false));
+  $('aba-criar').addEventListener('click', () => trocarAba(true));
+  ['aba-entrar', 'aba-criar'].forEach((id) => $(id).addEventListener('keydown', (ev) => {
+    if (ev.key === 'ArrowRight' || ev.key === 'ArrowLeft') { const criar = id === 'aba-entrar'; trocarAba(criar); $(criar ? 'aba-criar' : 'aba-entrar').focus(); }
+  }));
+
+  function renderLogin() {
+    const marcando = destinoLogin === 'revisao' && estado.hora;
+    $('t-login').textContent = marcando ? 'Falta pouco' : 'Entre na sua conta';
+    $('login-sub').textContent = marcando
+      ? 'Entre ou crie sua conta pra confirmar o horário que você escolheu.'
+      : 'Pra marcar e acompanhar seus horários.';
+    const s = servico(); const p = prof(estado.profissional);
+    $('login-escolha').innerHTML = marcando && s && p ? `<div class="escolha" style="--cor:${esc(p.cor)}">${fotoHtml(p, 'foto-p')}
+      <div><p class="escolha-titulo">${esc(s.nome)}, ${preco(s.preco)}</p>
+      <p class="escolha-info">${esc(diaCurto(estado.data))} às ${estado.hora} com ${esc(p.nome)}</p></div></div>` : '';
+    trocarAba(false);
+  }
+
+  async function autenticar(acao, dados, botao, rotulo) {
+    mensagem(elErroAuth, '');
+    botao.disabled = true; botao.textContent = 'Aguarde…';
+    try {
+      const { ok, j } = await api(acao, dados).catch(semRede);
+      if (!ok) { mensagem(elErroAuth, j.erro || 'Não deu certo. Tente de novo.'); return; }
+      A.cliente = j.cliente;
+      meusHorarios = j.horarios || null;
+      ['ent-senha', 'cad-senha'].forEach((id) => { $(id).value = ''; });
+      renderTab();
+      irPara(destinoLogin === 'revisao' && !estado.hora ? 'servico' : destinoLogin, { replace: true });
+    } finally {
+      botao.disabled = false; botao.textContent = rotulo;
+    }
+  }
+
+  $('painel-entrar').addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    const tel = $('ent-tel').value.replace(/\D/g, '');
+    if (tel.length < 10) { mensagem(elErroAuth, 'Digite o celular com DDD.'); $('ent-tel').focus(); return; }
+    if (!$('ent-senha').value) { mensagem(elErroAuth, 'Digite sua senha.'); $('ent-senha').focus(); return; }
+    autenticar('entrar', { telefone: tel, senha: $('ent-senha').value }, $('btn-entrar'), 'Entrar');
+  });
+
+  $('painel-criar').addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    const nome = $('cad-nome').value.trim().replace(/\s+/g, ' ');
+    const tel = $('cad-tel').value.replace(/\D/g, '');
+    const email = $('cad-email').value.trim();
+    const senha = $('cad-senha').value;
+    const falha = (msg, id) => { mensagem(elErroAuth, msg); $(id).focus(); };
+    if (nome.split(' ').length < 2) return falha('Digite seu nome completo (nome e sobrenome).', 'cad-nome');
+    if (tel.length < 10) return falha('Digite o celular com DDD.', 'cad-tel');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return falha('Digite um e-mail válido, ex.: maria@gmail.com.', 'cad-email');
+    if (senha.length < 6) return falha('A senha precisa ter pelo menos 6 caracteres.', 'cad-senha');
+    autenticar('cadastrar', { nome, telefone: tel, email, senha }, $('btn-criar'), 'Criar conta');
+  });
+
+  async function sair(proxima = 'servico', destino) {
+    await api('sair', {}).catch(() => {});
+    A.cliente = null; meusHorarios = null;
+    renderTab();
+    irPara(proxima, { replace: true, destino });
+  }
+
+  function sessaoExpirou(destino) {
+    A.cliente = null; renderTab();
+    irPara('login', { destino });
+    mensagem(elErroAuth, 'Sua sessão expirou. Entre de novo.');
+  }
+
+  // ---------- 3. Revisão e confirmação ----------
+  function cartaoResumo(ag) {
+    const p = prof(ag.profissionalId);
+    return `<div class="rev-prof" style="--cor:${esc(p ? p.cor : '')}">${fotoHtml(p)}
+        <div><p class="rev-com">Com</p><p class="rev-prof-nome">${esc(ag.profissional)}</p></div></div>
+      <dl><dt>Serviço</dt><dd>${esc(ag.servico)}</dd>
+        <dt>Quando</dt><dd>${esc(ag.quando)}</dd>
+        ${ag.duracao ? `<dt>Duração</dt><dd>${ag.duracao} min</dd>` : ''}
+        <dt>Valor</dt><dd>${esc(ag.valor)}</dd></dl>`;
+  }
+
+  function renderRevisao() {
+    const s = servico(); const p = prof(estado.profissional);
+    $('rev-cartao').innerHTML = cartaoResumo({
+      profissionalId: p.id, profissional: p.nome, servico: s.nome, duracao: s.duracao,
+      quando: `${diaLongo(estado.data)}, às ${estado.hora}`, valor: preco(s.preco),
+    });
+    $('rev-nome').textContent = A.cliente.nome;
+    mensagem($('erro-rev'), '');
+  }
+
+  $('rev-trocar').addEventListener('click', () => sair('login', 'revisao'));
+
+  $('btn-confirmar').addEventListener('click', async () => {
+    const b = $('btn-confirmar');
+    if (b.disabled) return;
+    b.disabled = true; b.textContent = 'Confirmando…';
+    mensagem($('erro-rev'), '');
+    try {
+      const { ok, status, j } = await api('agendar', {
+        servico: estado.servico, profissional: estado.profissional, data: estado.data, hora: estado.hora,
+        observacao: $('rev-obs').value.trim(), site: $('rev-site').value,
+      }).catch(semRede);
+      if (status === 401) { sessaoExpirou('revisao'); return; }
+      if (!ok) {
+        mensagem($('erro-rev'), j.erro || 'Não deu pra agendar.');
+        if (status === 409) carregarHorarios(); // a lista já volta atualizada
+        return;
+      }
+      mostrarConfirmacao(j.agendamento);
+    } finally {
+      b.disabled = false; b.textContent = 'Confirmar agendamento';
+    }
+  });
+
+  function mostrarConfirmacao(ag) {
+    if (!ag) return;
+    $('conf-cartao').innerHTML = cartaoResumo({
+      profissionalId: ag.profissional_id, profissional: ag.profissional, servico: ag.servico,
+      quando: `${ag.data_extenso}, às ${ag.hora}`, valor: ag.preco_fmt,
+    });
+    $('conf-nota').textContent = `Se precisar, dá pra cancelar em "Meus horários" até ${A.cancelarAteHoras} h antes.`;
+    const w = $('conf-whats');
+    if (A.whatsapp && !A.avisoAutomatico) {
+      const msg = `Oi! Sou ${A.cliente.nome} e acabei de agendar: ${ag.servico}, ${ag.data_extenso} às ${ag.hora}, com ${ag.profissional}.`;
+      w.href = `https://wa.me/${String(A.whatsapp).replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`;
+      w.hidden = false;
+    } else w.hidden = true;
+    // Próximo agendamento começa limpo
+    $('rev-obs').value = '';
+    meusHorarios = null;
+    limparHora();
+    carregarHorarios();
+    irPara('confirmado', { replace: true });
+  }
+
+  $('conf-novo').addEventListener('click', () => irPara('servico'));
+
+  // ---------- Meus horários ----------
+  async function carregarMeus() {
+    if (meusHorarios) renderMeus(); else { $('meus-info').textContent = 'Carregando…'; $('meus-lista').innerHTML = ''; $('meus-agendar').hidden = true; }
+    const { ok, status, j } = await api('eu').catch(semRede);
+    if (telaAtual !== 'meus') return;
+    if (status === 200 && !j.cliente) { sessaoExpirou('meus'); return; }
+    if (!ok) { $('meus-info').textContent = j.erro || 'Não carregou.'; return; }
+    meusHorarios = j.horarios;
+    renderMeus();
+  }
+
+  function renderMeus(aviso) {
+    const lista = meusHorarios || [];
+    $('meus-info').textContent = aviso || (lista.length
+      ? `Dá pra cancelar pelo site até ${A.cancelarAteHoras} h antes do horário.`
+      : 'Você não tem horários marcados.');
+    $('meus-agendar').hidden = lista.length > 0;
+    $('meus-lista').innerHTML = lista.map((h) => {
+      const p = prof(h.profissional_id) || { cor: '#9B1B3A', iniciais: '?', nome: h.profissional };
+      return `<li class="cartao meu" style="--cor:${esc(p.cor)}">${fotoHtml(p, 'foto-p')}
+        <div class="meu-corpo">
+          <p class="meu-quando">${esc(h.data_extenso)}, às ${esc(h.hora)}</p>
+          <p class="meu-det">${esc(h.servico)} com ${esc(h.profissional)}, <span class="nowrap">${esc(h.preco_fmt)}</span></p>
+          ${h.pode_cancelar
+            ? `<button type="button" class="link link-perigo" data-cancelar="${h.id}">Cancelar horário</button>`
+            : '<p class="meu-det">Pra cancelar agora, fale com o estúdio pelo WhatsApp.</p>'}
+          <p class="meu-confirma" hidden>Cancelar mesmo?
+            <button type="button" class="link link-perigo" data-sim="${h.id}">Sim, cancelar</button>
+            <button type="button" class="link" data-nao>Não</button></p>
+        </div></li>`;
+    }).join('');
+  }
+
+  $('meus-lista').addEventListener('click', async (ev) => {
+    const t = ev.target.closest('button');
+    const li = ev.target.closest('.meu');
+    if (!t || !li) return;
+    if (t.dataset.cancelar) { li.querySelector('.meu-confirma').hidden = false; t.hidden = true; return; }
+    if (t.hasAttribute('data-nao')) { li.querySelector('.meu-confirma').hidden = true; li.querySelector('[data-cancelar]').hidden = false; return; }
+    if (t.dataset.sim) {
+      t.disabled = true; t.textContent = 'Cancelando…';
+      const { ok, status, j } = await api('cancelar', { id: Number(t.dataset.sim) }).catch(semRede);
+      if (status === 401) { sessaoExpirou('meus'); return; }
+      if (!ok) { $('meus-info').textContent = j.erro || 'Não deu pra cancelar.'; t.disabled = false; t.textContent = 'Sim, cancelar'; return; }
+      meusHorarios = j.horarios;
+      renderMeus('Horário cancelado. O estúdio já foi avisado.');
+      if (estado.servico) carregarHorarios();
+    }
+  });
+
+  // ---------- Conta ----------
+  function renderPerfil() {
+    const c = A.cliente;
+    $('perfil-avatar').textContent = c.primeiro_nome.charAt(0).toUpperCase();
+    $('perfil-nome').textContent = c.nome;
+    $('perfil-tel').textContent = c.telefone;
+    $('perfil-email').textContent = c.email;
+    mensagem($('erro-senha'), ''); $('ok-senha').hidden = true;
+  }
+
+  $('form-senha').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const atual = $('senha-atual').value; const nova = $('senha-nova').value;
+    $('ok-senha').hidden = true;
+    if (!atual) { mensagem($('erro-senha'), 'Digite a senha atual.'); $('senha-atual').focus(); return; }
+    if (nova.length < 6) { mensagem($('erro-senha'), 'A nova senha precisa ter pelo menos 6 caracteres.'); $('senha-nova').focus(); return; }
+    const { ok, status, j } = await api('senha', { atual, nova }).catch(semRede);
+    if (status === 401) { sessaoExpirou('conta'); return; }
+    if (!ok) { mensagem($('erro-senha'), j.erro || 'Não deu pra trocar a senha.'); return; }
+    mensagem($('erro-senha'), '');
+    $('senha-atual').value = ''; $('senha-nova').value = '';
+    $('ok-senha').hidden = false;
+  });
+
+  $('btn-sair').addEventListener('click', () => sair('servico'));
+
+  // ---------- Início ----------
+  montarDias();
+  atualizarCta();
+  renderTab();
+  const inicial = (location.hash || '').slice(1);
+  history.replaceState({ tela: 'servico' }, '', location.pathname + location.search);
+  if (['meus', 'conta'].includes(inicial)) irPara(inicial, { destino: inicial });
+})();
+</script>
+<script>
+(function () {
+  const A = window.AGENDA; const D = window.DEMO;
+  const el = document.getElementById('painel');
+  const est = { prof: 0, mes: A.hoje.slice(0, 7), dia: A.hoje };
+  const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const foto = (p) => `<span class="foto" style="--cor:${p.cor}" aria-hidden="true">${esc(p.iniciais)}</span>`;
+
+  function render() {
+    const ag = window.DEMO_AG;
+    const filtro = (a) => !est.prof || a.prof === est.prof;
+    const [y, m] = est.mes.split('-').map(Number);
+    const diasNoMes = new Date(y, m, 0).getDate();
+    const porDia = {};
+    ag.filter((a) => a.status === 'confirmado' && filtro(a) && a.data.startsWith(est.mes)).forEach((a) => {
+      porDia[a.data] = porDia[a.data] || { n: 0, v: 0 }; porDia[a.data].n++; porDia[a.data].v += D.SERV[a.serv].preco;
+    });
+    const max = Math.max(0, ...Object.values(porDia).map((x) => x.n));
+    const totN = Object.values(porDia).reduce((t, x) => t + x.n, 0), totV = Object.values(porDia).reduce((t, x) => t + x.v, 0);
+    const cor = est.prof ? D.PROF[est.prof].cor : '#9B1B3A';
+
+    let grade = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'].map((s) => `<span class="cal-sem" aria-hidden="true">${s}</span>`).join('');
+    for (let i = 0; i < new Date(y, m - 1, 1).getDay(); i++) grade += '<span class="cal-vazio" aria-hidden="true"></span>';
+    for (let d = 1; d <= diasNoMes; d++) {
+      const iso = `${est.mes}-${String(d).padStart(2, '0')}`;
+      const n = (porDia[iso] || {}).n || 0;
+      const nivel = n && max ? Math.ceil(n / max * 4) : 0;
+      const fechado = !D.HOR[new Date(iso + 'T00:00').getDay()];
+      const cls = `cal-dia nivel-${nivel}${fechado ? ' fechado' : ''}${iso === A.hoje ? ' hoje' : ''}${iso === est.dia ? ' escolhido' : ''}${iso < A.hoje ? ' passado' : ''}`;
+      grade += `<button type="button" class="${cls}" data-dia="${iso}" aria-label="${D.extenso(iso)}: ${n} atendimentos"><span class="cal-num">${d}</span>${n ? `<span class="cal-qtd">${n}</span>` : ''}</button>`;
+    }
+
+    let detalhe = '<p class="vazio-dia">Toque num dia pra ver os detalhes.</p>';
+    if (est.dia && est.dia.startsWith(est.mes)) {
+      const doDia = ag.filter((a) => a.data === est.dia && a.status !== 'cancelado' && filtro(a)).sort((a, b) => a.ini - b.ini || a.prof - b.prof);
+      const conf = doDia.filter((a) => a.status === 'confirmado');
+      const faltas = doDia.length - conf.length;
+      const valor = conf.reduce((t, a) => t + D.SERV[a.serv].preco, 0);
+      const h = D.HOR[new Date(est.dia + 'T00:00').getDay()];
+      const minAb = h ? D.min(h[1]) - D.min(h[0]) - 60 : 0;
+      const oc = (l) => minAb ? Math.min(100, Math.round(l.reduce((t, a) => t + a.fim - a.ini, 0) / minAb * 100)) : null;
+      const profs = est.prof ? [D.PROF[est.prof]] : A.profissionais;
+      const res = profs.map((p) => { const l = conf.filter((a) => a.prof === p.id); return { p, n: l.length, v: l.reduce((t, a) => t + D.SERV[a.serv].preco, 0), oc: oc(l) }; });
+      const ocMed = minAb ? Math.round(res.reduce((t, r) => t + r.oc, 0) / res.length) : null;
+      const servs = {}; conf.forEach((a) => { const n = D.SERV[a.serv].nome; servs[n] = (servs[n] || 0) + 1; });
+      const agoraMin = new Date().getHours() * 60 + new Date().getMinutes();
+      const feitos = conf.filter((a) => a.data < A.hoje || (a.data === A.hoje && a.fim <= agoraMin)).length;
+      detalhe = `<section class="detalhe" id="p-detalhe">
+        <div class="detalhe-topo"><h2>${esc(D.extenso(est.dia).replace(/^./, (c) => c.toUpperCase()))}${est.dia === A.hoje ? ' <span class="tag">hoje</span>' : ''}</h2>
+          <p>${est.prof ? 'Só ' + esc(D.PROF[est.prof].nome) : 'Estúdio todo'}${h ? '' : ', dia fechado'}</p></div>
+        <div class="numeros numeros-dia">
+          <div class="numero"><p class="numero-rotulo">Atendimentos</p><p class="numero-valor">${conf.length}</p><p class="numero-detalhe">${est.dia < A.hoje ? 'feitos' : est.dia > A.hoje ? 'marcados' : feitos + ' já feitos'}</p></div>
+          <div class="numero"><p class="numero-rotulo">Faturamento</p><p class="numero-valor">${D.brl(valor)}</p><p class="numero-detalhe">${faltas ? faltas + (faltas === 1 ? ' falta' : ' faltas') + ' fora da conta' : 'sem faltas'}</p></div>
+          <div class="numero"><p class="numero-rotulo">Ocupação</p><p class="numero-valor">${ocMed === null ? '–' : ocMed + '%'}</p><p class="numero-detalhe">${ocMed === null ? 'dia fechado' : 'da agenda'}</p></div>
+        </div>
+        ${Object.keys(servs).length ? `<div class="bloco-dia"><h3>Serviços do dia</h3><ul class="servicos-dia">${Object.entries(servs).sort((a, b) => b[1] - a[1]).map(([n, q]) => `<li><strong>${q}×</strong> ${esc(n)}</li>`).join('')}</ul></div>` : ''}
+        ${est.prof ? '' : `<div class="bloco-dia"><h3>Cada uma</h3><ul class="ranking">${res.map((r) => `<li style="--cor:${r.p.cor}">${foto(r.p)}<div class="ranking-corpo"><div class="ranking-linha"><strong>${esc(r.p.nome)}</strong><strong class="ranking-valor">${D.brl(r.v)}</strong></div><div class="barra"><span style="width:${r.oc || 0}%"></span></div><p class="ranking-detalhe">${r.n} ${r.n === 1 ? 'atendimento' : 'atendimentos'}${r.oc !== null ? ', agenda ' + r.oc + '% ocupada' : ''}</p></div></li>`).join('')}</ul></div>`}
+        <div class="bloco-dia"><h3>Horários</h3><ol class="lista">${doDia.map((a) => `<li class="item${a.status === 'faltou' ? ' item-faltou' : ''}" style="--cor:${D.PROF[a.prof].cor}">
+          <div class="item-hora"><strong>${D.hhmm(a.ini)}</strong><span>${D.hhmm(a.fim)}</span></div>
+          <div class="item-corpo"><p class="item-cliente">${esc(a.nome)}${a.status === 'faltou' ? ' <span class="selo">Faltou</span>' : ''}${a.novo ? ' <span class="selo selo-novo">novo</span>' : ''}</p>
+          <p>${esc(D.SERV[a.serv].nome)}${est.prof ? '' : ', com ' + esc(D.PROF[a.prof].nome)}, <span class="nowrap">${D.brl(D.SERV[a.serv].preco)}</span></p></div></li>`).join('') || `<li class="vazio">${h ? 'Nenhum horário marcado nesse dia.' : 'O estúdio não abre nesse dia.'}</li>`}</ol></div>
+      </section>`;
+    }
+
+    el.innerHTML = `<h1 class="painel-titulo">Painel do estúdio</h1>
+      <p class="painel-sub">Calendário com dados de exemplo. O que você marcar na tela da cliente aparece aqui como novo.</p>
+      <nav class="quem" aria-label="Profissional">
+        <button type="button" class="quem-item${est.prof ? '' : ' ativo'}" data-prof="0"><span class="foto foto-todas" aria-hidden="true">${A.profissionais.length}</span><span>Todas</span></button>
+        ${A.profissionais.map((p) => `<button type="button" class="quem-item${est.prof === p.id ? ' ativo' : ''}" data-prof="${p.id}" style="--cor:${p.cor}">${foto(p)}<span>${esc(p.nome)}</span></button>`).join('')}
+      </nav>
+      <section class="calendario" style="--cor:${cor}">
+        <div class="cal-topo"><button type="button" class="seta" data-mes="-1" aria-label="Mês anterior">‹</button>
+          <div class="cal-titulo"><h1>${D.MESES[m - 1].replace(/^./, (c) => c.toUpperCase())} ${y}</h1><p>${totN} atendimentos, ${D.brl(totV)}</p></div>
+          <button type="button" class="seta" data-mes="1" aria-label="Próximo mês">›</button></div>
+        <div class="cal-grade">${grade}</div>
+        <p class="cal-legenda">O número em cada dia é quantos horários ${est.prof ? esc(D.PROF[est.prof].nome) + ' tem' : 'o estúdio tem'} marcados. Quanto mais forte a cor, mais cheio o dia.
+          <span class="cal-legenda-bloq"><span class="cal-legenda-fechado" aria-hidden="true"></span>fechado</span></p>
+      </section>${detalhe}`;
+  }
+
+  el.addEventListener('click', (ev) => {
+    const b = ev.target.closest('button'); if (!b) return;
+    if (b.dataset.prof !== undefined) { est.prof = Number(b.dataset.prof); render(); }
+    if (b.dataset.mes) { const [y, m] = est.mes.split('-').map(Number); const d = new Date(y, m - 1 + Number(b.dataset.mes), 1); est.mes = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; est.dia = est.mes === A.hoje.slice(0, 7) ? A.hoje : ''; render(); }
+    if (b.dataset.dia) { est.dia = b.dataset.dia; render(); document.getElementById('p-detalhe').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  });
+
+  const cli = document.getElementById('cliente');
+  const bc = document.getElementById('demo-cliente'), bp = document.getElementById('demo-painel');
+  function mostrar(p) { cli.hidden = p; el.hidden = !p; bc.setAttribute('aria-pressed', String(!p)); bp.setAttribute('aria-pressed', String(p)); if (p) render(); window.scrollTo(0, 0); }
+  bc.onclick = () => mostrar(false); bp.onclick = () => mostrar(true);
+})();
+</script>
+
+</body>
+</html>

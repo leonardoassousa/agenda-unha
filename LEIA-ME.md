@@ -95,3 +95,7 @@ A pasta `uploads/profissionais` precisa ter permissão de escrita no servidor.
 - `admin/clientes.php`: lista de clientes e senha nova
 - `assets/cliente.css` e `assets/app.js`: tela da cliente
 - `assets/style.css` e `assets/admin.css`: painel
+
+## Prévia na Vercel (`previa/`)
+A pasta `previa/` é uma versão de demonstração que roda sem PHP e sem banco: tela da cliente + painel em calendário, com dados de exemplo e nada salvo. Serve pra mostrar pra cliente antes de subir o sistema de verdade.
+Na Vercel: **Add New → Project → importar este repositório → Root Directory: `previa`** → Deploy. A cada push ela atualiza sozinha.
