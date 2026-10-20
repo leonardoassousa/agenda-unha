@@ -18,12 +18,18 @@ Substitua os arquivos (menos o seu `config.php`; copie dele só o bloco novo `av
 (versão 1: rode os três, v2, v3 e v4, nessa ordem.)
 
 ## Telas da cliente
-Barra fixa no topo com três abas: **Serviços**, **Horários** (meus horários) e **Conta**.
-1. Serviços: escolhe serviço, dia e horário e toca em **Avançar**.
-2. Se não estiver logada, abre a tela **Falta pouco** (entrar ou criar conta), mostrando o horário escolhido.
-3. Tela **Confira e confirme**: resumo, observação e o botão **Confirmar agendamento**.
-4. **Horário marcado**.
-O botão voltar do celular funciona entre as telas.
+Barra de abas embaixo (onde o dedão alcança): **Agendar**, **Meus horários** e **Conta**.
+1. **Serviço**: capa com o nome do estúdio e se está aberto agora. Tocar no serviço já avança.
+2. **Horário**: escolhe o dia, toca na profissional (foto + quantas vagas ela tem no dia) e escolhe o horário dela. Se ela estiver sem vaga, tem o botão "Ver o próximo dia livre dela".
+3. Se não estiver logada, abre **Falta pouco** (entrar ou criar conta), mostrando o horário escolhido.
+4. **Confira e confirme** e depois **Horário marcado!**
+O botão voltar do celular funciona entre as telas. Visual em `assets/cliente.css` (tem tema escuro automático).
+
+## Painel do estúdio (`/admin`)
+- **Calendário**: o mês inteiro, com o número de horários marcados em cada dia e cor mais forte nos dias mais cheios. No topo escolhe **Todas** ou uma profissional. Tocando no dia aparecem: atendimentos, faturamento, faltas, ocupação da agenda, quantos de cada serviço, quanto cada uma fez e a lista de horários (com Faltou e Cancelar).
+- **Resumo**: faturamento por período (hoje, semana, mês, mês passado ou datas escolhidas).
+- **Clientes**: busca e senha nova pra quem esqueceu.
+- **Ajustes**: bloquear horário (folga etc.), fotos da equipe, teste do aviso no WhatsApp e sair.
 
 ## Conta da cliente
 - O login é obrigatório só na hora de confirmar. Ela pode olhar serviços e horários sem conta.
@@ -51,7 +57,7 @@ A mensagem chega vinda do número do CallMeBot e pode demorar até 1 minuto.
 **Evolution API (se já tiver rodando na VPS)**
 Preencha `evolution_url`, `evolution_instancia`, `evolution_apikey`, o `telefone` que recebe e `modo` = `evolution`. A mensagem sai do número conectado na instância.
 
-Depois de configurar, entre no painel e toque em **Enviar mensagem de teste** (na página Agenda). Se algum aviso falhar, o horário aparece marcado na agenda.
+Depois de configurar, entre no painel e toque em **Enviar mensagem de teste** (aba Ajustes). Se algum aviso falhar, o horário aparece marcado na agenda.
 
 ## Resumo (painel)
 Em `/admin`, aba **Resumo**: faturamento, atendimentos, clientes, ticket médio e faltas, por hoje, ontem, semana, mês, mês passado ou um período escolhido. Mostra quanto cada profissional fez, os serviços que mais deram dinheiro e o dia a dia.
@@ -59,13 +65,13 @@ Em `/admin`, aba **Resumo**: faturamento, atendimentos, clientes, ticket médio 
 - Na agenda, depois que o horário começa, aparece o botão **Faltou**. Falta não entra no faturamento.
 
 ## Fotos das profissionais
-No painel, em "Fotos da equipe", toque em "Enviar foto". A foto é cortada em quadrado (400x400) automaticamente. Sem foto, aparece a inicial do nome.
+No painel, aba Ajustes, em "Fotos da equipe", toque em "Enviar foto". A foto é cortada em quadrado (400x400) automaticamente. Sem foto, aparece a inicial do nome.
 A pasta `uploads/profissionais` precisa ter permissão de escrita no servidor.
 
 ## Personalizar
 - **Profissionais e serviços**: edite as tabelas `profissionais` e `servicos` (nome, cor do "esmalte", duração, preço, `ativo`, `ordem`).
 - **Horário de funcionamento, almoço, antecedência mínima e dias pra frente**: `config.php`.
-- **Folga ou saída mais cedo**: pelo painel, em "Bloquear horário". Pode bloquear uma profissional só ou o estúdio todo.
+- **Folga ou saída mais cedo**: painel, aba Ajustes, "Bloquear horário" (ou pelo botão no detalhe do dia). Pode bloquear uma profissional só ou o estúdio todo.
 
 ## Proteções na hora de marcar
 - Se uma profissional não tiver horário no dia escolhido, aparece o botão "Ver próximo dia livre" no cartão dela.
@@ -79,11 +85,13 @@ A pasta `uploads/profissionais` precisa ter permissão de escrita no servidor.
 ## Arquivos
 - `index.php`: página da cliente
 - `api.php`: horários livres e criação do agendamento
-- `admin/index.php`: painel (agenda do dia, faltou/cancelar, fotos, teste do aviso, bloquear horários)
+- `admin/index.php`: calendário do mês e detalhe do dia
+- `admin/ajustes.php`: bloqueios, fotos, teste do aviso, sair
 - `admin/resumo.php`: resumo financeiro
 - `includes/app.php`: regras da agenda
 - `includes/whatsapp.php`: aviso no WhatsApp
 - `includes/admin.php`: login e cabeçalho do painel
 - `includes/cliente.php`: contas das clientes
 - `admin/clientes.php`: lista de clientes e senha nova
-- `assets/`: CSS e JS
+- `assets/cliente.css` e `assets/app.js`: tela da cliente
+- `assets/style.css` e `assets/admin.css`: painel

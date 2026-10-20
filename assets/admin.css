@@ -209,7 +209,8 @@
 .abas a { padding: 8px 11px; font-size: .86rem; }
 .numeros-dia .numero-valor { font: 700 1.25rem/1.2 "Figtree", sans-serif !important; white-space: nowrap; }
 @media (max-width: 400px) { .numeros-dia .numero-valor { font-size: 1.05rem !important; } }
-.numeros-dia .numero-rotulo { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.numeros-dia .numero { padding: 12px 10px 12px 12px; }
+.numeros-dia .numero-rotulo { font-size: .78rem; }
 .cal-dia.hoje .cal-num::after { display: none; }
 .cal-dia.hoje { border: 2px solid var(--tinta); }
 .cal-bloq { top: auto; bottom: 4px; right: 4px; width: 6px; height: 6px; }
