@@ -1,0 +1,13 @@
+# Configuração com senhas e chaves: cada instalação tem a sua (copie de config.exemplo.php)
+config.php
+
+# Fotos enviadas pelo painel
+uploads/profissionais/*
+!uploads/profissionais/.gitkeep
+
+# Sistema / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.zip
