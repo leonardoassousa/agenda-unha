@@ -35,7 +35,7 @@ if ($q !== '') {
     if ($digitos !== '') $params[] = '%' . $digitos . '%';
 }
 $st = db()->prepare("SELECT c.*,
-        (SELECT COUNT(*) FROM agendamentos a WHERE a.cliente_id = c.id AND a.status = 'confirmado' AND a.fim <= NOW()) feitos,
+        (SELECT COUNT(*) FROM agendamentos a WHERE a.cliente_id = c.id AND (a.status = 'concluido' OR (a.status = 'confirmado' AND a.fim <= NOW()))) feitos,
         (SELECT COUNT(*) FROM agendamentos a WHERE a.cliente_id = c.id AND a.status = 'faltou') faltas,
         (SELECT MIN(a.inicio) FROM agendamentos a WHERE a.cliente_id = c.id AND a.status = 'confirmado' AND a.inicio > NOW()) proximo
     FROM clientes c $where ORDER BY c.nome LIMIT 200");

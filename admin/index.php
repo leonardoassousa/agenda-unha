@@ -1,5 +1,6 @@
 <?php
 require __DIR__ . '/../includes/admin.php';
+require __DIR__ . '/../includes/atendimento.php';
 
 $logada = logada();
 $msg = '';
@@ -24,22 +25,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             session_destroy();
             voltarPara('./');
         }
-        $novoStatus = ['cancelar' => 'cancelado', 'faltou' => 'faltou', 'desfazer' => 'confirmado'][$acao] ?? null;
-        if ($novoStatus) {
-            $id = (int) $_POST['id'];
-            if ($novoStatus === 'confirmado') {
-                // "Desfazer falta" só volta se ninguém ocupou o horário nesse meio-tempo
-                $st = db()->prepare("SELECT a.id FROM agendamentos a JOIN agendamentos b
-                                      ON b.profissional_id = a.profissional_id AND b.id <> a.id AND b.status = 'confirmado'
-                                     AND b.inicio < a.fim AND b.fim > a.inicio WHERE a.id = ?");
-                $st->execute([$id]);
-                if ($st->fetchColumn()) {
-                    $_SESSION['aviso_cal'] = 'Esse horário já foi ocupado por outra cliente.';
-                    voltarPara('./', $volta, 'detalhe');
-                }
-            }
-            db()->prepare('UPDATE agendamentos SET status = ? WHERE id = ?')->execute([$novoStatus, $id]);
-            $_SESSION['aviso_cal'] = ['cancelado' => 'Horário cancelado. Ele ficou livre no link.', 'faltou' => 'Marcado como falta.', 'confirmado' => 'Falta desfeita.'][$novoStatus];
+        if (in_array($acao, ['concluir', 'salvar_extra', 'reabrir', 'faltou', 'desfazer', 'cancelar'], true)) {
+            $_SESSION['aviso_cal'] = acaoAtendimento($acao, (int) $_POST['id'], $_POST);
             voltarPara('./', $volta, 'detalhe');
         }
     }
@@ -63,8 +50,8 @@ if ($logada) {
     if ($dia !== '' && (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $dia) || substr($dia, 0, 7) !== $mes || !strtotime($dia))) $dia = '';
 
     // Contagem por dia do mês (só confirmados: falta e cancelado ficam de fora)
-    $sql = "SELECT DATE(inicio) d, COUNT(*) n, SUM(preco) v FROM agendamentos
-            WHERE status = 'confirmado' AND inicio >= ? AND inicio < ?" . ($filtroProf ? ' AND profissional_id = ?' : '') . ' GROUP BY DATE(inicio)';
+    $sql = "SELECT DATE(inicio) d, COUNT(*) n, SUM(preco + extra_valor) v FROM agendamentos
+            WHERE status IN " . STATUS_ATIVOS . " AND inicio >= ? AND inicio < ?" . ($filtroProf ? ' AND profissional_id = ?' : '') . ' GROUP BY DATE(inicio)';
     $st = db()->prepare($sql);
     $st->execute($filtroProf ? [$iniMes, $fimMes, $filtroProf] : [$iniMes, $fimMes]);
     $porDia = [];
@@ -92,41 +79,33 @@ if ($logada) {
     if ($dia !== '') {
         $iniDia = "$dia 00:00:00";
         $fimDia = date('Y-m-d', strtotime("$dia +1 day")) . ' 00:00:00';
-        $sql = "SELECT a.*, s.nome servico FROM agendamentos a JOIN servicos s ON s.id = a.servico_id
-                WHERE a.status IN ('confirmado','faltou') AND a.inicio >= ? AND a.inicio < ?" . ($filtroProf ? ' AND a.profissional_id = ?' : '') . ' ORDER BY a.inicio, a.profissional_id';
-        $st = db()->prepare($sql);
-        $st->execute($filtroProf ? [$iniDia, $fimDia, $filtroProf] : [$iniDia, $fimDia]);
-        $doDia = $st->fetchAll();
-        $conf = array_values(array_filter($doDia, fn($a) => $a['status'] === 'confirmado'));
+        $doDia = buscarAtendimentos($dia, $dia, $filtroProf);
+        $conf = array_values(array_filter($doDia, fn($a) => in_array($a['status'], ['confirmado', 'concluido'], true)));
         $faltas = count($doDia) - count($conf);
-        $valorDia = array_sum(array_column($conf, 'preco'));
-        $feitos = count(array_filter($conf, fn($a) => strtotime($a['fim']) <= time()));
+        $valorDia = array_sum(array_map(fn($a) => (float) $a['preco'] + (float) $a['extra_valor'], $conf));
+        $feitos = count(array_filter($conf, fn($a) => $a['status'] === 'concluido'));
 
         // Quantos de cada serviço
         $porServico = [];
         foreach ($conf as $a) $porServico[$a['servico']] = ($porServico[$a['servico']] ?? 0) + 1;
         arsort($porServico);
 
-        // Agenda ocupada: minutos marcados / minutos de trabalho (sem almoço)
-        $exp = expediente($dia);
-        $minAbertos = 0;
-        if ($exp) {
-            $minAbertos = ($exp[1] - $exp[0]) / 60;
-            if ($alm = cfg('almoco')) $minAbertos -= max(0, (strtotime("$dia {$alm[1]}") - strtotime("$dia {$alm[0]}")) / 60);
-        }
-        $ocupacao = function (array $lista) use ($minAbertos) {
-            if ($minAbertos <= 0) return null;
-            $m = 0;
-            foreach ($lista as $a) $m += (strtotime($a['fim']) - strtotime($a['inicio'])) / 60;
-            return min(100, (int) round($m / $minAbertos * 100));
-        };
+        // Agenda ocupada: minutos marcados / minutos de trabalho de cada uma
         $listaProfs = $filtroProf ? [$profPorId[$filtroProf]] : $profs;
         $resumoProf = [];
+        $algumaTrabalha = false;
         foreach ($listaProfs as $p) {
             $dela = array_values(array_filter($conf, fn($a) => (int) $a['profissional_id'] === (int) $p['id']));
-            $resumoProf[] = $p + ['n' => count($dela), 'v' => array_sum(array_column($dela, 'preco')), 'oc' => $ocupacao($dela)];
+            $minTrab = minutosJornada(jornada((int) $p['id'], $dia));
+            $m = 0;
+            foreach ($dela as $a) $m += (strtotime($a['fim']) - strtotime($a['inicio'])) / 60;
+            $algumaTrabalha = $algumaTrabalha || $minTrab > 0;
+            $resumoProf[] = $p + ['n' => count($dela), 'v' => array_sum(array_map(fn($a) => (float) $a['preco'] + (float) $a['extra_valor'], $dela)),
+                                  'oc' => $minTrab > 0 ? min(100, (int) round($m / $minTrab * 100)) : null];
         }
-        $ocupMedia = $resumoProf && $minAbertos > 0 ? (int) round(array_sum(array_column($resumoProf, 'oc')) / count($resumoProf)) : null;
+        $exp = $algumaTrabalha;
+        $comOc = array_filter(array_column($resumoProf, 'oc'), fn($v) => $v !== null);
+        $ocupMedia = $comOc ? (int) round(array_sum($comOc) / count($comOc)) : null;
 
         $st = db()->prepare('SELECT * FROM bloqueios WHERE inicio < ? AND fim > ? ORDER BY inicio');
         $st->execute([$fimDia, $iniDia]);
@@ -198,7 +177,8 @@ headAdmin('Calendário');
             $iso = sprintf('%s-%02d', $mes, $d);
             $n = $porDia[$iso]['n'] ?? 0;
             $nivel = $n && $maxDia ? (int) ceil($n / $maxDia * 4) : 0;
-            $fechado = !expediente($iso);
+            $fechado = true;
+            foreach (($filtroProf ? [$filtroProf] : array_column($profs, 'id')) as $pid) if (jornada((int) $pid, $iso)) { $fechado = false; break; }
             $classes = 'cal-dia nivel-' . $nivel . ($fechado ? ' fechado' : '') . ($iso === date('Y-m-d') ? ' hoje' : '') . ($iso === $dia ? ' escolhido' : '') . ($iso < date('Y-m-d') ? ' passado' : '');
             $rotulo = dataExtenso($iso) . ': ' . ($fechado && !$n ? 'fechado' : ($n ? "$n " . ($n === 1 ? 'atendimento' : 'atendimentos') : 'nenhum atendimento')) . (isset($diasBloq[$iso]) ? ', tem bloqueio' : '');
       ?>
@@ -230,7 +210,7 @@ headAdmin('Calendário');
       <div class="numero">
         <p class="numero-rotulo">Atendimentos</p>
         <p class="numero-valor"><?= count($conf) ?></p>
-        <p class="numero-detalhe"><?= $dia < date('Y-m-d') ? 'feitos' : ($dia > date('Y-m-d') ? 'marcados' : "$feitos já feitos") ?></p>
+        <p class="numero-detalhe"><?= plural($feitos, 'concluído', 'concluídos') ?></p>
       </div>
       <div class="numero">
         <p class="numero-rotulo">Faturamento</p>
@@ -287,42 +267,10 @@ headAdmin('Calendário');
         </ul>
       <?php endif; ?>
       <ol class="lista">
-        <?php foreach ($doDia as $a):
-            $p = $profPorId[$a['profissional_id']] ?? ['nome' => '?', 'cor' => '#999999'];
-            $tel = $a['cliente_telefone'];
-            $faltou = $a['status'] === 'faltou';
-            $jaComecou = strtotime($a['inicio']) <= time();
-        ?>
-          <li class="item<?= $faltou ? ' item-faltou' : '' ?>" style="--cor: <?= e($p['cor']) ?>">
-            <div class="item-hora">
-              <strong><?= date('H:i', strtotime($a['inicio'])) ?></strong>
-              <span><?= date('H:i', strtotime($a['fim'])) ?></span>
-            </div>
-            <div class="item-corpo">
-              <p class="item-cliente"><?= e($a['cliente_nome']) ?><?php if ($faltou): ?> <span class="selo">Faltou</span><?php endif; ?></p>
-              <p><?= e($a['servico']) ?><?= $filtroProf ? '' : ', com ' . e($p['nome']) ?>, <span class="nowrap"><?= preco((float) $a['preco']) ?></span></p>
-              <?php if ($a['observacao']): ?><p class="item-obs"><?= e($a['observacao']) ?></p><?php endif; ?>
-              <?php if (($a['aviso'] ?? '') === 'falhou'): ?><p class="item-obs">O aviso no WhatsApp desse horário não foi enviado.</p><?php endif; ?>
-              <div class="item-acoes">
-                <a href="https://wa.me/55<?= e($tel) ?>" target="_blank" rel="noopener"><?= e(telefoneBonito($tel)) ?></a>
-                <form method="post">
-                  <?= campoCsrf() ?>
-                  <input type="hidden" name="id" value="<?= (int) $a['id'] ?>">
-                  <input type="hidden" name="mes_ref" value="<?= e($mes) ?>">
-                  <input type="hidden" name="prof_ref" value="<?= $filtroProf ?>">
-                  <input type="hidden" name="dia_ref" value="<?= e($dia) ?>">
-                  <?php if ($faltou): ?>
-                    <button class="link" name="acao" value="desfazer">Desfazer falta</button>
-                  <?php else: ?>
-                    <?php if ($jaComecou): ?><button class="link" name="acao" value="faltou">Faltou</button><?php endif; ?>
-                    <button class="link link-perigo" name="acao" value="cancelar" onclick="return confirm('Cancelar o horário de <?= e(addslashes($a['cliente_nome'])) ?>? Ele fica livre de novo no link.')">Cancelar</button>
-                  <?php endif; ?>
-                </form>
-              </div>
-            </div>
-          </li>
+        <?php foreach ($doDia as $a): ?>
+          <?= cartaoAtendimento($a, $a['cor'], ['mes_ref' => $mes, 'prof_ref' => $filtroProf, 'dia_ref' => $dia], !$filtroProf) ?>
         <?php endforeach; ?>
-        <?php if (!$doDia): ?><li class="vazio"><?= $exp ? 'Nenhum horário marcado nesse dia.' : 'O estúdio não abre nesse dia.' ?></li><?php endif; ?>
+        <?php if (!$doDia): ?><li class="vazio"><?= $exp ? 'Nenhum horário marcado nesse dia.' : 'Ninguém trabalha nesse dia.' ?></li><?php endif; ?>
       </ol>
       <a class="botao botao-leve botao-peq bloquear-dia" href="ajustes.php?<?= e(http_build_query(array_filter(['data' => $dia, 'prof' => $filtroProf]))) ?>#bloqueios">Bloquear horário nesse dia</a>
     </div>

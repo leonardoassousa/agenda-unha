@@ -101,6 +101,8 @@ try {
         $porProf = horariosPorProfissional($data, (int) $serv['duracao_min'], $ids);
         $lista = [];
         foreach ($porProf as $id => $horas) $lista[] = ['id' => $id, 'horarios' => $horas];
+        // Aproveita a visita pra mandar lembretes que estão na hora (sem atrasar a resposta)
+        if (lembreteAutomaticoAtivo()) responderEDepois(['data' => $data, 'profissionais' => $lista], 'lembretesSeHora');
         responder(['data' => $data, 'profissionais' => $lista]);
     }
 

@@ -11,8 +11,6 @@ if (isset($_COOKIE['agenda_cliente'])) {
 
 $servicos = servicosAtivos();
 $profissionais = profissionaisAtivas();
-$diasAbertos = [];
-foreach (cfg('horarios') as $dia => $h) if ($h) $diasAbertos[] = $dia;
 
 $dadosJs = [
     'servicos' => array_map(fn($s) => [
@@ -23,7 +21,7 @@ $dadosJs = [
         'id' => (int) $p['id'], 'nome' => $p['nome'], 'cor' => $p['cor'],
         'foto' => $p['foto'] ?: null, 'iniciais' => iniciais($p['nome']),
     ], $profissionais),
-    'diasAbertos' => $diasAbertos,
+    'diasDisponiveis' => diasDisponiveis(),
     'diasAFrente' => (int) cfg('dias_a_frente'),
     'hoje' => date('Y-m-d'),
     'whatsapp' => cfg('whatsapp'),
@@ -36,20 +34,22 @@ $dadosJs = [
 // Aberto agora? (mostrado no topo)
 function statusEstudio(): array
 {
-    $hor = cfg('horarios');
+    $ids = array_map('intval', array_column(profissionaisAtivas(), 'id'));
     $agora = time();
-    $h = $hor[(int) date('w')] ?? null;
-    if ($h && $agora >= strtotime(date('Y-m-d') . " {$h[0]}") && $agora < strtotime(date('Y-m-d') . " {$h[1]}")) {
-        return [true, 'Aberto agora, até ' . $h[1]];
-    }
     $nomes = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
     for ($i = 0; $i <= 7; $i++) {
-        $t = strtotime("+$i day");
-        $hh = $hor[(int) date('w', $t)] ?? null;
-        if (!$hh) continue;
-        if ($i === 0 && $agora >= strtotime(date('Y-m-d') . " {$hh[0]}")) continue;
-        $quando = $i === 0 ? 'hoje' : ($i === 1 ? 'amanhã' : $nomes[(int) date('w', $t)]);
-        return [false, "Fechado agora. Abre $quando às {$hh[0]}"];
+        $d = date('Y-m-d', strtotime("+$i day"));
+        $ini = null; $fim = null;
+        foreach ($ids as $id) {
+            if (!$j = jornada($id, $d)) continue;
+            $ini = $ini === null ? $j['ini'] : min($ini, $j['ini']);
+            $fim = $fim === null ? $j['fim'] : max($fim, $j['fim']);
+        }
+        if ($ini === null) continue;
+        if ($i === 0 && $agora >= $ini && $agora < $fim) return [true, 'Aberto agora, até ' . date('H:i', $fim)];
+        if ($i === 0 && $agora >= $fim) continue;
+        $quando = $i === 0 ? 'hoje' : ($i === 1 ? 'amanhã' : $nomes[(int) date('w', strtotime($d))]);
+        return [false, "Fechado agora. Abre $quando às " . date('H:i', $ini)];
     }
     return [false, 'Fechado agora'];
 }

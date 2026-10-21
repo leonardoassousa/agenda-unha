@@ -28,40 +28,40 @@ $umDia = $de === $ate;
 // ---------- Números ----------
 $agora = date('Y-m-d H:i:s');
 $st = db()->prepare("SELECT
-        SUM(status = 'confirmado') atendimentos,
-        COALESCE(SUM(CASE WHEN status = 'confirmado' THEN preco END), 0) total,
-        COALESCE(SUM(CASE WHEN status = 'confirmado' AND fim <= ? THEN preco END), 0) realizado,
-        COALESCE(SUM(CASE WHEN status = 'confirmado' AND fim > ? THEN preco END), 0) a_receber,
-        COUNT(DISTINCT CASE WHEN status = 'confirmado' THEN cliente_telefone END) clientes,
+        SUM(status IN ('confirmado','concluido')) atendimentos,
+        COALESCE(SUM(CASE WHEN status IN ('confirmado','concluido') THEN preco + extra_valor END), 0) total,
+        COALESCE(SUM(CASE WHEN status = 'concluido' THEN preco + extra_valor END), 0) realizado,
+        COALESCE(SUM(CASE WHEN status = 'confirmado' THEN preco END), 0) a_receber,
+        COUNT(DISTINCT CASE WHEN status IN ('confirmado','concluido') THEN cliente_telefone END) clientes,
         SUM(status = 'faltou') faltas,
         COALESCE(SUM(CASE WHEN status = 'faltou' THEN preco END), 0) perdido,
         SUM(status = 'cancelado') cancelados
     FROM agendamentos WHERE inicio >= ? AND inicio < ?");
-$st->execute([$agora, $agora, $ini, $fim]);
+$st->execute([$ini, $fim]);
 $t = array_map(fn($v) => $v ?? 0, $st->fetch());
 $ticket = $t['atendimentos'] ? $t['total'] / $t['atendimentos'] : 0;
 
 $st = db()->prepare("SELECT p.id, p.nome, p.cor, p.foto,
         COUNT(a.id) atendimentos,
-        COALESCE(SUM(a.preco), 0) total,
-        COALESCE(SUM(CASE WHEN a.fim <= ? THEN a.preco END), 0) realizado,
-        COALESCE(SUM(CASE WHEN a.fim > ? THEN a.preco END), 0) a_receber
+        COALESCE(SUM(a.preco + a.extra_valor), 0) total,
+        COALESCE(SUM(CASE WHEN a.status = 'concluido' THEN a.preco + a.extra_valor END), 0) realizado,
+        COALESCE(SUM(CASE WHEN a.status = 'confirmado' THEN a.preco END), 0) a_receber
     FROM profissionais p
-    LEFT JOIN agendamentos a ON a.profissional_id = p.id AND a.status = 'confirmado' AND a.inicio >= ? AND a.inicio < ?
+    LEFT JOIN agendamentos a ON a.profissional_id = p.id AND a.status IN ('confirmado','concluido') AND a.inicio >= ? AND a.inicio < ?
     GROUP BY p.id ORDER BY total DESC, p.ordem");
-$st->execute([$agora, $agora, $ini, $fim]);
+$st->execute([$ini, $fim]);
 $porProf = $st->fetchAll();
 $maiorProf = max(array_column($porProf, 'total') ?: [0]);
 
-$st = db()->prepare("SELECT s.nome, COUNT(*) qtd, SUM(a.preco) total FROM agendamentos a JOIN servicos s ON s.id = a.servico_id
-    WHERE a.status = 'confirmado' AND a.inicio >= ? AND a.inicio < ? GROUP BY s.id ORDER BY total DESC");
+$st = db()->prepare("SELECT s.nome, COUNT(*) qtd, SUM(a.preco + a.extra_valor) total FROM agendamentos a JOIN servicos s ON s.id = a.servico_id
+    WHERE a.status IN ('confirmado','concluido') AND a.inicio >= ? AND a.inicio < ? GROUP BY s.id ORDER BY total DESC");
 $st->execute([$ini, $fim]);
 $porServico = $st->fetchAll();
 
 $porDia = [];
 if (!$umDia) {
-    $st = db()->prepare("SELECT DATE(inicio) dia, COUNT(*) qtd, SUM(preco) total FROM agendamentos
-        WHERE status = 'confirmado' AND inicio >= ? AND inicio < ? GROUP BY DATE(inicio) ORDER BY dia");
+    $st = db()->prepare("SELECT DATE(inicio) dia, COUNT(*) qtd, SUM(preco + extra_valor) total FROM agendamentos
+        WHERE status IN ('confirmado','concluido') AND inicio >= ? AND inicio < ? GROUP BY DATE(inicio) ORDER BY dia");
     $st->execute([$ini, $fim]);
     $porDia = $st->fetchAll();
 }
@@ -91,8 +91,8 @@ cabecalhoAdmin('resumo.php');
       <p class="numero-rotulo">Faturamento</p>
       <p class="numero-valor"><?= preco((float) $t['total']) ?></p>
       <p class="numero-detalhe">
-        <?= preco((float) $t['realizado']) ?> já atendido<br>
-        <?= preco((float) $t['a_receber']) ?> em horários que ainda vão acontecer
+        <?= preco((float) $t['realizado']) ?> já concluído (no caixa)<br>
+        <?= preco((float) $t['a_receber']) ?> em horários ainda não concluídos
       </p>
     </div>
     <div class="numero">
@@ -130,7 +130,7 @@ cabecalhoAdmin('resumo.php');
             <div class="barra" role="presentation"><span style="width: <?= round($pct, 1) ?>%"></span></div>
             <p class="ranking-detalhe"><?php
               $txt = (int) $r['atendimentos'] . ((int) $r['atendimentos'] === 1 ? ' atendimento' : ' atendimentos');
-              if ($r['a_receber'] > 0) $txt .= ', ' . preco((float) $r['realizado']) . ' já atendido';
+              if ($r['a_receber'] > 0) $txt .= ', ' . preco((float) $r['realizado']) . ' já concluído';
               echo e($txt);
             ?></p>
           </div>

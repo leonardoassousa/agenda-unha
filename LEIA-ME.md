@@ -13,9 +13,10 @@ Link de agendamento pra bio do Instagram. A cliente escolhe o serviço e o dia, 
 
 ## Já tinha instalado uma versão anterior?
 Substitua os arquivos (menos o seu `config.php`; copie dele só o bloco novo `aviso_whatsapp` e `max_agendamentos_por_cliente`) e rode no phpMyAdmin, nesta ordem:
-- veio da versão 2: `sql/atualizar-v3.sql` e depois `sql/atualizar-v4.sql`
-- veio da versão 3: só `sql/atualizar-v4.sql`
-(versão 1: rode os três, v2, v3 e v4, nessa ordem.)
+- veio da versão 4: só `sql/atualizar-v5.sql`
+- veio da versão 3: `atualizar-v4.sql` e `atualizar-v5.sql`
+- veio da versão 2: `atualizar-v3.sql`, `atualizar-v4.sql` e `atualizar-v5.sql`
+(versão 1: rode todos, do v2 ao v5, nessa ordem.) No `config.php`, copie também o bloco novo `lembrete_cliente`.
 
 ## Telas da cliente
 Barra de abas embaixo (onde o dedão alcança): **Agendar**, **Meus horários** e **Conta**.
@@ -26,10 +27,25 @@ Barra de abas embaixo (onde o dedão alcança): **Agendar**, **Meus horários** 
 O botão voltar do celular funciona entre as telas. Visual em `assets/cliente.css` (tem tema escuro automático).
 
 ## Painel do estúdio (`/admin`)
-- **Calendário**: o mês inteiro, com o número de horários marcados em cada dia e cor mais forte nos dias mais cheios. No topo escolhe **Todas** ou uma profissional. Tocando no dia aparecem: atendimentos, faturamento, faltas, ocupação da agenda, quantos de cada serviço, quanto cada uma fez e a lista de horários (com Faltou e Cancelar).
+- **Calendário**: o mês inteiro, com o número de horários marcados em cada dia e cor mais forte nos dias mais cheios. No topo escolhe **Todas** ou uma profissional. Tocando no dia aparecem: atendimentos, faturamento, faltas, ocupação da agenda, quantos de cada serviço, quanto cada uma fez e a lista de horários (com Concluir, valor a mais, Faltou, Cancelar e Lembrar no WhatsApp).
+- **Caixa**: escolhe a pessoa (ou Todas) e o mês. Mostra o caixa do mês, quanto cada uma fez e todos os serviços dia a dia, com o total de cada dia. Tocando num dia, aparece só ele, com o total do dia e do mês. Entra no caixa só o que foi **concluído** (valor do serviço + valor a mais).
 - **Resumo**: faturamento por período (hoje, semana, mês, mês passado ou datas escolhidas).
 - **Clientes**: busca e senha nova pra quem esqueceu.
-- **Ajustes**: bloquear horário (folga etc.), fotos da equipe, teste do aviso no WhatsApp e sair.
+- **Ajustes**: acesso da equipe (criar senha de cada colaboradora), horários de cada uma, bloquear horário, fotos, teste do aviso no WhatsApp e sair.
+
+## Área da equipe (`/equipe`)
+Cada colaboradora entra com o celular e a senha que a dona cria em **Ajustes → Equipe: acesso e horários** (a senha aparece uma vez, com botão pra mandar no WhatsApp dela).
+- **Minha agenda**: os atendimentos do dia. Ao terminar, ela toca em **Concluir**; se fez algo a mais, escreve o que foi e o valor, que soma no serviço. Também marca falta, cancela e manda **lembrete no WhatsApp** da cliente com um toque.
+- **Meus horários**: a **semana de trabalho** (dias, entrada, saída e pausa) e **dias específicos** (folga ou horário diferente numa data). O link da cliente só mostra horários dentro disso. Se ela nunca configurar, vale o horário do estúdio do `config.php`.
+- **Meu caixa**: o caixa dela no mês e por dia.
+Ela só enxerga e mexe nos atendimentos dela.
+
+## Lembrete no WhatsApp da cliente
+Algumas horas antes do horário (padrão 3 h, em `lembrete_cliente` no `config.php`) a cliente recebe: "Oi, Maria! Passando pra lembrar do seu horário hoje, às 14:00, com Ana…".
+- Precisa da **Evolution API** (o CallMeBot só manda pro número do estúdio).
+- Cada horário recebe um lembrete só. Quem marcou em cima da hora não recebe.
+- Dispara sozinho quando alguém usa o link de agendamento. Pra ficar no horário certinho mesmo sem visitas, agende o `cron/lembretes.php` a cada 10 minutos (VPS: crontab; Windows: Agendador de Tarefas com `C:\xampp\php\php.exe C:\xampp\htdocs\agenda-unhas\cron\lembretes.php`).
+- Sem a API, o botão **Lembrar no WhatsApp** (na agenda) abre a conversa com a mensagem pronta.
 
 ## Conta da cliente
 - O login é obrigatório só na hora de confirmar. Ela pode olhar serviços e horários sem conta.
@@ -93,6 +109,11 @@ A pasta `uploads/profissionais` precisa ter permissão de escrita no servidor.
 - `includes/admin.php`: login e cabeçalho do painel
 - `includes/cliente.php`: contas das clientes
 - `admin/clientes.php`: lista de clientes e senha nova
+- `admin/caixa.php` e `includes/caixa.php`: caixa
+- `admin/disponibilidade.php`, `equipe/disponibilidade.php` e `includes/disponibilidade.php`: horários de cada colaboradora
+- `equipe/`: área da equipe (`includes/equipe.php`)
+- `includes/atendimento.php`: concluir, valor a mais, lembrete
+- `cron/lembretes.php`: envio dos lembretes
 - `assets/cliente.css` e `assets/app.js`: tela da cliente
 - `assets/style.css` e `assets/admin.css`: painel
 

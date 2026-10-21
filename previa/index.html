@@ -7,8 +7,6 @@
 <meta name="theme-color" content="#3A0E1E">
 <title>Agenda de Unhas · Prévia</title>
 <meta name="description" content="Prévia do sistema de agendamento online: a cliente escolhe serviço, profissional e horário, e o estúdio acompanha tudo num calendário.">
-<meta property="og:title" content="Agenda de Unhas · Prévia">
-<meta property="og:description" content="Veja como fica o agendamento online e o painel do estúdio.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Gloock&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -562,6 +560,112 @@ button { cursor: pointer; }
 #painel .cal-dia.hoje .cal-num::after { display: none; }
 #painel .cal-dia.hoje { border: 2px solid var(--tinta); }
 #painel .cal-bloq { top: auto; bottom: 4px; right: 4px; width: 6px; height: 6px; }
+#painel .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+#painel .item-valor { font-variant-numeric: tabular-nums; }
+#painel .item-valor strong { font-weight: 700; }
+#painel .item-extra { color: var(--verniz); font-size: .9rem; font-weight: 600; }
+#painel .selo-ok { color: #2E7D4F; }
+#painel .selo-pendente { color: #9A6700; }
+#painel .item-concluido .item-hora { border-left-color: #2E7D4F; }
+#painel details.concluir { margin-top: 10px; border: 1px solid var(--linha); border-radius: 12px; background: var(--branco); }
+#painel details.concluir summary { cursor: pointer; padding: 10px 14px; font-weight: 700; color: var(--verniz); list-style: none; }
+#painel details.concluir summary::-webkit-details-marker { display: none; }
+#painel details.concluir summary::before { content: "+ "; }
+#painel details.concluir[open] summary::before { content: "– "; }
+#painel .item-concluido details.concluir summary { color: var(--cinza); font-weight: 600; }
+#painel .concluir-form { display: grid; grid-template-columns: 1fr; gap: 10px; padding: 0 14px 14px; }
+#painel .concluir-form .campo input { padding: 10px 12px; }
+#painel .campo-valor { max-width: 200px; }
+#painel .valor-caixa { position: relative; display: block; }
+#painel .valor-caixa > span { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--cinza); font-weight: 600; }
+#painel .valor-caixa input { padding-left: 38px !important; font-variant-numeric: tabular-nums; }
+#painel .concluir-form .botao { justify-self: start; }
+#painel .caixa { margin-top: 10px; display: grid; gap: 18px; }
+#painel .caixa-total {
+  background: var(--tinta); color: var(--leite); border-radius: 20px; padding: 18px 18px 16px;
+  display: grid; gap: 2px;
+}
+#painel .caixa-total p { margin: 0; }
+#painel .caixa-rotulo { font-size: .88rem; opacity: .8; }
+#painel .caixa-valor { font: 400 2.6rem/1.1 "Gloock", Georgia, serif; font-variant-numeric: tabular-nums; }
+#painel .caixa-sub { font-size: .88rem; opacity: .85; }
+#painel .caixa-mes { margin-top: 8px !important; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, .2); }
+#painel .caixa-mes a { color: inherit; font-weight: 700; }
+#painel .caixa-pessoas { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+#painel .caixa-pessoas a {
+  display: grid; grid-template-columns: 1fr auto; gap: 0 12px; padding: 12px 14px; text-decoration: none; color: var(--tinta);
+  background: var(--branco); border: 1px solid var(--linha); border-left: 4px solid var(--cor); border-radius: 12px;
+}
+#painel .caixa-pessoa-nome { font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+#painel .caixa-pessoa-nome .bolinha { background: var(--cor); }
+#painel .caixa-pessoa-valor { font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+#painel .caixa-pessoa-det { grid-column: 1 / -1; color: var(--cinza); font-size: .85rem; }
+#painel .caixa-dia { background: var(--branco); border: 1px solid var(--linha); border-radius: 16px; margin-bottom: 12px; overflow: hidden; }
+#painel .caixa-dia-topo {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 12px 14px;
+  text-decoration: none; color: var(--tinta); background: var(--leite); border-bottom: 1px solid var(--linha);
+}
+#painel .caixa-dia-nome { font-weight: 700; }
+#painel .caixa-dia-valor { font-weight: 700; font-variant-numeric: tabular-nums; }
+#painel .caixa-linhas { list-style: none; margin: 0; padding: 0; }
+#painel .caixa-linhas li {
+  display: grid; grid-template-columns: 46px 1fr auto; gap: 10px; align-items: start;
+  padding: 10px 14px; border-bottom: 1px solid var(--linha); border-left: 3px solid var(--cor);
+}
+#painel .linha-hora { font-weight: 700; font-variant-numeric: tabular-nums; font-size: .92rem; }
+#painel .linha-desc { display: grid; min-width: 0; font-size: .92rem; }
+#painel .linha-desc span { color: var(--cinza); }
+#painel .linha-extra { color: var(--verniz) !important; font-weight: 600; font-size: .85rem; }
+#painel .linha-valor { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+#painel .linha-valor small { display: block; font-weight: 600; font-size: .72rem; color: var(--cinza); }
+#painel .linha-ok .linha-valor small { color: #2E7D4F; }
+#painel .linha-pendente .linha-valor small { color: #9A6700; }
+#painel .linha-falta { opacity: .6; }
+#painel .linha-falta .linha-valor { text-decoration: line-through; }
+#painel .linha-futuro .linha-valor { color: var(--cinza); }
+#painel .caixa-dia-rodape { margin: 0; padding: 8px 14px; font-size: .82rem; color: var(--cinza); }
+#painel .semana { display: grid; gap: 8px; margin-top: 12px; }
+#painel .semana-dia {
+  margin: 0; border: 1px solid var(--linha); border-radius: 14px; background: var(--branco);
+  padding: 12px 14px; display: grid; gap: 10px;
+}
+#painel .semana-check { display: flex; align-items: center; gap: 10px; font-weight: 700; cursor: pointer; }
+#painel .semana-check input { width: 20px; height: 20px; accent-color: var(--verniz); }
+#painel .semana-horas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+#painel .semana-horas label { display: grid; gap: 4px; font-size: .78rem; color: var(--cinza); }
+#painel .semana-horas input { width: 100%; padding: 8px 6px; border: 1px solid var(--linha); border-radius: 10px; background: var(--leite); font: inherit; color: var(--tinta); }
+#painel @media (max-width: 420px) { .semana-horas { grid-template-columns: 1fr 1fr; }
+#painel }
+.semana-folga-txt { display: none; margin: 0; color: var(--cinza); font-size: .9rem; }
+#painel .semana-dia.folga { background: transparent; border-style: dashed; }
+#painel .semana-dia.folga .semana-horas { display: none; }
+#painel .semana-dia.folga .semana-folga-txt { display: block; }
+#painel .semana .botao { justify-self: start; margin-top: 6px; }
+#painel .tipo-dia { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
+#painel .tipo-dia legend { font-size: .9rem; font-weight: 600; margin-bottom: 6px; }
+#painel .tipo-dia label { display: flex; gap: 8px; align-items: center; }
+#painel .tipo-dia input { accent-color: var(--verniz); width: 18px; height: 18px; }
+#painel .dia-especifico .so-horario { display: none; }
+#painel .dia-especifico.com-horario .so-horario { display: grid; }
+#painel .lista-acesso { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 12px; }
+#painel .lista-acesso li { background: var(--branco); border: 1px solid var(--linha); border-radius: 16px; padding: 14px; display: grid; gap: 12px; }
+#painel .acesso-topo { display: flex; align-items: center; gap: 12px; }
+#painel .acesso-topo p { margin: 2px 0 0; }
+#painel .acesso-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
+#painel .acesso-form .campo { flex: 1 1 180px; }
+#painel .acesso-links { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; font-size: .92rem; }
+#painel .acesso-links a { color: var(--verniz); font-weight: 600; }
+#painel .equipe-topo { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+#painel .equipe-topo p { margin: 0; }
+#painel .equipe-ola { font: 400 1.6rem/1.1 "Gloock", Georgia, serif; }
+#painel .equipe-estudio { color: var(--cinza); font-size: .88rem; }
+#painel .equipe-sair { margin-left: auto; }
+#painel .abas-equipe { margin-bottom: 18px; }
+#painel .sanfona-eq { background: var(--branco); border: 1px solid var(--linha); border-radius: 14px; padding: 12px 14px; }
+#painel .sanfona-eq summary { cursor: pointer; font-weight: 600; }
+#painel .admin .topo-info { display: block; }
+#painel .admin .topo-info strong { color: var(--tinta); }
+#painel .abas { flex-wrap: wrap; overflow: visible; }
 
 :root { --leite: var(--fundo); --branco: var(--cartao); --cinza: var(--suave); --raio: 16px; }
 .demo { background: var(--vinho); color: var(--creme); }
@@ -600,7 +704,7 @@ button { cursor: pointer; }
   <section class="tela" id="tela-servico" aria-labelledby="t-servico">
     <header class="capa">
       <div class="capa-in">
-        <p class="capa-status "><span class="ponto" aria-hidden="true"></span>Fechado agora. Abre amanhã às 09:00</p>
+        <p class="capa-status "><span class="ponto" aria-hidden="true"></span>Fechado agora. Abre hoje às 09:00</p>
         <h1>Studio de Unhas</h1>
         <p class="capa-info">
           <span>@studiodeunhas</span>          <span>Rua Exemplo, 123 - Centro</span>        </p>
@@ -873,7 +977,7 @@ button { cursor: pointer; }
 </nav>
 </div>
 <div id="painel" hidden></div>
-<script>window.AGENDA = {"servicos": [{"id": 1, "nome": "Mão", "descricao": "Cutilagem e esmaltação", "duracao": 45, "preco": 25}, {"id": 2, "nome": "Pé", "descricao": "Cutilagem e esmaltação", "duracao": 45, "preco": 30}, {"id": 3, "nome": "Pé e mão", "descricao": "Os dois no mesmo horário", "duracao": 90, "preco": 50}, {"id": 4, "nome": "Esmaltação em gel", "descricao": "Dura até 3 semanas", "duracao": 60, "preco": 60}, {"id": 5, "nome": "Alongamento em fibra", "descricao": "Aplicação completa", "duracao": 120, "preco": 130}, {"id": 6, "nome": "Manutenção", "descricao": "Manutenção de alongamento", "duracao": 90, "preco": 80}], "profissionais": [{"id": 1, "nome": "Ana", "cor": "#9B1B3A", "foto": null, "iniciais": "A"}, {"id": 2, "nome": "Bruna", "cor": "#C2577A", "foto": null, "iniciais": "B"}, {"id": 3, "nome": "Camila", "cor": "#6E3B5C", "foto": null, "iniciais": "C"}], "diasAbertos": [1, 2, 3, 4, 5, 6], "diasAFrente": 30, "hoje": "2026-10-20", "whatsapp": "5573999999999", "estudio": "Studio de Unhas", "cliente": null, "avisoAutomatico": true, "cancelarAteHoras": 2};</script>
+<script>window.AGENDA = {"servicos": [{"id": 1, "nome": "Mão", "descricao": "Cutilagem e esmaltação", "duracao": 45, "preco": 25}, {"id": 2, "nome": "Pé", "descricao": "Cutilagem e esmaltação", "duracao": 45, "preco": 30}, {"id": 3, "nome": "Pé e mão", "descricao": "Os dois no mesmo horário", "duracao": 90, "preco": 50}, {"id": 4, "nome": "Esmaltação em gel", "descricao": "Dura até 3 semanas", "duracao": 60, "preco": 60}, {"id": 5, "nome": "Alongamento em fibra", "descricao": "Aplicação completa", "duracao": 120, "preco": 130}, {"id": 6, "nome": "Manutenção", "descricao": "Manutenção de alongamento", "duracao": 90, "preco": 80}], "profissionais": [{"id": 1, "nome": "Ana", "cor": "#9B1B3A", "foto": null, "iniciais": "A"}, {"id": 2, "nome": "Bruna", "cor": "#C2577A", "foto": null, "iniciais": "B"}, {"id": 3, "nome": "Camila", "cor": "#6E3B5C", "foto": null, "iniciais": "C"}], "diasDisponiveis": ["2026-10-21", "2026-10-22", "2026-10-23", "2026-10-24", "2026-10-26", "2026-10-27", "2026-10-28", "2026-10-29", "2026-10-30", "2026-10-31", "2026-11-02", "2026-11-03", "2026-11-04", "2026-11-05", "2026-11-06", "2026-11-07", "2026-11-09", "2026-11-10", "2026-11-11", "2026-11-12", "2026-11-13", "2026-11-14", "2026-11-16", "2026-11-17", "2026-11-18", "2026-11-19", "2026-11-20"], "diasAFrente": 30, "hoje": "2026-10-21", "whatsapp": "5573999999999", "estudio": "Studio de Unhas", "cliente": null, "avisoAutomatico": true, "cancelarAteHoras": 2};</script>
 <script>
 (function () {
   const A = window.AGENDA;
@@ -881,6 +985,7 @@ button { cursor: pointer; }
   const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
   A.hoje = iso(hoje);
+  A.diasDisponiveis = [];
   const HOR = { 1: ['09:00', '19:00'], 2: ['09:00', '19:00'], 3: ['09:00', '19:00'], 4: ['09:00', '19:00'], 5: ['09:00', '19:00'], 6: ['08:00', '14:00'] };
   const min = (h) => { const [a, b] = h.split(':').map(Number); return a * 60 + b; };
   const hhmm = (m) => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
@@ -890,6 +995,7 @@ button { cursor: pointer; }
   const SEMANA = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
   const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
   const extenso = (d) => { const x = new Date(d + 'T00:00'); return `${SEMANA[x.getDay()]}, ${x.getDate()} de ${MESES[x.getMonth()]}`; };
+  for (let i = 0; i <= A.diasAFrente; i++) { const d = new Date(hoje); d.setDate(hoje.getDate() + i); if (HOR[d.getDay()]) A.diasDisponiveis.push(iso(d)); }
   window.DEMO = { HOR, SERV, PROF, iso, min, hhmm, brl, extenso, MESES };
 
   // Agenda de exemplo: do começo do mês até 45 dias depois
@@ -1124,7 +1230,7 @@ button { cursor: pointer; }
     for (let i = 0; i <= A.diasAFrente; i++) {
       const dt = new Date(base); dt.setDate(base.getDate() + i);
       const iso = isoLocal(dt);
-      const aberto = A.diasAbertos.includes(dt.getDay());
+      const aberto = A.diasDisponiveis.includes(iso);
       const rotulo = i === 0 ? 'hoje' : i === 1 ? 'amanhã' : SEM[dt.getDay()];
       const lbl = document.createElement('label');
       lbl.className = 'dia';

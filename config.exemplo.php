@@ -50,6 +50,12 @@ return [
         'evolution_apikey' => '',
     ],
 
+    // Lembrete no WhatsApp da CLIENTE antes do horário (só funciona com a Evolution API)
+    'lembrete_cliente' => [
+        'ativo' => true,
+        'horas_antes' => 3,   // manda 3 horas antes
+    ],
+
     // Quantos horários futuros a mesma cliente (mesmo WhatsApp) pode ter ao mesmo tempo. 0 = sem limite
     'max_agendamentos_por_cliente' => 3,
 

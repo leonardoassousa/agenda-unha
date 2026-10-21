@@ -6,8 +6,11 @@ CREATE TABLE IF NOT EXISTS profissionais (
   nome VARCHAR(80) NOT NULL,
   cor CHAR(7) NOT NULL DEFAULT '#9B1B3A',   -- cor dela na agenda
   foto VARCHAR(255) NULL,                     -- caminho da foto (enviada pelo painel)
+  telefone VARCHAR(11) NULL,                  -- login da colaboradora na área da equipe
+  senha_hash VARCHAR(255) NULL,
   ativo TINYINT(1) NOT NULL DEFAULT 1,
-  ordem INT NOT NULL DEFAULT 0
+  ordem INT NOT NULL DEFAULT 0,
+  UNIQUE KEY uq_prof_tel (telefone)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS servicos (
@@ -52,8 +55,12 @@ CREATE TABLE IF NOT EXISTS agendamentos (
   cliente_telefone VARCHAR(20) NOT NULL,
   observacao VARCHAR(255) NULL,
   preco DECIMAL(8,2) NOT NULL DEFAULT 0,     -- valor do serviço no dia em que marcou
-  status ENUM('confirmado','cancelado','faltou') NOT NULL DEFAULT 'confirmado',
+  extra_valor DECIMAL(8,2) NOT NULL DEFAULT 0, -- valor a mais lançado pela colaboradora
+  extra_obs VARCHAR(255) NULL,                 -- o que foi feito a mais
+  status ENUM('confirmado','concluido','cancelado','faltou') NOT NULL DEFAULT 'confirmado',
+  concluido_em DATETIME NULL,
   aviso ENUM('pendente','enviado','falhou','desligado') NOT NULL DEFAULT 'pendente', -- aviso no WhatsApp do estúdio
+  lembrete ENUM('pendente','enviado','falhou','pulado') NOT NULL DEFAULT 'pendente', -- lembrete no WhatsApp da cliente
   criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   KEY idx_prof_inicio (profissional_id, inicio),
   KEY idx_inicio (inicio),
@@ -61,6 +68,37 @@ CREATE TABLE IF NOT EXISTS agendamentos (
   CONSTRAINT fk_ag_prof FOREIGN KEY (profissional_id) REFERENCES profissionais(id),
   CONSTRAINT fk_ag_serv FOREIGN KEY (servico_id) REFERENCES servicos(id),
   CONSTRAINT fk_ag_cli FOREIGN KEY (cliente_id) REFERENCES clientes(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Semana de trabalho de cada colaboradora (sem linha no dia = não trabalha nesse dia).
+-- Se ela não tiver nenhuma linha, vale o horário do estúdio do config.php.
+CREATE TABLE IF NOT EXISTS disponibilidade_semana (
+  profissional_id INT UNSIGNED NOT NULL,
+  dia_semana TINYINT UNSIGNED NOT NULL,       -- 0 = domingo ... 6 = sábado
+  inicio TIME NOT NULL,
+  fim TIME NOT NULL,
+  pausa_inicio TIME NULL,
+  pausa_fim TIME NULL,
+  PRIMARY KEY (profissional_id, dia_semana),
+  CONSTRAINT fk_ds_prof FOREIGN KEY (profissional_id) REFERENCES profissionais(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Dias específicos: folga ou horário diferente naquela data (vale mais que a semana)
+CREATE TABLE IF NOT EXISTS disponibilidade_datas (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  profissional_id INT UNSIGNED NOT NULL,
+  data DATE NOT NULL,
+  trabalha TINYINT(1) NOT NULL DEFAULT 0,
+  inicio TIME NULL,
+  fim TIME NULL,
+  UNIQUE KEY uq_dd (profissional_id, data),
+  CONSTRAINT fk_dd_prof FOREIGN KEY (profissional_id) REFERENCES profissionais(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Controles internos (ex.: última vez que rodou o lembrete)
+CREATE TABLE IF NOT EXISTS sistema (
+  chave VARCHAR(50) PRIMARY KEY,
+  valor VARCHAR(255) NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Folgas, consultas, horário de almoço diferente etc.

@@ -214,3 +214,119 @@
 .cal-dia.hoje .cal-num::after { display: none; }
 .cal-dia.hoje { border: 2px solid var(--tinta); }
 .cal-bloq { top: auto; bottom: 4px; right: 4px; width: 6px; height: 6px; }
+
+/* ---------- Atendimento: concluir e valor a mais ---------- */
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.item-valor { font-variant-numeric: tabular-nums; }
+.item-valor strong { font-weight: 700; }
+.item-extra { color: var(--verniz); font-size: .9rem; font-weight: 600; }
+.selo-ok { color: #2E7D4F; }
+.selo-pendente { color: #9A6700; }
+.item-concluido .item-hora { border-left-color: #2E7D4F; }
+details.concluir { margin-top: 10px; border: 1px solid var(--linha); border-radius: 12px; background: var(--branco); }
+details.concluir summary { cursor: pointer; padding: 10px 14px; font-weight: 700; color: var(--verniz); list-style: none; }
+details.concluir summary::-webkit-details-marker { display: none; }
+details.concluir summary::before { content: "+ "; }
+details.concluir[open] summary::before { content: "– "; }
+.item-concluido details.concluir summary { color: var(--cinza); font-weight: 600; }
+.concluir-form { display: grid; grid-template-columns: 1fr; gap: 10px; padding: 0 14px 14px; }
+.concluir-form .campo input { padding: 10px 12px; }
+.campo-valor { max-width: 200px; }
+.valor-caixa { position: relative; display: block; }
+.valor-caixa > span { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--cinza); font-weight: 600; }
+.valor-caixa input { padding-left: 38px !important; font-variant-numeric: tabular-nums; }
+.concluir-form .botao { justify-self: start; }
+
+/* ---------- Caixa ---------- */
+.caixa { margin-top: 10px; display: grid; gap: 18px; }
+.caixa-total {
+  background: var(--tinta); color: var(--leite); border-radius: 20px; padding: 18px 18px 16px;
+  display: grid; gap: 2px;
+}
+.caixa-total p { margin: 0; }
+.caixa-rotulo { font-size: .88rem; opacity: .8; }
+.caixa-valor { font: 400 2.6rem/1.1 "Gloock", Georgia, serif; font-variant-numeric: tabular-nums; }
+.caixa-sub { font-size: .88rem; opacity: .85; }
+.caixa-mes { margin-top: 8px !important; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, .2); }
+.caixa-mes a { color: inherit; font-weight: 700; }
+.caixa-pessoas { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.caixa-pessoas a {
+  display: grid; grid-template-columns: 1fr auto; gap: 0 12px; padding: 12px 14px; text-decoration: none; color: var(--tinta);
+  background: var(--branco); border: 1px solid var(--linha); border-left: 4px solid var(--cor); border-radius: 12px;
+}
+.caixa-pessoa-nome { font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+.caixa-pessoa-nome .bolinha { background: var(--cor); }
+.caixa-pessoa-valor { font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+.caixa-pessoa-det { grid-column: 1 / -1; color: var(--cinza); font-size: .85rem; }
+.caixa-dia { background: var(--branco); border: 1px solid var(--linha); border-radius: 16px; margin-bottom: 12px; overflow: hidden; }
+.caixa-dia-topo {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 12px 14px;
+  text-decoration: none; color: var(--tinta); background: var(--leite); border-bottom: 1px solid var(--linha);
+}
+.caixa-dia-nome { font-weight: 700; }
+.caixa-dia-valor { font-weight: 700; font-variant-numeric: tabular-nums; }
+.caixa-linhas { list-style: none; margin: 0; padding: 0; }
+.caixa-linhas li {
+  display: grid; grid-template-columns: 46px 1fr auto; gap: 10px; align-items: start;
+  padding: 10px 14px; border-bottom: 1px solid var(--linha); border-left: 3px solid var(--cor);
+}
+.linha-hora { font-weight: 700; font-variant-numeric: tabular-nums; font-size: .92rem; }
+.linha-desc { display: grid; min-width: 0; font-size: .92rem; }
+.linha-desc span { color: var(--cinza); }
+.linha-extra { color: var(--verniz) !important; font-weight: 600; font-size: .85rem; }
+.linha-valor { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.linha-valor small { display: block; font-weight: 600; font-size: .72rem; color: var(--cinza); }
+.linha-ok .linha-valor small { color: #2E7D4F; }
+.linha-pendente .linha-valor small { color: #9A6700; }
+.linha-falta { opacity: .6; }
+.linha-falta .linha-valor { text-decoration: line-through; }
+.linha-futuro .linha-valor { color: var(--cinza); }
+.caixa-dia-rodape { margin: 0; padding: 8px 14px; font-size: .82rem; color: var(--cinza); }
+
+/* ---------- Disponibilidade ---------- */
+.semana { display: grid; gap: 8px; margin-top: 12px; }
+.semana-dia {
+  margin: 0; border: 1px solid var(--linha); border-radius: 14px; background: var(--branco);
+  padding: 12px 14px; display: grid; gap: 10px;
+}
+.semana-check { display: flex; align-items: center; gap: 10px; font-weight: 700; cursor: pointer; }
+.semana-check input { width: 20px; height: 20px; accent-color: var(--verniz); }
+.semana-horas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.semana-horas label { display: grid; gap: 4px; font-size: .78rem; color: var(--cinza); }
+.semana-horas input { width: 100%; padding: 8px 6px; border: 1px solid var(--linha); border-radius: 10px; background: var(--leite); font: inherit; color: var(--tinta); }
+@media (max-width: 420px) { .semana-horas { grid-template-columns: 1fr 1fr; } }
+.semana-folga-txt { display: none; margin: 0; color: var(--cinza); font-size: .9rem; }
+.semana-dia.folga { background: transparent; border-style: dashed; }
+.semana-dia.folga .semana-horas { display: none; }
+.semana-dia.folga .semana-folga-txt { display: block; }
+.semana .botao { justify-self: start; margin-top: 6px; }
+.tipo-dia { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
+.tipo-dia legend { font-size: .9rem; font-weight: 600; margin-bottom: 6px; }
+.tipo-dia label { display: flex; gap: 8px; align-items: center; }
+.tipo-dia input { accent-color: var(--verniz); width: 18px; height: 18px; }
+.dia-especifico .so-horario { display: none; }
+.dia-especifico.com-horario .so-horario { display: grid; }
+
+/* ---------- Acesso da equipe (ajustes) ---------- */
+.lista-acesso { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 12px; }
+.lista-acesso li { background: var(--branco); border: 1px solid var(--linha); border-radius: 16px; padding: 14px; display: grid; gap: 12px; }
+.acesso-topo { display: flex; align-items: center; gap: 12px; }
+.acesso-topo p { margin: 2px 0 0; }
+.acesso-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
+.acesso-form .campo { flex: 1 1 180px; }
+.acesso-links { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; font-size: .92rem; }
+.acesso-links a { color: var(--verniz); font-weight: 600; }
+
+/* ---------- Área da equipe ---------- */
+.equipe-topo { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.equipe-topo p { margin: 0; }
+.equipe-ola { font: 400 1.6rem/1.1 "Gloock", Georgia, serif; }
+.equipe-estudio { color: var(--cinza); font-size: .88rem; }
+.equipe-sair { margin-left: auto; }
+.abas-equipe { margin-bottom: 18px; }
+.sanfona-eq { background: var(--branco); border: 1px solid var(--linha); border-radius: 14px; padding: 12px 14px; }
+.sanfona-eq summary { cursor: pointer; font-weight: 600; }
+
+.admin .topo-info { display: block; }
+.admin .topo-info strong { color: var(--tinta); }
+.abas { flex-wrap: wrap; overflow: visible; }

@@ -11,6 +11,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['aviso_ajustes'] = $erro ?: 'Foto atualizada.';
         voltarPara('ajustes.php', [], 'equipe');
     }
+    if ($acao === 'acesso') {
+        $id = (int) $_POST['id'];
+        $tel = normalizarTelefone((string) ($_POST['telefone'] ?? ''));
+        if ($tel === '') {
+            $_SESSION['aviso_ajustes'] = 'Digite o celular dela com DDD.';
+            voltarPara('ajustes.php', [], 'acesso');
+        }
+        $st = db()->prepare('SELECT id FROM profissionais WHERE telefone = ? AND id <> ?');
+        $st->execute([$tel, $id]);
+        if ($st->fetchColumn()) {
+            $_SESSION['aviso_ajustes'] = 'Esse celular já está no acesso de outra colaboradora.';
+            voltarPara('ajustes.php', [], 'acesso');
+        }
+        $alfabeto = 'abcdefghjkmnpqrstuvwxyz23456789';
+        $senha = '';
+        for ($i = 0; $i < 8; $i++) $senha .= $alfabeto[random_int(0, strlen($alfabeto) - 1)];
+        db()->prepare('UPDATE profissionais SET telefone = ?, senha_hash = ? WHERE id = ?')->execute([$tel, password_hash($senha, PASSWORD_DEFAULT), $id]);
+        db()->prepare('DELETE FROM login_tentativas WHERE chave = ?')->execute(['eq:' . $tel]);
+        $st = db()->prepare('SELECT nome FROM profissionais WHERE id = ?');
+        $st->execute([$id]);
+        $_SESSION['senha_equipe'] = ['nome' => $st->fetchColumn(), 'telefone' => $tel, 'senha' => $senha];
+        voltarPara('ajustes.php', [], 'acesso');
+    }
+    if ($acao === 'remover_acesso') {
+        db()->prepare('UPDATE profissionais SET senha_hash = NULL WHERE id = ?')->execute([(int) $_POST['id']]);
+        $_SESSION['aviso_ajustes'] = 'Acesso removido. Ela não entra mais na área da equipe.';
+        voltarPara('ajustes.php', [], 'acesso');
+    }
     if ($acao === 'remover_foto') {
         removerFoto((int) $_POST['id']);
         voltarPara('ajustes.php', [], 'equipe');
@@ -46,8 +74,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $aviso = $_SESSION['aviso_ajustes'] ?? '';
-unset($_SESSION['aviso_ajustes']);
-$profs = db()->query('SELECT id, nome, cor, foto FROM profissionais ORDER BY ordem, nome')->fetchAll();
+$senhaEquipe = $_SESSION['senha_equipe'] ?? null;
+unset($_SESSION['aviso_ajustes'], $_SESSION['senha_equipe']);
+$profs = db()->query('SELECT id, nome, cor, foto, telefone, senha_hash IS NOT NULL tem_acesso FROM profissionais ORDER BY ordem, nome')->fetchAll();
+$linkEquipe = (!empty($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . rtrim(dirname(dirname($_SERVER['SCRIPT_NAME'] ?? '/admin/x')), '/') . '/equipe/';
 $profPorId = array_column($profs, null, 'id');
 $dataBloq = $_GET['data'] ?? date('Y-m-d');
 if (!DateTime::createFromFormat('!Y-m-d', $dataBloq)) $dataBloq = date('Y-m-d');
@@ -60,6 +90,48 @@ cabecalhoAdmin('ajustes.php');
 ?>
   <h1>Ajustes</h1>
   <?php if ($aviso): ?><p class="nota" role="status"><?= e($aviso) ?></p><?php endif; ?>
+
+  <section class="bloco" id="acesso">
+    <h2>Equipe: acesso e horários</h2>
+    <p class="topo-info">Cada colaboradora entra em <a href="<?= e($linkEquipe) ?>"><?= e($linkEquipe) ?></a> com o celular e a senha que você gerar aqui. Lá ela vê a agenda dela, conclui os atendimentos, lança valor a mais e ajusta os próprios horários.</p>
+    <?php if ($senhaEquipe):
+        $msgWa = "Oi, {$senhaEquipe['nome']}! Seu acesso à agenda do estúdio: $linkEquipe\nCelular: " . telefoneBonito($senhaEquipe['telefone']) . "\nSenha: {$senhaEquipe['senha']}"; ?>
+      <div class="nota nota-senha" role="status">
+        <p>Senha de <strong><?= e($senhaEquipe['nome']) ?></strong>:</p>
+        <p class="senha-gerada"><?= e($senhaEquipe['senha']) ?></p>
+        <p>Ela só aparece agora. Mande pra ela:</p>
+        <a class="botao botao-peq" href="https://wa.me/55<?= e($senhaEquipe['telefone']) ?>?text=<?= rawurlencode($msgWa) ?>" target="_blank" rel="noopener">Enviar pelo WhatsApp</a>
+      </div>
+    <?php endif; ?>
+    <ul class="lista-acesso">
+      <?php foreach ($profs as $p): ?>
+        <li style="--cor: <?= e($p['cor']) ?>">
+          <div class="acesso-topo">
+            <?= $p['foto'] ? '<img class="foto" src="../' . e($p['foto']) . '" alt="">' : '<span class="foto" aria-hidden="true">' . e(iniciais($p['nome'])) . '</span>' ?>
+            <div>
+              <strong><?= e($p['nome']) ?></strong>
+              <p class="topo-info"><?= $p['tem_acesso'] ? 'Tem acesso com ' . e(telefoneBonito((string) $p['telefone'])) : 'Ainda sem acesso' ?></p>
+            </div>
+          </div>
+          <form method="post" class="acesso-form">
+            <?= campoCsrf() ?>
+            <input type="hidden" name="id" value="<?= (int) $p['id'] ?>">
+            <label class="campo"><span>Celular dela</span>
+              <input type="tel" name="telefone" inputmode="numeric" value="<?= e($p['telefone'] ? telefoneBonito($p['telefone']) : '') ?>" placeholder="(73) 99999-9999">
+            </label>
+            <button class="botao botao-peq" name="acao" value="acesso"><?= $p['tem_acesso'] ? 'Gerar senha nova' : 'Criar acesso' ?></button>
+          </form>
+          <div class="acesso-links">
+            <a href="disponibilidade.php?prof=<?= (int) $p['id'] ?>">Ver e mudar os horários dela</a>
+            <?php if ($p['tem_acesso']): ?>
+              <form method="post"><?= campoCsrf() ?><input type="hidden" name="id" value="<?= (int) $p['id'] ?>">
+                <button class="link link-perigo" name="acao" value="remover_acesso" onclick="return confirm('Tirar o acesso de <?= e(addslashes($p['nome'])) ?>?')">Tirar acesso</button></form>
+            <?php endif; ?>
+          </div>
+        </li>
+      <?php endforeach; ?>
+    </ul>
+  </section>
 
   <section class="bloco" id="bloqueios">
     <h2>Bloquear horário</h2>

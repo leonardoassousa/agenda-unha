@@ -1,11 +1,12 @@
 <?php
 // Sessão e cabeçalho comuns às páginas do painel.
 require_once __DIR__ . '/app.php';
+require_once __DIR__ . '/sessao.php';
 
 session_set_cookie_params(['httponly' => true, 'samesite' => 'Lax', 'secure' => !empty($_SERVER['HTTPS'])]);
 session_name('agenda_admin');
 session_start();
-if (empty($_SESSION['csrf'])) $_SESSION['csrf'] = bin2hex(random_bytes(16));
+prepararCsrf();
 
 function logada(): bool
 {
@@ -17,22 +18,9 @@ function exigirLogin(): void
     if (!logada()) { header('Location: ./'); exit; }
 }
 
-function conferirCsrf(): void
-{
-    if (!hash_equals($_SESSION['csrf'], (string) ($_POST['csrf'] ?? ''))) {
-        http_response_code(400);
-        exit('Sessão expirou. Volte e tente de novo.');
-    }
-}
-
-function campoCsrf(): string
-{
-    return '<input type="hidden" name="csrf" value="' . e($_SESSION['csrf']) . '">';
-}
-
 function cabecalhoAdmin(string $ativa): void
 {
-    $abas = ['index.php' => 'Calendário', 'resumo.php' => 'Resumo', 'clientes.php' => 'Clientes', 'ajustes.php' => 'Ajustes'];
+    $abas = ['index.php' => 'Calendário', 'caixa.php' => 'Caixa', 'resumo.php' => 'Resumo', 'clientes.php' => 'Clientes', 'ajustes.php' => 'Ajustes'];
     ?>
   <header class="admin-topo">
     <nav class="abas" aria-label="Painel">

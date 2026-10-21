@@ -38,14 +38,27 @@ function mensagemCancelamento(array $ag): string
 function enviarWhatsappEstudio(string $texto): string
 {
     $c = cfg('aviso_whatsapp') ?: [];
+    return enviarWhatsapp((string) ($c['telefone'] ?? ''), $texto);
+}
+
+/**
+ * Envia mensagem pra qualquer número (com 55 + DDD).
+ * O CallMeBot só entrega no número que ativou ele (o do estúdio); pra cliente precisa da Evolution API.
+ * Retorna '' se deu certo, ou o motivo do erro.
+ */
+function enviarWhatsapp(string $numero, string $texto): string
+{
+    $c = cfg('aviso_whatsapp') ?: [];
     $modo = $c['modo'] ?? 'desligado';
-    $para = preg_replace('/\D/', '', (string) ($c['telefone'] ?? ''));
+    $para = preg_replace('/\D/', '', $numero);
+    $estudio = preg_replace('/\D/', '', (string) ($c['telefone'] ?? ''));
 
     if ($modo === 'desligado') return 'Aviso desligado no config.php.';
-    if (!$para) return 'Falta o telefone que recebe o aviso no config.php.';
+    if (!$para) return 'Falta o número de destino.';
     if (!function_exists('curl_init')) return 'A extensão cURL do PHP está desligada.';
 
     if ($modo === 'callmebot') {
+        if ($para !== $estudio) return 'O CallMeBot só manda mensagem pro número do estúdio. Pra mandar pra cliente, use a Evolution API.';
         if (empty($c['callmebot_apikey'])) return 'Falta a apikey do CallMeBot no config.php.';
         $url = 'https://api.callmebot.com/whatsapp.php?' . http_build_query([
             'phone' => '+' . $para, 'text' => $texto, 'apikey' => $c['callmebot_apikey'],
@@ -73,6 +86,62 @@ function enviarWhatsappEstudio(string $texto): string
     }
 
     return "Modo '$modo' desconhecido. Use 'desligado', 'callmebot' ou 'evolution'.";
+}
+
+/** Lembrete da cliente pode ser enviado automaticamente? */
+function lembreteAutomaticoAtivo(): bool
+{
+    $l = cfg('lembrete_cliente') ?: [];
+    $modo = (cfg('aviso_whatsapp') ?: [])['modo'] ?? 'desligado';
+    return !empty($l['ativo']) && $modo === 'evolution';
+}
+
+/**
+ * Manda os lembretes que estão na hora. Cada horário recebe no máximo um.
+ * Retorna quantos foram enviados.
+ */
+function rodarLembretes(): int
+{
+    if (!lembreteAutomaticoAtivo()) return 0;
+    require_once __DIR__ . '/atendimento.php';
+    $horas = max(1, (int) ((cfg('lembrete_cliente') ?: [])['horas_antes'] ?? 3));
+
+    // Horário marcado já dentro da janela (ex.: marcou 1 h antes) não precisa de lembrete
+    db()->prepare("UPDATE agendamentos SET lembrete = 'pulado' WHERE lembrete = 'pendente' AND status = 'confirmado'
+                   AND criado_em > inicio - INTERVAL ? HOUR AND inicio <= NOW() + INTERVAL ? HOUR")->execute([$horas, $horas]);
+    db()->exec("UPDATE agendamentos SET lembrete = 'pulado' WHERE lembrete = 'pendente' AND (inicio <= NOW() OR status <> 'confirmado')");
+
+    $st = db()->prepare("SELECT a.*, s.nome servico, p.nome profissional FROM agendamentos a
+        JOIN servicos s ON s.id = a.servico_id JOIN profissionais p ON p.id = a.profissional_id
+        WHERE a.lembrete = 'pendente' AND a.status = 'confirmado' AND a.inicio > NOW() AND a.inicio <= NOW() + INTERVAL ? HOUR
+        ORDER BY a.inicio LIMIT 30");
+    $st->execute([$horas]);
+    $enviados = 0;
+    foreach ($st->fetchAll() as $a) {
+        // "Reserva" o horário antes de mandar: dois disparos ao mesmo tempo não mandam duas vezes
+        $res = db()->prepare("UPDATE agendamentos SET lembrete = 'enviado' WHERE id = ? AND lembrete = 'pendente'");
+        $res->execute([$a['id']]);
+        if ($res->rowCount() !== 1) continue;
+        $erro = enviarWhatsapp('55' . $a['cliente_telefone'], mensagemLembrete($a));
+        if ($erro !== '') {
+            db()->prepare("UPDATE agendamentos SET lembrete = 'falhou' WHERE id = ?")->execute([$a['id']]);
+            error_log('[agenda] lembrete ' . $a['id'] . ' falhou: ' . $erro);
+        } else {
+            $enviados++;
+        }
+    }
+    return $enviados;
+}
+
+/** Roda os lembretes no máximo a cada 5 minutos (dispensa agendador no servidor). */
+function lembretesSeHora(): void
+{
+    if (!lembreteAutomaticoAtivo()) return;
+    $pdo = db();
+    $pdo->exec("INSERT IGNORE INTO sistema (chave, valor) VALUES ('lembretes_em', '0')");
+    $st = $pdo->prepare("UPDATE sistema SET valor = ? WHERE chave = 'lembretes_em' AND CAST(valor AS UNSIGNED) < ?");
+    $st->execute([(string) time(), time() - 300]);
+    if ($st->rowCount() === 1) rodarLembretes();
 }
 
 function requisicao(string $metodo, string $url, ?string $corpo = null, array $headers = []): array

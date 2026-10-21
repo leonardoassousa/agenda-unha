@@ -119,7 +119,7 @@
     for (let i = 0; i <= A.diasAFrente; i++) {
       const dt = new Date(base); dt.setDate(base.getDate() + i);
       const iso = isoLocal(dt);
-      const aberto = A.diasAbertos.includes(dt.getDay());
+      const aberto = A.diasDisponiveis.includes(iso);
       const rotulo = i === 0 ? 'hoje' : i === 1 ? 'amanhã' : SEM[dt.getDay()];
       const lbl = document.createElement('label');
       lbl.className = 'dia';

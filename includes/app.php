@@ -89,7 +89,10 @@ function dataPermitida(string $data): bool
     return $d >= $hoje && $d <= $limite;
 }
 
-/** [abre, fecha] em timestamp, ou null se fechado. */
+/** Status que ocupam a agenda e contam como atendimento. */
+const STATUS_ATIVOS = "('confirmado','concluido')";
+
+/** Horário padrão do estúdio (config.php): [abre, fecha] em timestamp, ou null se fechado. */
 function expediente(string $data): ?array
 {
     $dia = (int) date('w', strtotime($data));
@@ -98,9 +101,95 @@ function expediente(string $data): ?array
     return [strtotime("$data {$h[0]}"), strtotime("$data {$h[1]}")];
 }
 
+/** Semana de trabalho de todas as colaboradoras: [profId => [diaSemana => linha]] (cache por requisição). */
+function semanas(): array
+{
+    static $cache = null;
+    if ($cache === null) {
+        $cache = [];
+        foreach (db()->query('SELECT * FROM disponibilidade_semana') as $r) {
+            $cache[(int) $r['profissional_id']][(int) $r['dia_semana']] = $r;
+        }
+    }
+    return $cache;
+}
+
+/** Dias específicos (folga ou horário diferente) num intervalo: [profId => [data => linha]]. */
+function datasEspeciais(string $de, string $ate): array
+{
+    static $cache = [];
+    $k = "$de|$ate";
+    if (!isset($cache[$k])) {
+        $cache[$k] = [];
+        $st = db()->prepare('SELECT * FROM disponibilidade_datas WHERE data BETWEEN ? AND ?');
+        $st->execute([$de, $ate]);
+        foreach ($st as $r) $cache[$k][(int) $r['profissional_id']][$r['data']] = $r;
+    }
+    return $cache[$k];
+}
+
+/**
+ * Jornada da colaboradora num dia: ['ini' => ts, 'fim' => ts, 'pausa' => [ts, ts] | null], ou null se não trabalha.
+ * Ordem: dia específico > semana dela > horário do estúdio (se ela não configurou nada).
+ */
+function jornada(int $profId, string $data): ?array
+{
+    $esp = datasEspeciais($data, $data)[$profId][$data] ?? null;
+    $semana = semanas()[$profId] ?? null;
+    $dia = (int) date('w', strtotime($data));
+
+    if ($esp) {
+        if (!(int) $esp['trabalha'] || !$esp['inicio'] || !$esp['fim']) return null;
+        $ini = strtotime("$data {$esp['inicio']}");
+        $fim = strtotime("$data {$esp['fim']}");
+        $pausa = null;
+        $linha = $semana[$dia] ?? null;  // usa a pausa da semana, se couber
+        if ($linha && $linha['pausa_inicio'] && $linha['pausa_fim']) $pausa = [strtotime("$data {$linha['pausa_inicio']}"), strtotime("$data {$linha['pausa_fim']}")];
+        elseif (!$semana && ($alm = cfg('almoco'))) $pausa = [strtotime("$data {$alm[0]}"), strtotime("$data {$alm[1]}")];
+        return $fim > $ini ? ['ini' => $ini, 'fim' => $fim, 'pausa' => $pausa] : null;
+    }
+
+    if ($semana) {
+        $linha = $semana[$dia] ?? null;
+        if (!$linha) return null;
+        $pausa = $linha['pausa_inicio'] && $linha['pausa_fim']
+            ? [strtotime("$data {$linha['pausa_inicio']}"), strtotime("$data {$linha['pausa_fim']}")] : null;
+        return ['ini' => strtotime("$data {$linha['inicio']}"), 'fim' => strtotime("$data {$linha['fim']}"), 'pausa' => $pausa];
+    }
+
+    $exp = expediente($data);
+    if (!$exp) return null;
+    $alm = cfg('almoco');
+    return ['ini' => $exp[0], 'fim' => $exp[1], 'pausa' => $alm ? [strtotime("$data {$alm[0]}"), strtotime("$data {$alm[1]}")] : null];
+}
+
+/** Minutos de trabalho da jornada (sem a pausa). */
+function minutosJornada(?array $j): int
+{
+    if (!$j) return 0;
+    $m = ($j['fim'] - $j['ini']) / 60;
+    if ($j['pausa']) $m -= max(0, (min($j['fim'], $j['pausa'][1]) - max($j['ini'], $j['pausa'][0])) / 60);
+    return (int) max(0, $m);
+}
+
+/** Datas (Y-m-d) da janela de agendamento em que pelo menos uma colaboradora trabalha. */
+function diasDisponiveis(): array
+{
+    $ids = array_map('intval', array_column(profissionaisAtivas(), 'id'));
+    $hoje = date('Y-m-d');
+    $ate = date('Y-m-d', strtotime('+' . (int) cfg('dias_a_frente') . ' days'));
+    datasEspeciais($hoje, $ate); // aquece o cache
+    $saida = [];
+    for ($t = strtotime($hoje); date('Y-m-d', $t) <= $ate; $t = strtotime('+1 day', $t)) {
+        $d = date('Y-m-d', $t);
+        foreach ($ids as $id) if (jornada($id, $d)) { $saida[] = $d; break; }
+    }
+    return $saida;
+}
+
 /**
  * Intervalos ocupados no dia, por profissional: [id => [[inicio, fim], ...]].
- * Junta agendamentos confirmados e bloqueios (bloqueio sem profissional vale pra todas).
+ * Junta agendamentos ativos e bloqueios (bloqueio sem profissional vale pra todas).
  */
 function ocupacao(string $data, array $profIds): array
 {
@@ -111,7 +200,7 @@ function ocupacao(string $data, array $profIds): array
     $fim = date('Y-m-d', strtotime("$data +1 day")) . ' 00:00:00';
 
     $st = db()->prepare("SELECT profissional_id, inicio, fim FROM agendamentos
-                          WHERE status = 'confirmado' AND inicio < ? AND fim > ?");
+                          WHERE status IN " . STATUS_ATIVOS . " AND inicio < ? AND fim > ?");
     $st->execute([$fim, $ini]);
     foreach ($st as $r) {
         if (isset($ocup[$r['profissional_id']])) {
@@ -146,35 +235,48 @@ function livre(array $intervalos, int $ini, int $fim): bool
 }
 
 /**
- * Horários disponíveis num dia pra um serviço.
+ * Horários disponíveis num dia pra um serviço, respeitando a jornada de cada colaboradora.
  * Retorna [['hora' => '09:00', 'profissionais' => [ids livres]], ...]
  */
 function horariosDisponiveis(string $data, int $duracaoMin, array $profIds): array
 {
-    if (!dataPermitida($data)) return [];
-    $exp = expediente($data);
-    if (!$exp) return [];
-    [$abre, $fecha] = $exp;
+    if (!dataPermitida($data) || !$profIds) return [];
+    $jornadas = [];
+    foreach ($profIds as $id) if ($j = jornada($id, $data)) $jornadas[$id] = $j;
+    if (!$jornadas) return [];
 
     $passo = (int) cfg('intervalo_slots_min') * 60;
     $dur = $duracaoMin * 60;
     $minimo = time() + (int) cfg('antecedencia_min') * 60;
+    $ocup = ocupacao($data, array_keys($jornadas));
 
-    $almoco = cfg('almoco');
-    $alm = $almoco ? [strtotime("$data {$almoco[0]}"), strtotime("$data {$almoco[1]}")] : null;
+    // Os horários partem de uma grade única (00:00 + passo) pra todas ficarem alinhadas
+    $base = strtotime("$data 00:00");
+    $comeco = min(array_column($jornadas, 'ini'));
+    $comeco = $base + (int) ceil(($comeco - $base) / $passo) * $passo;
+    $termino = max(array_column($jornadas, 'fim'));
 
-    $ocup = ocupacao($data, $profIds);
     $saida = [];
-    for ($t = $abre; $t + $dur <= $fecha; $t += $passo) {
+    for ($t = $comeco; $t + $dur <= $termino; $t += $passo) {
         if ($t < $minimo) continue;
-        if ($alm && sobrepoe($t, $t + $dur, $alm[0], $alm[1])) continue;
         $livres = [];
-        foreach ($profIds as $id) {
+        foreach ($jornadas as $id => $j) {
+            if ($t < $j['ini'] || $t + $dur > $j['fim']) continue;
+            if ($j['pausa'] && sobrepoe($t, $t + $dur, $j['pausa'][0], $j['pausa'][1])) continue;
             if (livre($ocup[$id], $t, $t + $dur)) $livres[] = $id;
         }
         if ($livres) $saida[] = ['hora' => date('H:i', $t), 'profissionais' => $livres];
     }
     return $saida;
+}
+
+/** Converte "R$ 15,50", "15.5", "15" em número. */
+function lerValor(string $v): float
+{
+    $v = preg_replace('/[^\d,.\-]/', '', $v);
+    if ($v === '' || $v === '-') return 0.0;
+    if (strpos($v, ',') !== false) $v = str_replace('.', '', $v);   // 1.234,56
+    return round((float) str_replace(',', '.', $v), 2);
 }
 
 /** Deixa o telefone só com DDD + número (10 ou 11 dígitos). Retorna '' se inválido. */
@@ -259,7 +361,7 @@ function agendar(array $d): array
         }
 
         // Mesma cliente com outro horário que bate com esse
-        $st = $pdo->prepare("SELECT inicio FROM agendamentos WHERE status = 'confirmado' AND cliente_telefone = ?
+        $st = $pdo->prepare("SELECT inicio FROM agendamentos WHERE status IN " . STATUS_ATIVOS . " AND cliente_telefone = ?
                               AND inicio < ? AND fim > ? LIMIT 1");
         $st->execute([$tel, $fimSql, $iniSql]);
         if ($conflito = $st->fetchColumn()) {
@@ -296,7 +398,7 @@ function agendar(array $d): array
             if (!$pedida && count($livres) > 1) {
                 $in2 = implode(',', array_fill(0, count($livres), '?'));
                 $st = $pdo->prepare("SELECT profissional_id, COUNT(*) n FROM agendamentos
-                                      WHERE status = 'confirmado' AND inicio >= ? AND inicio < ? AND profissional_id IN ($in2)
+                                      WHERE status IN " . STATUS_ATIVOS . " AND inicio >= ? AND inicio < ? AND profissional_id IN ($in2)
                                       GROUP BY profissional_id");
                 $st->execute(array_merge(["$data 00:00:00", date('Y-m-d', strtotime("$data +1 day")) . ' 00:00:00'], $livres));
                 $carga = array_fill_keys($livres, 0);
@@ -319,6 +421,12 @@ function agendar(array $d): array
     }
 
     return dadosDoAgendamento($id) + ['novo' => true];
+}
+
+/** "1 serviço" / "2 serviços" */
+function plural(int $n, string $um, string $varios): string
+{
+    return $n . ' ' . ($n === 1 ? $um : $varios);
 }
 
 function diaSemana(string $data): string
