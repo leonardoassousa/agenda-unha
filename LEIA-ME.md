@@ -1,4 +1,8 @@
-# Agenda de unhas
+# Agenda de unhas · Studio Carina Aquino
+
+**Equipe:** Carina Aquino (terça a sábado, 9h às 18h), Victoria Aquino (só sábado, 9h às 18h) e Ana Oliveira (quinta a sábado, 9h às 17h). O estúdio abre de terça a sábado, das 9h às 18h. Cada uma pode mudar os próprios dias em `/equipe`, aba Meus horários.
+
+**Procedimentos:** pé e mão R$ 55, pé R$ 35, mão R$ 35, esmaltação convencional R$ 5, spa dos pés R$ 100, massagem nos pés R$ 20, alongamento R$ 200, banho em gel R$ 150, esmaltação em gel R$ 75, manutenção natural R$ 115, manutenção encapsulada a partir de R$ 135 (o que passar disso, a colaboradora lança como "valor a mais" ao concluir). As durações estão em `servicos.duracao_min` e definem quanto tempo cada horário ocupa.
 
 > O `config.php` não vai pro Git (tem senhas). Use o `config.exemplo.php` como base.
 
@@ -13,10 +17,11 @@ Link de agendamento pra bio do Instagram. A cliente escolhe o serviço e o dia, 
 
 ## Já tinha instalado uma versão anterior?
 Substitua os arquivos (menos o seu `config.php`; copie dele só o bloco novo `aviso_whatsapp` e `max_agendamentos_por_cliente`) e rode no phpMyAdmin, nesta ordem:
-- veio da versão 4: só `sql/atualizar-v5.sql`
-- veio da versão 3: `atualizar-v4.sql` e `atualizar-v5.sql`
-- veio da versão 2: `atualizar-v3.sql`, `atualizar-v4.sql` e `atualizar-v5.sql`
-(versão 1: rode todos, do v2 ao v5, nessa ordem.) No `config.php`, copie também o bloco novo `lembrete_cliente`.
+- veio da versão 5: só `sql/atualizar-v6.sql` (coloca os dados do Studio Carina Aquino no lugar dos de exemplo)
+- veio da versão 4: `atualizar-v5.sql` e `atualizar-v6.sql`
+- veio da versão 3: `atualizar-v4.sql`, `atualizar-v5.sql` e `atualizar-v6.sql`
+- veio da versão 2: `atualizar-v3.sql` até `atualizar-v6.sql`
+(versão 1: rode todos, do v2 ao v6, nessa ordem.) No `config.php`, copie também o bloco novo `lembrete_cliente`.
 
 ## Telas da cliente
 Barra de abas embaixo (onde o dedão alcança): **Agendar**, **Meus horários** e **Conta**.

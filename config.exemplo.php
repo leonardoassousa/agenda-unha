@@ -10,7 +10,7 @@ return [
     ],
 
     // Dados do estúdio
-    'nome_estudio' => 'Studio de Unhas',
+    'nome_estudio' => 'Studio Carina Aquino',
     'instagram'    => '@studiodeunhas',
     'endereco'     => 'Rua Exemplo, 123 - Centro',
     // WhatsApp do estúdio com DDI+DDD, só números (deixe '' pra esconder o botão)
@@ -21,16 +21,16 @@ return [
     // Horário de funcionamento por dia da semana (0 = domingo ... 6 = sábado)
     // null = fechado
     'horarios' => [
-        0 => null,
-        1 => ['09:00', '19:00'],
-        2 => ['09:00', '19:00'],
-        3 => ['09:00', '19:00'],
-        4 => ['09:00', '19:00'],
-        5 => ['09:00', '19:00'],
-        6 => ['08:00', '14:00'],
+        0 => null,               // domingo: fechado
+        1 => null,               // segunda: fechado
+        2 => ['09:00', '18:00'],
+        3 => ['09:00', '18:00'],
+        4 => ['09:00', '18:00'],
+        5 => ['09:00', '18:00'],
+        6 => ['09:00', '18:00'],
     ],
     // Pausa de almoço de todas (null pra desligar)
-    'almoco' => ['12:00', '13:00'],
+    'almoco' => null,
 
     'intervalo_slots_min' => 30, // de quanto em quanto tempo aparecem os horários
     'antecedencia_min'    => 60, // não deixa marcar com menos de 1h de antecedência

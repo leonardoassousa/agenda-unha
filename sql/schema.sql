@@ -113,16 +113,29 @@ CREATE TABLE IF NOT EXISTS bloqueios (
   CONSTRAINT fk_bl_prof FOREIGN KEY (profissional_id) REFERENCES profissionais(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Dados de exemplo: troque pelos nomes, serviços e preços reais
+-- Studio Carina Aquino
 INSERT INTO profissionais (nome, cor, ordem) VALUES
-  ('Ana',     '#9B1B3A', 1),
-  ('Bruna',   '#C2577A', 2),
-  ('Camila',  '#6E3B5C', 3);
+  ('Carina Aquino',   '#9B1B3A', 1),
+  ('Victoria Aquino', '#C2577A', 2),
+  ('Ana Oliveira',    '#6E3B5C', 3);
 
+-- Dias de cada uma (0 = domingo ... 6 = sábado). Cada uma pode mudar na área da equipe.
+-- Carina: terça a sábado, 9h às 18h. Victoria: só sábado. Ana: quinta a sábado, 9h às 17h.
+INSERT INTO disponibilidade_semana (profissional_id, dia_semana, inicio, fim) VALUES
+  (1, 2, '09:00', '18:00'), (1, 3, '09:00', '18:00'), (1, 4, '09:00', '18:00'), (1, 5, '09:00', '18:00'), (1, 6, '09:00', '18:00'),
+  (2, 6, '09:00', '18:00'),
+  (3, 4, '09:00', '17:00'), (3, 5, '09:00', '17:00'), (3, 6, '09:00', '17:00');
+
+-- Procedimentos e valores. A duração (min) define quanto tempo o horário ocupa na agenda.
 INSERT INTO servicos (nome, descricao, duracao_min, preco, ordem) VALUES
-  ('Mão',                    'Cutilagem e esmaltação',            45, 25.00, 1),
-  ('Pé',                     'Cutilagem e esmaltação',            45, 30.00, 2),
-  ('Pé e mão',               'Os dois no mesmo horário',          90, 50.00, 3),
-  ('Esmaltação em gel',      'Dura até 3 semanas',                60, 60.00, 4),
-  ('Alongamento em fibra',   'Aplicação completa',               120, 130.00, 5),
-  ('Manutenção',             'Manutenção de alongamento',         90, 80.00, 6);
+  ('Pé e mão',                 'Os dois no mesmo horário',                       90,  55.00,  1),
+  ('Pé',                       'Cutilagem e esmaltação',                         45,  35.00,  2),
+  ('Mão',                      'Cutilagem e esmaltação',                         45,  35.00,  3),
+  ('Esmaltação convencional',  'Só a esmaltação',                                15,   5.00,  4),
+  ('Spa dos pés',              'Esfoliação, hidratação e cuidado completo',      60, 100.00,  5),
+  ('Massagem nos pés',         '15 minutos de massagem relaxante',               15,  20.00,  6),
+  ('Alongamento',              'Aplicação completa',                            150, 200.00,  7),
+  ('Banho em gel',             'Gel sobre a unha natural',                       90, 150.00,  8),
+  ('Esmaltação em gel',        'Dura até 3 semanas',                             60,  75.00,  9),
+  ('Manutenção natural',       'Manutenção do banho em gel',                     90, 115.00, 10),
+  ('Manutenção encapsulada',   'A partir de R$ 135, o valor final depende do caso', 120, 135.00, 11);
