@@ -18,6 +18,10 @@ return [
 
     'fuso' => 'America/Bahia',
 
+    // Formas de pagamento (aparecem pra cliente antes de confirmar). '' esconde.
+    'pagamento'     => 'Dinheiro, Pix, cartão de crédito ou débito.',
+    'pagamento_obs' => 'Não parcelamos: no crédito é só à vista.',
+
     // Horário de funcionamento por dia da semana (0 = domingo ... 6 = sábado)
     // null = fechado
     'horarios' => [

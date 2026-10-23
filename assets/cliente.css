@@ -347,3 +347,9 @@ button { cursor: pointer; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
 }
+
+/* Formas de pagamento (revisão e confirmação) */
+.pagamento { background: var(--verniz-claro); border-radius: 14px; padding: 12px 16px; font-size: .95rem; text-align: left; }
+.pagamento p { margin: 0; }
+.pagamento-titulo { font-weight: 700; color: var(--verniz-forte); font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 2px !important; }
+.pagamento-obs { color: var(--suave); margin-top: 4px !important; }

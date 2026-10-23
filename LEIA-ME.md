@@ -2,7 +2,11 @@
 
 **Equipe:** Carina Aquino (terça a sábado, 9h às 18h), Victoria Aquino (só sábado, 9h às 18h) e Ana Oliveira (quinta a sábado, 9h às 17h). O estúdio abre de terça a sábado, das 9h às 18h. Cada uma pode mudar os próprios dias em `/equipe`, aba Meus horários.
 
-**Procedimentos:** pé e mão R$ 55, pé R$ 35, mão R$ 35, esmaltação convencional R$ 5, spa dos pés R$ 100, massagem nos pés R$ 20, alongamento R$ 200, banho em gel R$ 150, esmaltação em gel R$ 75, manutenção natural R$ 115, manutenção encapsulada a partir de R$ 135 (o que passar disso, a colaboradora lança como "valor a mais" ao concluir). As durações estão em `servicos.duracao_min` e definem quanto tempo cada horário ocupa.
+**Procedimentos:** pé e mão R$ 55, pé R$ 35, mão R$ 35, esmaltação convencional R$ 5, spa dos pés R$ 100, massagem nos pés R$ 20, alongamento R$ 200, banho em gel R$ 150, esmaltação em gel R$ 75, manutenção natural R$ 115, manutenção encapsulada a partir de R$ 135 (o que passar disso, a colaboradora lança como "valor a mais" ao concluir).
+
+**Tempos (passados pela Carina):** pé e mão 2 h (com uma manicure só), pé 1 h, mão 1 h, alongamento 2 h, manutenção natural 1h30, manutenção encapsulada (com decoração) 2 h, esmaltação convencional 10 min, esmaltação em gel 1 h. Ficam em `servicos.duracao_min` e definem quanto tempo cada horário ocupa.
+
+**Pagamento:** dinheiro, Pix, cartão de crédito ou débito, sem parcelamento. Aparece pra cliente antes de confirmar e depois de marcar (`pagamento` e `pagamento_obs` no `config.php`).
 
 > O `config.php` não vai pro Git (tem senhas). Use o `config.exemplo.php` como base.
 

@@ -205,6 +205,13 @@ $waEstudio = preg_replace('/\D/', '', (string) cfg('whatsapp'));
       </ol>
       <h2 class="titulo titulo-grande" id="t-rev">Confira e confirme</h2>
       <div class="cartao revisao" id="rev-cartao"></div>
+      <?php if (cfg('pagamento')): ?>
+      <div class="pagamento">
+        <p class="pagamento-titulo">Pagamento no studio</p>
+        <p><?= e(cfg('pagamento')) ?></p>
+        <?php if (cfg('pagamento_obs')): ?><p class="pagamento-obs"><?= e(cfg('pagamento_obs')) ?></p><?php endif; ?>
+      </div>
+      <?php endif; ?>
       <div class="rev-conta">
         <p>Agendando como <strong id="rev-nome"></strong></p>
         <button type="button" class="link" id="rev-trocar">Trocar de conta</button>
@@ -227,6 +234,13 @@ $waEstudio = preg_replace('/\D/', '', (string) cfg('whatsapp'));
       <h2 class="titulo titulo-grande" id="t-ok">Horário marcado!</h2>
       <div class="cartao revisao" id="conf-cartao"></div>
       <p class="subtitulo" id="conf-nota"></p>
+      <?php if (cfg('pagamento')): ?>
+      <div class="pagamento">
+        <p class="pagamento-titulo">Pagamento no studio</p>
+        <p><?= e(cfg('pagamento')) ?></p>
+        <?php if (cfg('pagamento_obs')): ?><p class="pagamento-obs"><?= e(cfg('pagamento_obs')) ?></p><?php endif; ?>
+      </div>
+      <?php endif; ?>
       <a class="botao botao-largo" id="conf-whats" target="_blank" rel="noopener" hidden>Avisar o estúdio no WhatsApp</a>
       <button type="button" class="botao botao-largo botao-leve" data-ir="meus">Ver meus horários</button>
       <button type="button" class="link link-centro" id="conf-novo">Marcar outro horário</button>
