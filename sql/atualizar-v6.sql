@@ -19,7 +19,7 @@ UPDATE servicos SET ativo = 0;
 
 -- Procedimentos e valores. A duração (min) define quanto tempo o horário ocupa na agenda.
 INSERT INTO servicos (nome, descricao, duracao_min, preco, ordem) VALUES
-  ('Pé e mão',                 'Os dois no mesmo horário',                       120,  55.00,  1),
+  ('Pé e mão',                 'Com uma manicure só',                            120,  55.00,  1),
   ('Pé',                       'Cutilagem e esmaltação',                         60,  35.00,  2),
   ('Mão',                      'Cutilagem e esmaltação',                         60,  35.00,  3),
   ('Esmaltação convencional',  'Só a esmaltação',                                10,   5.00,  4),

@@ -23,7 +23,10 @@
   const isoLocal = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const dataDe = (iso) => { const [y, m, d] = iso.split('-').map(Number); return new Date(y, m - 1, d); };
   const servico = () => A.servicos.find((s) => s.id === estado.servico);
-  const prof = (id) => A.profissionais.find((p) => p.id === id);
+  // Serviço em dupla (ex.: pé e mão com duas manicures): um cartão só, o sistema escolhe as duas
+  const DUPLA = { id: 0, nome: 'Duas manicures', cor: '#9B1B3A', foto: null, iniciais: '2', dupla: true };
+  const prof = (id) => (id === 0 ? DUPLA : A.profissionais.find((p) => p.id === id));
+  const listaPros = () => (servico() && servico().dupla ? [DUPLA] : A.profissionais);
   const diaCurto = (iso) => { const d = dataDe(iso); return `${SEMANA[d.getDay()]}, ${d.getDate()}/${String(d.getMonth() + 1).padStart(2, '0')}`; };
   const diaLongo = (iso) => { const d = dataDe(iso); return `${SEMANA[d.getDay()]}, ${d.getDate()} de ${MESES[d.getMonth()]}`; };
 
@@ -164,15 +167,16 @@
     (j.profissionais || []).forEach((p) => { vagas[p.id] = p.horarios; });
     // Mostra a profissional que já estava aberta; senão, a primeira com vaga
     if (!estado.profVista || !(estado.profVista in vagas)) {
-      const comVaga = A.profissionais.find((p) => (vagas[p.id] || []).length);
-      estado.profVista = (comVaga || A.profissionais[0] || {}).id ?? null;
+      const comVaga = listaPros().find((p) => (vagas[p.id] || []).length);
+      estado.profVista = (comVaga || listaPros()[0] || {}).id ?? null;
     }
     renderPros();
     renderHoras();
   }
 
   function renderPros() {
-    $('pros').innerHTML = A.profissionais.map((p) => {
+    $('pros').classList.toggle('pros-dupla', !!(servico() && servico().dupla));
+    $('pros').innerHTML = listaPros().map((p) => {
       const n = vagas ? (vagas[p.id] || []).length : null;
       const txt = n === null ? '…' : n === 0 ? 'Sem vaga' : `${n} ${n === 1 ? 'vaga' : 'vagas'}`;
       const sel = p.id === estado.profVista;
@@ -192,7 +196,7 @@
   });
   $('pros').addEventListener('keydown', (ev) => {
     if (!['ArrowRight', 'ArrowLeft'].includes(ev.key)) return;
-    const ids = A.profissionais.map((p) => p.id);
+    const ids = listaPros().map((p) => p.id);
     const i = ids.indexOf(estado.profVista);
     const novo = ids[(i + (ev.key === 'ArrowRight' ? 1 : ids.length - 1)) % ids.length];
     $('pros').querySelector(`[data-pro="${novo}"]`).click();
@@ -203,12 +207,16 @@
     const lista = vagas && p ? (vagas[p.id] || []) : [];
     if (!p) { $('horas').innerHTML = '<p class="aviso">Nenhuma profissional disponível.</p>'; return; }
     if (!lista.length) {
-      $('horas').innerHTML = `<p class="aviso">${esc(p.nome)} não tem horário livre nesse dia.
-        <button type="button" class="link" data-proximo="${p.id}">Ver o próximo dia livre dela</button></p>`;
+      $('horas').innerHTML = p.dupla
+        ? `<p class="aviso">Nesse dia não tem duas manicures livres no mesmo horário.
+            <button type="button" class="link" data-proximo="0">Ver o próximo dia livre</button></p>`
+        : `<p class="aviso">${esc(p.nome)} não tem horário livre nesse dia.
+            <button type="button" class="link" data-proximo="${p.id}">Ver o próximo dia livre dela</button></p>`;
       return;
     }
+    const nota = p.dupla ? '<p class="dupla-nota">Uma manicure faz o pé e a outra a mão, ao mesmo tempo. A gente escolhe as duas que estiverem livres no horário.</p>' : '';
     const grupos = [['Manhã', (h) => h < '12:00'], ['Tarde', (h) => h >= '12:00' && h < '18:00'], ['Noite', (h) => h >= '18:00']];
-    $('horas').innerHTML = grupos.map(([nome, f]) => {
+    $('horas').innerHTML = nota + grupos.map(([nome, f]) => {
       const hs = lista.filter(f);
       if (!hs.length) return '';
       return `<div class="periodo"><p class="periodo-nome">${nome}</p><div class="grade">${hs.map((h) => {
@@ -233,7 +241,8 @@
     b.disabled = true; b.textContent = 'Procurando…';
     const { ok, j } = await api('proximo', undefined, { servico: estado.servico, profissional: b.dataset.proximo, depois: estado.data }).catch(semRede);
     if (ok && j.data) { selecionarDia(j.data); return; }
-    b.replaceWith(Object.assign(document.createElement('span'), { textContent: ok ? ' Ela não tem vaga nos próximos dias.' : ' Não deu pra procurar agora.' }));
+    const semVaga = b.dataset.proximo === '0' ? ' Não tem vaga nos próximos dias.' : ' Ela não tem vaga nos próximos dias.';
+    b.replaceWith(Object.assign(document.createElement('span'), { textContent: ok ? semVaga : ' Não deu pra procurar agora.' }));
   });
 
   function atualizarCta() {

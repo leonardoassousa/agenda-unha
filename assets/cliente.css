@@ -353,3 +353,9 @@ button { cursor: pointer; }
 .pagamento p { margin: 0; }
 .pagamento-titulo { font-weight: 700; color: var(--verniz-forte); font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 2px !important; }
 .pagamento-obs { color: var(--suave); margin-top: 4px !important; }
+
+/* Serviço em dupla (duas manicures ao mesmo tempo): um cartão só, deitado */
+.pros-dupla { grid-template-columns: 1fr; }
+.pros-dupla .pro { grid-template-columns: auto 1fr; grid-template-rows: auto auto; justify-items: start; align-items: center; column-gap: 14px; row-gap: 2px; padding: 12px 16px; text-align: left; }
+.pros-dupla .pro .foto { grid-row: span 2; }
+.dupla-nota { margin: 0 0 14px; color: var(--suave); font-size: .92rem; }

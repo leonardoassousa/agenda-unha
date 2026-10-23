@@ -6,6 +6,8 @@
 
 **Tempos (passados pela Carina):** pé e mão 2 h (com uma manicure só), pé 1 h, mão 1 h, alongamento 2 h, manutenção natural 1h30, manutenção encapsulada (com decoração) 2 h, esmaltação convencional 10 min, esmaltação em gel 1 h. Ficam em `servicos.duracao_min` e definem quanto tempo cada horário ocupa.
 
+**Pé e mão com duas manicures (1 h):** uma faz o pé e a outra a mão, ao mesmo tempo. A cliente vê um cartão só, "Duas manicures", com os horários em que pelo menos duas estão livres juntas, e o sistema escolhe as duas (quem tem menos atendimentos no dia). Viram dois atendimentos, um na agenda de cada uma, com o valor dividido meio a meio no caixa. Cancelar ou marcar falta vale pras duas; concluir e valor a mais são de cada uma. A cliente recebe um lembrete só. Na tabela `servicos`, qualquer serviço com `dupla = 1` funciona assim.
+
 **Pagamento:** dinheiro, Pix, cartão de crédito ou débito, sem parcelamento. Aparece pra cliente antes de confirmar e depois de marcar (`pagamento` e `pagamento_obs` no `config.php`).
 
 > O `config.php` não vai pro Git (tem senhas). Use o `config.exemplo.php` como base.
@@ -21,11 +23,12 @@ Link de agendamento pra bio do Instagram. A cliente escolhe o serviço e o dia, 
 
 ## Já tinha instalado uma versão anterior?
 Substitua os arquivos (menos o seu `config.php`; copie dele só o bloco novo `aviso_whatsapp` e `max_agendamentos_por_cliente`) e rode no phpMyAdmin, nesta ordem:
-- veio da versão 5: só `sql/atualizar-v6.sql` (coloca os dados do Studio Carina Aquino no lugar dos de exemplo)
-- veio da versão 4: `atualizar-v5.sql` e `atualizar-v6.sql`
-- veio da versão 3: `atualizar-v4.sql`, `atualizar-v5.sql` e `atualizar-v6.sql`
-- veio da versão 2: `atualizar-v3.sql` até `atualizar-v6.sql`
-(versão 1: rode todos, do v2 ao v6, nessa ordem.) No `config.php`, copie também o bloco novo `lembrete_cliente`.
+- veio da versão 6: só `sql/atualizar-v7.sql` (pé e mão com duas manicures)
+- veio da versão 5: `atualizar-v6.sql` (dados do Studio Carina Aquino) e `atualizar-v7.sql`
+- veio da versão 4: `atualizar-v5.sql` até `atualizar-v7.sql`
+- veio da versão 3: `atualizar-v4.sql` até `atualizar-v7.sql`
+- veio da versão 2: `atualizar-v3.sql` até `atualizar-v7.sql`
+(versão 1: rode todos, do v2 ao v7, nessa ordem.) No `config.php`, copie também o bloco novo `lembrete_cliente`.
 
 ## Telas da cliente
 Barra de abas embaixo (onde o dedão alcança): **Agendar**, **Meus horários** e **Conta**.

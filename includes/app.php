@@ -46,7 +46,7 @@ function preco(float $v): string
 
 function servicosAtivos(): array
 {
-    return db()->query('SELECT id, nome, descricao, duracao_min, preco FROM servicos WHERE ativo = 1 ORDER BY ordem, nome')->fetchAll();
+    return db()->query('SELECT id, nome, descricao, duracao_min, preco, dupla FROM servicos WHERE ativo = 1 ORDER BY ordem, nome')->fetchAll();
 }
 
 function profissionaisAtivas(): array
@@ -270,6 +270,31 @@ function horariosDisponiveis(string $data, int $duracaoMin, array $profIds): arr
     return $saida;
 }
 
+/** Serviço em dupla: só os horários em que pelo menos duas estão livres juntas. */
+function horariosDupla(string $data, int $duracaoMin, array $profIds): array
+{
+    $saida = [];
+    foreach (horariosDisponiveis($data, $duracaoMin, $profIds) as $s) {
+        if (count($s['profissionais']) >= 2) $saida[] = $s;
+    }
+    return $saida;
+}
+
+/** Horários do serviço: em dupla ou normal. */
+function horariosDoServico(array $serv, string $data, array $profIds): array
+{
+    return !empty($serv['dupla'])
+        ? horariosDupla($data, (int) $serv['duracao_min'], $profIds)
+        : horariosDisponiveis($data, (int) $serv['duracao_min'], $profIds);
+}
+
+/** "Ana", "Ana e Bia" */
+function nomesJuntos(array $nomes): string
+{
+    $ult = array_pop($nomes);
+    return $nomes ? implode(', ', $nomes) . ' e ' . $ult : (string) $ult;
+}
+
 /** Converte "R$ 15,50", "15.5", "15" em número. */
 function lerValor(string $v): float
 {
@@ -302,14 +327,27 @@ function dadosDoAgendamento(int $id): array
                          JOIN servicos s ON s.id = a.servico_id JOIN profissionais p ON p.id = a.profissional_id WHERE a.id = ?');
     $st->execute([$id]);
     $a = $st->fetch();
+    $nome = $a['profissional'];
+    $profId = (int) $a['profissional_id'];
+    $preco = (float) $a['preco'];
+    if ($a['grupo']) {
+        // Serviço em dupla: junta as duas profissionais e o valor das duas partes
+        $st = db()->prepare('SELECT p.nome, a.preco FROM agendamentos a JOIN profissionais p ON p.id = a.profissional_id WHERE a.grupo = ? ORDER BY a.id');
+        $st->execute([$a['grupo']]);
+        $partes = $st->fetchAll();
+        $nome = nomesJuntos(array_column($partes, 'nome'));
+        $preco = array_sum(array_map('floatval', array_column($partes, 'preco')));
+        $profId = 0;
+    }
     return [
         'id' => (int) $a['id'],
+        'grupo' => $a['grupo'] ? (int) $a['grupo'] : null,
         'servico' => $a['servico'],
-        'profissional' => $a['profissional'],
-        'profissional_id' => (int) $a['profissional_id'],
+        'profissional' => $nome,
+        'profissional_id' => $profId,
         'data' => substr($a['inicio'], 0, 10),
         'hora' => substr($a['inicio'], 11, 5),
-        'preco' => (float) $a['preco'],
+        'preco' => $preco,
         'cliente_nome' => $a['cliente_nome'],
         'cliente_telefone' => $a['cliente_telefone'],
         'observacao' => $a['observacao'],
@@ -339,6 +377,8 @@ function agendar(array $d): array
     $todas = array_map('intval', array_column(profissionaisAtivas(), 'id'));
     $pedida = (int) $d['profissional'];
     if ($pedida && !in_array($pedida, $todas, true)) throw new InvalidArgumentException('Profissional não encontrada.');
+    $dupla = !empty($serv['dupla']);
+    if ($dupla) $pedida = 0; // em dupla o sistema escolhe as duas
     $candidatas = $pedida ? [$pedida] : $todas;
     if (!$candidatas) throw new InvalidArgumentException('Nenhuma profissional disponível no momento.');
 
@@ -354,7 +394,7 @@ function agendar(array $d): array
     try {
         // Reenvio do mesmo pedido (toque duplo, internet caiu na hora da resposta)
         $st = $pdo->prepare("SELECT id FROM agendamentos WHERE status = 'confirmado' AND cliente_telefone = ?
-                              AND servico_id = ? AND inicio = ? AND (? = 0 OR profissional_id = ?) LIMIT 1");
+                              AND servico_id = ? AND inicio = ? AND (? = 0 OR profissional_id = ?) ORDER BY id LIMIT 1");
         $st->execute([$tel, $serv['id'], $iniSql, $pedida, $pedida]);
         if ($idExistente = $st->fetchColumn()) {
             return dadosDoAgendamento((int) $idExistente) + ['novo' => false];
@@ -372,7 +412,7 @@ function agendar(array $d): array
         // Limite de horários futuros por cliente (evita brincadeira e agenda travada)
         $max = (int) (cfg('max_agendamentos_por_cliente') ?? 3);
         if ($max > 0) {
-            $st = $pdo->prepare("SELECT COUNT(*) FROM agendamentos WHERE status = 'confirmado' AND cliente_telefone = ? AND fim > NOW()");
+            $st = $pdo->prepare("SELECT COUNT(DISTINCT COALESCE(grupo, id)) FROM agendamentos WHERE status = 'confirmado' AND cliente_telefone = ? AND fim > NOW()");
             $st->execute([$tel]);
             if ((int) $st->fetchColumn() >= $max) {
                 throw new RuntimeException("Você já tem $max horários marcados. Pra marcar mais, fale com o estúdio pelo WhatsApp.");
@@ -386,15 +426,18 @@ function agendar(array $d): array
             $pdo->prepare("SELECT id FROM profissionais WHERE id IN ($in) FOR UPDATE")->execute($candidatas);
 
             $livres = null;
-            foreach (horariosDisponiveis($data, (int) $serv['duracao_min'], $candidatas) as $s) {
+            foreach (horariosDoServico($serv, $data, $candidatas) as $s) {
                 if ($s['hora'] === $hora) { $livres = $s['profissionais']; break; }
             }
             if (!$livres) {
-                throw new RuntimeException('Esse horário não está mais disponível. Escolha outro.');
+                throw new RuntimeException($dupla
+                    ? 'Nesse horário não tem mais duas manicures livres juntas. Escolha outro.'
+                    : 'Esse horário não está mais disponível. Escolha outro.');
             }
 
             // Sem preferência: fica com quem tem menos atendimentos no dia
             $escolhida = $livres[0];
+            $ordem = $livres;
             if (!$pedida && count($livres) > 1) {
                 $in2 = implode(',', array_fill(0, count($livres), '?'));
                 $st = $pdo->prepare("SELECT profissional_id, COUNT(*) n FROM agendamentos
@@ -404,13 +447,27 @@ function agendar(array $d): array
                 $carga = array_fill_keys($livres, 0);
                 foreach ($st as $r) $carga[(int) $r['profissional_id']] = (int) $r['n'];
                 asort($carga);
-                $escolhida = (int) array_key_first($carga);
+                $ordem = array_map('intval', array_keys($carga));
+                $escolhida = $ordem[0];
             }
 
-            $pdo->prepare('INSERT INTO agendamentos (profissional_id, servico_id, cliente_id, inicio, fim, cliente_nome, cliente_telefone, observacao, preco)
-                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
-                ->execute([$escolhida, $serv['id'], $d['cliente_id'] ?? null, $iniSql, $fimSql, $d['nome'], $tel, $d['observacao'] ?: null, $serv['preco']]);
-            $id = (int) $pdo->lastInsertId();
+            $ins = $pdo->prepare('INSERT INTO agendamentos (profissional_id, servico_id, cliente_id, inicio, fim, cliente_nome, cliente_telefone, observacao, preco, lembrete)
+                                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+            if ($dupla) {
+                // Uma linha pra cada profissional; o valor fica dividido entre as duas (vai pro caixa de cada uma)
+                $metade = round((float) $serv['preco'] / 2, 2);
+                $partes = [[$ordem[0], (float) $serv['preco'] - $metade], [$ordem[1], $metade]];
+                $id = 0;
+                foreach ($partes as $i => [$pid, $valor]) {
+                    // Lembrete pra cliente sai uma vez só (pela primeira linha)
+                    $ins->execute([$pid, $serv['id'], $d['cliente_id'] ?? null, $iniSql, $fimSql, $d['nome'], $tel, $d['observacao'] ?: null, $valor, $i ? 'pulado' : 'pendente']);
+                    if (!$id) $id = (int) $pdo->lastInsertId();
+                    $pdo->prepare('UPDATE agendamentos SET grupo = ? WHERE id = ?')->execute([$id, (int) $pdo->lastInsertId()]);
+                }
+            } else {
+                $ins->execute([$escolhida, $serv['id'], $d['cliente_id'] ?? null, $iniSql, $fimSql, $d['nome'], $tel, $d['observacao'] ?: null, $serv['preco'], 'pendente']);
+                $id = (int) $pdo->lastInsertId();
+            }
             $pdo->commit();
         } catch (Throwable $ex) {
             if ($pdo->inTransaction()) $pdo->rollBack();

@@ -98,9 +98,13 @@ try {
 
         $ids = array_map('intval', array_column(profissionaisAtivas(), 'id'));
         $data = (string) ($_GET['data'] ?? '');
-        $porProf = horariosPorProfissional($data, (int) $serv['duracao_min'], $ids);
         $lista = [];
-        foreach ($porProf as $id => $horas) $lista[] = ['id' => $id, 'horarios' => $horas];
+        if ($serv['dupla']) {
+            // Duas manicures juntas: um "cartão" só (id 0) com os horários em que duas estão livres
+            $lista[] = ['id' => 0, 'horarios' => array_column(horariosDupla($data, (int) $serv['duracao_min'], $ids), 'hora')];
+        } else {
+            foreach (horariosPorProfissional($data, (int) $serv['duracao_min'], $ids) as $id => $horas) $lista[] = ['id' => $id, 'horarios' => $horas];
+        }
         // Aproveita a visita pra mandar lembretes que estão na hora (sem atrasar a resposta)
         if (lembreteAutomaticoAtivo()) responderEDepois(['data' => $data, 'profissionais' => $lista], 'lembretesSeHora');
         responder(['data' => $data, 'profissionais' => $lista]);
@@ -118,7 +122,7 @@ try {
         for ($i = 1; $i <= (int) cfg('dias_a_frente'); $i++) {
             $dia = date('Y-m-d', strtotime("$d +$i day"));
             if (!dataPermitida($dia)) break;
-            if (horariosDisponiveis($dia, (int) $serv['duracao_min'], $prof ? [$prof] : $ids)) responder(['data' => $dia]);
+            if (horariosDoServico($serv, $dia, $prof && !$serv['dupla'] ? [$prof] : $ids)) responder(['data' => $dia]);
         }
         responder(['data' => null]);
     }

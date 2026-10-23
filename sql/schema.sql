@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS servicos (
   duracao_min SMALLINT UNSIGNED NOT NULL,
   preco DECIMAL(8,2) NOT NULL DEFAULT 0,
   ativo TINYINT(1) NOT NULL DEFAULT 1,
+  dupla TINYINT(1) NOT NULL DEFAULT 0,       -- 1 = feito por duas profissionais ao mesmo tempo (ex.: uma no pé, outra na mão)
   ordem INT NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -61,7 +62,9 @@ CREATE TABLE IF NOT EXISTS agendamentos (
   concluido_em DATETIME NULL,
   aviso ENUM('pendente','enviado','falhou','desligado') NOT NULL DEFAULT 'pendente', -- aviso no WhatsApp do estúdio
   lembrete ENUM('pendente','enviado','falhou','pulado') NOT NULL DEFAULT 'pendente', -- lembrete no WhatsApp da cliente
+  grupo INT UNSIGNED NULL,                     -- serviço em dupla: as duas linhas têm o id da primeira
   criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_grupo (grupo),
   KEY idx_prof_inicio (profissional_id, inicio),
   KEY idx_inicio (inicio),
   KEY idx_tel (cliente_telefone, inicio),
@@ -128,7 +131,7 @@ INSERT INTO disponibilidade_semana (profissional_id, dia_semana, inicio, fim) VA
 
 -- Procedimentos e valores. A duração (min) define quanto tempo o horário ocupa na agenda.
 INSERT INTO servicos (nome, descricao, duracao_min, preco, ordem) VALUES
-  ('Pé e mão',                 'Os dois no mesmo horário',                       120,  55.00,  1),
+  ('Pé e mão',                 'Com uma manicure só',                            120,  55.00,  1),
   ('Pé',                       'Cutilagem e esmaltação',                         60,  35.00,  2),
   ('Mão',                      'Cutilagem e esmaltação',                         60,  35.00,  3),
   ('Esmaltação convencional',  'Só a esmaltação',                                10,   5.00,  4),
@@ -139,3 +142,7 @@ INSERT INTO servicos (nome, descricao, duracao_min, preco, ordem) VALUES
   ('Esmaltação em gel',        'Dura até 3 semanas',                             60,  75.00,  9),
   ('Manutenção natural',       'Manutenção do banho em gel',                     90, 115.00, 10),
   ('Manutenção encapsulada',   'Com decoração. A partir de R$ 135, depende do caso', 120, 135.00, 11);
+
+-- Pé e mão com duas manicures ao mesmo tempo: uma no pé, outra na mão, em 1 hora
+INSERT INTO servicos (nome, descricao, duracao_min, preco, ordem, dupla) VALUES
+  ('Pé e mão com duas manicures', 'Uma faz o pé e a outra a mão, ao mesmo tempo', 60, 55.00, 1, 1);

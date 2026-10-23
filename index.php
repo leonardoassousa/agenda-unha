@@ -15,7 +15,7 @@ $profissionais = profissionaisAtivas();
 $dadosJs = [
     'servicos' => array_map(fn($s) => [
         'id' => (int) $s['id'], 'nome' => $s['nome'], 'descricao' => (string) $s['descricao'],
-        'duracao' => (int) $s['duracao_min'], 'preco' => (float) $s['preco'],
+        'duracao' => (int) $s['duracao_min'], 'preco' => (float) $s['preco'], 'dupla' => (bool) $s['dupla'],
     ], $servicos),
     'profissionais' => array_map(fn($p) => [
         'id' => (int) $p['id'], 'nome' => $p['nome'], 'cor' => $p['cor'],

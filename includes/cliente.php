@@ -143,16 +143,19 @@ function sairCliente(): void
 /** Próximos horários da cliente logada. */
 function horariosDaCliente(int $clienteId): array
 {
-    $st = db()->prepare("SELECT a.id, a.inicio, a.preco, s.nome servico, p.nome profissional, p.id profissional_id
+    // Serviço em dupla vira uma linha só (as duas profissionais juntas e o valor inteiro)
+    $st = db()->prepare("SELECT MIN(a.id) id, MIN(a.inicio) inicio, SUM(a.preco) preco, MIN(s.nome) servico,
+               GROUP_CONCAT(p.nome ORDER BY a.id SEPARATOR '|') nomes, MIN(p.id) profissional_id, COUNT(*) partes
         FROM agendamentos a JOIN servicos s ON s.id = a.servico_id JOIN profissionais p ON p.id = a.profissional_id
-        WHERE a.cliente_id = ? AND a.status = 'confirmado' AND a.fim > NOW() ORDER BY a.inicio LIMIT 20");
+        WHERE a.cliente_id = ? AND a.status = 'confirmado' AND a.fim > NOW()
+        GROUP BY COALESCE(a.grupo, a.id) ORDER BY inicio LIMIT 20");
     $st->execute([$clienteId]);
     $limite = (int) (cfg('cancelar_ate_horas') ?? 2) * 3600;
     return array_map(fn($a) => [
         'id' => (int) $a['id'],
         'servico' => $a['servico'],
-        'profissional' => $a['profissional'],
-        'profissional_id' => (int) $a['profissional_id'],
+        'profissional' => nomesJuntos(explode('|', $a['nomes'])),
+        'profissional_id' => (int) $a['partes'] > 1 ? 0 : (int) $a['profissional_id'],
         'data_extenso' => dataExtenso(substr($a['inicio'], 0, 10)),
         'hora' => substr($a['inicio'], 11, 5),
         'preco_fmt' => preco((float) $a['preco']),
@@ -163,7 +166,7 @@ function horariosDaCliente(int $clienteId): array
 /** Cliente cancela o próprio horário. Retorna os dados pra avisar o estúdio. */
 function cancelarPelaCliente(int $clienteId, int $agId): array
 {
-    $st = db()->prepare("SELECT id, inicio FROM agendamentos WHERE id = ? AND cliente_id = ? AND status = 'confirmado'");
+    $st = db()->prepare("SELECT id, inicio, grupo FROM agendamentos WHERE id = ? AND cliente_id = ? AND status = 'confirmado'");
     $st->execute([$agId, $clienteId]);
     $a = $st->fetch();
     if (!$a) throw new RuntimeException('Esse horário não foi encontrado ou já foi cancelado.');
@@ -171,8 +174,10 @@ function cancelarPelaCliente(int $clienteId, int $agId): array
     if (strtotime($a['inicio']) - time() < $horas * 3600) {
         throw new RuntimeException("Pelo site dá pra cancelar até $horas h antes. Agora, fale com o estúdio pelo WhatsApp.");
     }
-    db()->prepare("UPDATE agendamentos SET status = 'cancelado' WHERE id = ? AND status = 'confirmado'")->execute([$agId]);
-    return dadosDoAgendamento($agId);
+    $dados = dadosDoAgendamento($agId); // antes de cancelar, pra pegar as duas profissionais se for em dupla
+    db()->prepare("UPDATE agendamentos SET status = 'cancelado' WHERE (id = ? OR grupo = ?) AND cliente_id = ? AND status = 'confirmado'")
+        ->execute([$agId, $a['grupo'] ?: $agId, $clienteId]);
+    return $dados;
 }
 
 function trocarSenhaCliente(int $clienteId, string $atual, string $nova): void

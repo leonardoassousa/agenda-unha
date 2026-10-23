@@ -36,22 +36,32 @@ function acaoAtendimento(string $acao, int $id, array $post, ?int $somenteProf =
 
         case 'faltou':
             if ($a['status'] !== 'confirmado') return 'Só dá pra marcar falta num horário ainda não concluído.';
-            db()->prepare("UPDATE agendamentos SET status = 'faltou' WHERE id = ?")->execute([$id]);
+            // Em dupla, a falta vale pras duas partes
+            db()->prepare("UPDATE agendamentos SET status = 'faltou' WHERE (id = ? OR (grupo IS NOT NULL AND grupo = ?)) AND status = 'confirmado'")->execute([$id, $a['grupo']]);
             return 'Marcado como falta.';
 
         case 'desfazer':
             if ($a['status'] !== 'faltou') return 'Nada pra desfazer.';
             // Só volta se ninguém ocupou o horário nesse meio-tempo
-            $st = db()->prepare("SELECT id FROM agendamentos WHERE profissional_id = ? AND id <> ? AND status IN " . STATUS_ATIVOS . " AND inicio < ? AND fim > ?");
-            $st->execute([$a['profissional_id'], $id, $a['fim'], $a['inicio']]);
-            if ($st->fetchColumn()) return 'Esse horário já foi ocupado por outra cliente.';
-            db()->prepare("UPDATE agendamentos SET status = 'confirmado' WHERE id = ?")->execute([$id]);
+            $partes = [$a];
+            if ($a['grupo']) {
+                $st = db()->prepare("SELECT * FROM agendamentos WHERE grupo = ? AND status = 'faltou'");
+                $st->execute([$a['grupo']]);
+                $partes = $st->fetchAll();
+            }
+            foreach ($partes as $p) {
+                $st = db()->prepare("SELECT id FROM agendamentos WHERE profissional_id = ? AND id <> ? AND status IN " . STATUS_ATIVOS . " AND inicio < ? AND fim > ?");
+                $st->execute([$p['profissional_id'], $p['id'], $p['fim'], $p['inicio']]);
+                if ($st->fetchColumn()) return 'Esse horário já foi ocupado por outra cliente.';
+            }
+            foreach ($partes as $p) db()->prepare("UPDATE agendamentos SET status = 'confirmado' WHERE id = ?")->execute([$p['id']]);
             return 'Falta desfeita.';
 
         case 'cancelar':
             if ($a['status'] !== 'confirmado') return 'Só dá pra cancelar um horário ainda não concluído.';
-            db()->prepare("UPDATE agendamentos SET status = 'cancelado' WHERE id = ?")->execute([$id]);
-            return 'Horário cancelado. Ele ficou livre no link.';
+            // Em dupla, cancela as duas partes (a cliente não vem pra nenhuma)
+            db()->prepare("UPDATE agendamentos SET status = 'cancelado' WHERE (id = ? OR (grupo IS NOT NULL AND grupo = ?)) AND status = 'confirmado'")->execute([$id, $a['grupo']]);
+            return $a['grupo'] ? 'Horário cancelado pras duas manicures. Ele ficou livre no link.' : 'Horário cancelado. Ele ficou livre no link.';
     }
     return 'Ação desconhecida.';
 }
@@ -99,6 +109,7 @@ function cartaoAtendimento(array $a, string $cor, array $ocultos, bool $mostrarP
       <div class="item-corpo">
         <p class="item-cliente"><?= e($a['cliente_nome']) ?> <?= $selo ?></p>
         <p><?= e($a['servico']) ?><?= $mostrarProf ? ', com ' . e($a['profissional']) : '' ?></p>
+        <?php if (!empty($a['parceira'])): ?><p class="item-dupla">Em dupla com <?= e($a['parceira']) ?>. O valor fica dividido entre as duas.</p><?php endif; ?>
         <p class="item-valor">
           <?php if ($extra > 0): ?>
             <?= preco((float) $a['preco']) ?> + <?= preco($extra) ?> a mais = <strong><?= preco($total) ?></strong>
@@ -162,7 +173,10 @@ function cartaoAtendimento(array $a, string $cor, array $ocultos, bool $mostrarP
 function buscarAtendimentos(string $de, string $ate, int $profId = 0, array $status = ['confirmado', 'concluido', 'faltou']): array
 {
     $in = implode(',', array_fill(0, count($status), '?'));
-    $sql = "SELECT a.*, s.nome servico, p.nome profissional, p.cor FROM agendamentos a
+    $sql = "SELECT a.*, s.nome servico, p.nome profissional, p.cor,
+                   (SELECT GROUP_CONCAT(p2.nome SEPARATOR ' e ') FROM agendamentos a2 JOIN profissionais p2 ON p2.id = a2.profissional_id
+                     WHERE a.grupo IS NOT NULL AND a2.grupo = a.grupo AND a2.id <> a.id) parceira
+            FROM agendamentos a
             JOIN servicos s ON s.id = a.servico_id JOIN profissionais p ON p.id = a.profissional_id
             WHERE a.inicio >= ? AND a.inicio < ? AND a.status IN ($in)" . ($profId ? ' AND a.profissional_id = ?' : '') . '
             ORDER BY a.inicio, a.profissional_id';

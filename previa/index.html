@@ -366,6 +366,12 @@ button { cursor: pointer; }
 .pagamento-titulo { font-weight: 700; color: var(--verniz-forte); font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 2px !important; }
 .pagamento-obs { color: var(--suave); margin-top: 4px !important; }
 
+/* Serviço em dupla (duas manicures ao mesmo tempo): um cartão só, deitado */
+.pros-dupla { grid-template-columns: 1fr; }
+.pros-dupla .pro { grid-template-columns: auto 1fr; grid-template-rows: auto auto; justify-items: start; align-items: center; column-gap: 14px; row-gap: 2px; padding: 12px 16px; text-align: left; }
+.pros-dupla .pro .foto { grid-row: span 2; }
+.dupla-nota { margin: 0 0 14px; color: var(--suave); font-size: .92rem; }
+
 #painel .admin { padding-bottom: 60px; }
 #painel .admin h1 { font: 400 2.4rem/1 "Gloock", Georgia, serif; margin: 0; }
 #painel .admin h2 { font: 600 1.15rem/1.3 "Figtree", sans-serif; margin: 0 0 4px; }
@@ -415,6 +421,7 @@ button { cursor: pointer; }
 #painel .item-corpo p { margin: 0; }
 #painel .item-cliente { font-weight: 700; }
 #painel .item-obs { color: var(--cinza); font-size: .9rem; font-style: italic; }
+#painel .item-dupla { color: var(--cinza); font-size: .9rem; }
 #painel .item-acoes { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center; margin-top: 6px; }
 #painel .item-acoes a, #painel .nowrap { white-space: nowrap; }
 #painel .item-acoes a { color: var(--verniz); font-weight: 600; }
@@ -726,10 +733,22 @@ button { cursor: pointer; }
             <button type="button" class="servico" data-servico="1">
               <span class="servico-texto">
                 <span class="servico-nome">Pé e mão</span>
-                <span class="servico-desc">Os dois no mesmo horário</span>              </span>
+                <span class="servico-desc">Com uma manicure só</span>              </span>
               <span class="servico-valor">
                 <span class="servico-preco">R$ 55,00</span>
                 <span class="servico-dur">120 min</span>
+              </span>
+              <svg class="seta" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+          </li>
+                  <li>
+            <button type="button" class="servico" data-servico="12">
+              <span class="servico-texto">
+                <span class="servico-nome">Pé e mão com duas manicures</span>
+                <span class="servico-desc">Uma faz o pé e a outra a mão, ao mesmo tempo</span>              </span>
+              <span class="servico-valor">
+                <span class="servico-preco">R$ 55,00</span>
+                <span class="servico-dur">60 min</span>
               </span>
               <svg class="seta" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
             </button>
@@ -1051,7 +1070,7 @@ button { cursor: pointer; }
 </nav>
 </div>
 <div id="painel" hidden></div>
-<script>window.AGENDA = {"servicos": [{"id": 1, "nome": "Pé e mão", "descricao": "Os dois no mesmo horário", "duracao": 120, "preco": 55}, {"id": 2, "nome": "Pé", "descricao": "Cutilagem e esmaltação", "duracao": 60, "preco": 35}, {"id": 3, "nome": "Mão", "descricao": "Cutilagem e esmaltação", "duracao": 60, "preco": 35}, {"id": 4, "nome": "Esmaltação convencional", "descricao": "Só a esmaltação", "duracao": 10, "preco": 5}, {"id": 5, "nome": "Spa dos pés", "descricao": "Esfoliação, hidratação e cuidado completo", "duracao": 60, "preco": 100}, {"id": 6, "nome": "Massagem nos pés", "descricao": "15 minutos de massagem relaxante", "duracao": 15, "preco": 20}, {"id": 7, "nome": "Alongamento", "descricao": "Aplicação completa", "duracao": 120, "preco": 200}, {"id": 8, "nome": "Banho em gel", "descricao": "Gel sobre a unha natural", "duracao": 90, "preco": 150}, {"id": 9, "nome": "Esmaltação em gel", "descricao": "Dura até 3 semanas", "duracao": 60, "preco": 75}, {"id": 10, "nome": "Manutenção natural", "descricao": "Manutenção do banho em gel", "duracao": 90, "preco": 115}, {"id": 11, "nome": "Manutenção encapsulada", "descricao": "Com decoração. A partir de R$ 135, depende do caso", "duracao": 120, "preco": 135}], "profissionais": [{"id": 1, "nome": "Carina Aquino", "cor": "#9B1B3A", "foto": null, "iniciais": "CA"}, {"id": 2, "nome": "Victoria Aquino", "cor": "#C2577A", "foto": null, "iniciais": "VA"}, {"id": 3, "nome": "Ana Oliveira", "cor": "#6E3B5C", "foto": null, "iniciais": "AO"}], "diasDisponiveis": ["2026-10-23", "2026-10-24", "2026-10-27", "2026-10-28", "2026-10-29", "2026-10-30", "2026-10-31", "2026-11-03", "2026-11-04", "2026-11-05", "2026-11-06", "2026-11-07", "2026-11-10", "2026-11-11", "2026-11-12", "2026-11-13", "2026-11-14", "2026-11-17", "2026-11-18", "2026-11-19", "2026-11-20", "2026-11-21"], "diasAFrente": 30, "hoje": "2026-10-23", "whatsapp": "5573999999999", "estudio": "Studio Carina Aquino", "cliente": null, "avisoAutomatico": true, "cancelarAteHoras": 2};</script>
+<script>window.AGENDA = {"servicos": [{"id": 1, "nome": "Pé e mão", "descricao": "Com uma manicure só", "duracao": 120, "preco": 55, "dupla": false}, {"id": 12, "nome": "Pé e mão com duas manicures", "descricao": "Uma faz o pé e a outra a mão, ao mesmo tempo", "duracao": 60, "preco": 55, "dupla": true}, {"id": 2, "nome": "Pé", "descricao": "Cutilagem e esmaltação", "duracao": 60, "preco": 35, "dupla": false}, {"id": 3, "nome": "Mão", "descricao": "Cutilagem e esmaltação", "duracao": 60, "preco": 35, "dupla": false}, {"id": 4, "nome": "Esmaltação convencional", "descricao": "Só a esmaltação", "duracao": 10, "preco": 5, "dupla": false}, {"id": 5, "nome": "Spa dos pés", "descricao": "Esfoliação, hidratação e cuidado completo", "duracao": 60, "preco": 100, "dupla": false}, {"id": 6, "nome": "Massagem nos pés", "descricao": "15 minutos de massagem relaxante", "duracao": 15, "preco": 20, "dupla": false}, {"id": 7, "nome": "Alongamento", "descricao": "Aplicação completa", "duracao": 120, "preco": 200, "dupla": false}, {"id": 8, "nome": "Banho em gel", "descricao": "Gel sobre a unha natural", "duracao": 90, "preco": 150, "dupla": false}, {"id": 9, "nome": "Esmaltação em gel", "descricao": "Dura até 3 semanas", "duracao": 60, "preco": 75, "dupla": false}, {"id": 10, "nome": "Manutenção natural", "descricao": "Manutenção do banho em gel", "duracao": 90, "preco": 115, "dupla": false}, {"id": 11, "nome": "Manutenção encapsulada", "descricao": "Com decoração. A partir de R$ 135, depende do caso", "duracao": 120, "preco": 135, "dupla": false}], "profissionais": [{"id": 1, "nome": "Carina Aquino", "cor": "#9B1B3A", "foto": null, "iniciais": "CA"}, {"id": 2, "nome": "Victoria Aquino", "cor": "#C2577A", "foto": null, "iniciais": "VA"}, {"id": 3, "nome": "Ana Oliveira", "cor": "#6E3B5C", "foto": null, "iniciais": "AO"}], "diasDisponiveis": ["2026-10-23", "2026-10-24", "2026-10-27", "2026-10-28", "2026-10-29", "2026-10-30", "2026-10-31", "2026-11-03", "2026-11-04", "2026-11-05", "2026-11-06", "2026-11-07", "2026-11-10", "2026-11-11", "2026-11-12", "2026-11-13", "2026-11-14", "2026-11-17", "2026-11-18", "2026-11-19", "2026-11-20", "2026-11-21"], "diasAFrente": 30, "hoje": "2026-10-23", "whatsapp": "5573999999999", "estudio": "Studio Carina Aquino", "cliente": null, "avisoAutomatico": true, "cancelarAteHoras": 2};</script>
 <script>
 (function () {
   const A = window.AGENDA;
@@ -1089,7 +1108,7 @@ button { cursor: pointer; }
       let t = min(j[0]) + (rnd() < 0.5 ? 0 : 30);
       while (t < min(j[1])) {
         if (rnd() < prob) {
-          const sid = A.servicos[Math.floor(rnd() * A.servicos.length)].id; const dur = SERV[sid].duracao;
+          const simples = A.servicos.filter((x) => !x.dupla); const sid = simples[Math.floor(rnd() * simples.length)].id; const dur = SERV[sid].duracao;
           if (t + dur > min(j[1])) { t += 30; continue; }
           const passado = dias < 0 || (dias === 0 && t + dur <= agoraMin);
           ag.push({ id: seq++, prof: p.id, serv: sid, data: dia, ini: t, fim: t + dur, nome: nomes[Math.floor(rnd() * nomes.length)],
@@ -1121,9 +1140,9 @@ button { cursor: pointer; }
   const soDig = (t) => String(t || '').replace(/\D/g, '').replace(/^0+/, '').replace(/^55(?=\d{10,11}$)/, '');
   const telFmt = (t) => t.length === 11 ? `(${t.slice(0, 2)}) ${t.slice(2, 7)}-${t.slice(7)}` : `(${t.slice(0, 2)}) ${t.slice(2, 6)}-${t.slice(6)}`;
   const pub = (c) => c && { nome: c.nome, primeiro_nome: c.nome.split(' ')[0], telefone: telFmt(c.tel), email: c.email };
-  const meus = () => !logada ? [] : ag.filter((a) => a.cli === logada.id && a.status === 'confirmado')
+  const meus = () => !logada ? [] : ag.filter((a) => a.cli === logada.id && a.status === 'confirmado' && (!a.grupo || a.id === a.grupo))
     .sort((x, y) => x.data.localeCompare(y.data) || x.ini - y.ini)
-    .map((a) => ({ id: a.id, servico: SERV[a.serv].nome, profissional: PROF[a.prof].nome, profissional_id: a.prof,
+    .map((a) => ({ id: a.id, servico: SERV[a.serv].nome, profissional: a.grupo ? ag.filter((x) => x.grupo === a.grupo).map((x) => PROF[x.prof].nome).join(' e ') : PROF[a.prof].nome, profissional_id: a.grupo ? 0 : a.prof,
       data_extenso: extenso(a.data), hora: hhmm(a.ini), preco_fmt: brl(SERV[a.serv].preco), pode_cancelar: true }));
 
   window.fetch = async (url, opt = {}) => {
@@ -1135,12 +1154,13 @@ button { cursor: pointer; }
     if (acao === 'horarios') {
       const s = SERV[+u.searchParams.get('servico')]; const data = u.searchParams.get('data');
       const sl = slots(data, s.duracao, todas);
+      if (s.dupla) return resp({ data, profissionais: [{ id: 0, horarios: sl.filter((x) => x.livres.length >= 2).map((x) => x.hora) }] });
       return resp({ data, profissionais: todas.map((id) => ({ id, horarios: sl.filter((x) => x.livres.includes(id)).map((x) => x.hora) })) });
     }
     if (acao === 'proximo') {
       const s = SERV[+u.searchParams.get('servico')]; const p = +u.searchParams.get('profissional');
       const d0 = new Date(u.searchParams.get('depois') + 'T00:00');
-      for (let i = 1; i <= 30; i++) { const d = new Date(d0); d.setDate(d0.getDate() + i); if (slots(iso(d), s.duracao, p ? [p] : todas).length) return resp({ data: iso(d) }); }
+      for (let i = 1; i <= 30; i++) { const d = new Date(d0); d.setDate(d0.getDate() + i); if (slots(iso(d), s.duracao, p && !s.dupla ? [p] : todas).filter((x) => !s.dupla || x.livres.length >= 2).length) return resp({ data: iso(d) }); }
       return resp({ data: null });
     }
     if (acao === 'eu') return resp({ cliente: pub(logada), horarios: meus() });
@@ -1167,11 +1187,19 @@ button { cursor: pointer; }
     if (acao === 'cancelar') {
       const a = ag.find((a) => a.id === corpo.id && logada && a.cli === logada.id && a.status === 'confirmado');
       if (!a) return resp({ erro: 'Esse horário não foi encontrado ou já foi cancelado.' }, 409);
-      a.status = 'cancelado'; return resp({ ok: true, horarios: meus() });
+      ag.forEach((x) => { if (x === a || (a.grupo && x.grupo === a.grupo)) x.status = 'cancelado'; }); return resp({ ok: true, horarios: meus() });
     }
     if (acao === 'agendar') {
       if (!logada) return resp({ erro: 'Entre na sua conta ou crie uma pra confirmar o horário.', precisa_login: true }, 401);
       const s = SERV[corpo.servico];
+      if (s.dupla) {
+        const sd = slots(corpo.data, s.duracao, todas).find((x) => x.hora === corpo.hora && x.livres.length >= 2);
+        if (!sd) return resp({ erro: 'Nesse horário não tem mais duas manicures livres juntas. Escolha outro.' }, 409);
+        const g = seq + 1;
+        sd.livres.slice(0, 2).forEach((pid) => ag.push({ id: ++seq, grupo: g, cli: logada.id, prof: pid, serv: s.id, data: corpo.data, ini: min(corpo.hora), fim: min(corpo.hora) + s.duracao, nome: logada.nome, status: 'confirmado', novo: true }));
+        return resp({ ok: true, agendamento: { servico: s.nome, profissional: sd.livres.slice(0, 2).map((i) => PROF[i].nome).join(' e '), profissional_id: 0,
+          data: corpo.data, hora: corpo.hora, data_extenso: extenso(corpo.data), preco_fmt: brl(s.preco) } });
+      }
       const sl = slots(corpo.data, s.duracao, [corpo.profissional]).find((x) => x.hora === corpo.hora);
       if (!sl) return resp({ erro: 'Esse horário não está mais disponível. Escolha outro.' }, 409);
       ag.push({ id: ++seq, cli: logada.id, prof: corpo.profissional, serv: s.id, data: corpo.data, ini: min(corpo.hora), fim: min(corpo.hora) + s.duracao, nome: logada.nome, status: 'confirmado', novo: true });
@@ -1207,7 +1235,10 @@ button { cursor: pointer; }
   const isoLocal = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const dataDe = (iso) => { const [y, m, d] = iso.split('-').map(Number); return new Date(y, m - 1, d); };
   const servico = () => A.servicos.find((s) => s.id === estado.servico);
-  const prof = (id) => A.profissionais.find((p) => p.id === id);
+  // Serviço em dupla (ex.: pé e mão com duas manicures): um cartão só, o sistema escolhe as duas
+  const DUPLA = { id: 0, nome: 'Duas manicures', cor: '#9B1B3A', foto: null, iniciais: '2', dupla: true };
+  const prof = (id) => (id === 0 ? DUPLA : A.profissionais.find((p) => p.id === id));
+  const listaPros = () => (servico() && servico().dupla ? [DUPLA] : A.profissionais);
   const diaCurto = (iso) => { const d = dataDe(iso); return `${SEMANA[d.getDay()]}, ${d.getDate()}/${String(d.getMonth() + 1).padStart(2, '0')}`; };
   const diaLongo = (iso) => { const d = dataDe(iso); return `${SEMANA[d.getDay()]}, ${d.getDate()} de ${MESES[d.getMonth()]}`; };
 
@@ -1348,15 +1379,16 @@ button { cursor: pointer; }
     (j.profissionais || []).forEach((p) => { vagas[p.id] = p.horarios; });
     // Mostra a profissional que já estava aberta; senão, a primeira com vaga
     if (!estado.profVista || !(estado.profVista in vagas)) {
-      const comVaga = A.profissionais.find((p) => (vagas[p.id] || []).length);
-      estado.profVista = (comVaga || A.profissionais[0] || {}).id ?? null;
+      const comVaga = listaPros().find((p) => (vagas[p.id] || []).length);
+      estado.profVista = (comVaga || listaPros()[0] || {}).id ?? null;
     }
     renderPros();
     renderHoras();
   }
 
   function renderPros() {
-    $('pros').innerHTML = A.profissionais.map((p) => {
+    $('pros').classList.toggle('pros-dupla', !!(servico() && servico().dupla));
+    $('pros').innerHTML = listaPros().map((p) => {
       const n = vagas ? (vagas[p.id] || []).length : null;
       const txt = n === null ? '…' : n === 0 ? 'Sem vaga' : `${n} ${n === 1 ? 'vaga' : 'vagas'}`;
       const sel = p.id === estado.profVista;
@@ -1376,7 +1408,7 @@ button { cursor: pointer; }
   });
   $('pros').addEventListener('keydown', (ev) => {
     if (!['ArrowRight', 'ArrowLeft'].includes(ev.key)) return;
-    const ids = A.profissionais.map((p) => p.id);
+    const ids = listaPros().map((p) => p.id);
     const i = ids.indexOf(estado.profVista);
     const novo = ids[(i + (ev.key === 'ArrowRight' ? 1 : ids.length - 1)) % ids.length];
     $('pros').querySelector(`[data-pro="${novo}"]`).click();
@@ -1387,12 +1419,16 @@ button { cursor: pointer; }
     const lista = vagas && p ? (vagas[p.id] || []) : [];
     if (!p) { $('horas').innerHTML = '<p class="aviso">Nenhuma profissional disponível.</p>'; return; }
     if (!lista.length) {
-      $('horas').innerHTML = `<p class="aviso">${esc(p.nome)} não tem horário livre nesse dia.
-        <button type="button" class="link" data-proximo="${p.id}">Ver o próximo dia livre dela</button></p>`;
+      $('horas').innerHTML = p.dupla
+        ? `<p class="aviso">Nesse dia não tem duas manicures livres no mesmo horário.
+            <button type="button" class="link" data-proximo="0">Ver o próximo dia livre</button></p>`
+        : `<p class="aviso">${esc(p.nome)} não tem horário livre nesse dia.
+            <button type="button" class="link" data-proximo="${p.id}">Ver o próximo dia livre dela</button></p>`;
       return;
     }
+    const nota = p.dupla ? '<p class="dupla-nota">Uma manicure faz o pé e a outra a mão, ao mesmo tempo. A gente escolhe as duas que estiverem livres no horário.</p>' : '';
     const grupos = [['Manhã', (h) => h < '12:00'], ['Tarde', (h) => h >= '12:00' && h < '18:00'], ['Noite', (h) => h >= '18:00']];
-    $('horas').innerHTML = grupos.map(([nome, f]) => {
+    $('horas').innerHTML = nota + grupos.map(([nome, f]) => {
       const hs = lista.filter(f);
       if (!hs.length) return '';
       return `<div class="periodo"><p class="periodo-nome">${nome}</p><div class="grade">${hs.map((h) => {
@@ -1417,7 +1453,8 @@ button { cursor: pointer; }
     b.disabled = true; b.textContent = 'Procurando…';
     const { ok, j } = await api('proximo', undefined, { servico: estado.servico, profissional: b.dataset.proximo, depois: estado.data }).catch(semRede);
     if (ok && j.data) { selecionarDia(j.data); return; }
-    b.replaceWith(Object.assign(document.createElement('span'), { textContent: ok ? ' Ela não tem vaga nos próximos dias.' : ' Não deu pra procurar agora.' }));
+    const semVaga = b.dataset.proximo === '0' ? ' Não tem vaga nos próximos dias.' : ' Ela não tem vaga nos próximos dias.';
+    b.replaceWith(Object.assign(document.createElement('span'), { textContent: ok ? semVaga : ' Não deu pra procurar agora.' }));
   });
 
   function atualizarCta() {

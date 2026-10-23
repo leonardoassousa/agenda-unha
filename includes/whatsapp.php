@@ -111,7 +111,10 @@ function rodarLembretes(): int
                    AND criado_em > inicio - INTERVAL ? HOUR AND inicio <= NOW() + INTERVAL ? HOUR")->execute([$horas, $horas]);
     db()->exec("UPDATE agendamentos SET lembrete = 'pulado' WHERE lembrete = 'pendente' AND (inicio <= NOW() OR status <> 'confirmado')");
 
-    $st = db()->prepare("SELECT a.*, s.nome servico, p.nome profissional FROM agendamentos a
+    $st = db()->prepare("SELECT a.*, s.nome servico,
+            COALESCE((SELECT GROUP_CONCAT(p2.nome ORDER BY a2.id SEPARATOR ' e ') FROM agendamentos a2
+                      JOIN profissionais p2 ON p2.id = a2.profissional_id WHERE a.grupo IS NOT NULL AND a2.grupo = a.grupo), p.nome) profissional
+        FROM agendamentos a
         JOIN servicos s ON s.id = a.servico_id JOIN profissionais p ON p.id = a.profissional_id
         WHERE a.lembrete = 'pendente' AND a.status = 'confirmado' AND a.inicio > NOW() AND a.inicio <= NOW() + INTERVAL ? HOUR
         ORDER BY a.inicio LIMIT 30");
@@ -169,7 +172,7 @@ function avisarEstudio(array $ag): void
     $status = $erro === '' ? 'enviado' : 'falhou';
     if (($c = cfg('aviso_whatsapp')) && ($c['modo'] ?? 'desligado') === 'desligado') $status = 'desligado';
     try {
-        db()->prepare('UPDATE agendamentos SET aviso = ? WHERE id = ?')->execute([$status, $ag['id']]);
+        db()->prepare('UPDATE agendamentos SET aviso = ? WHERE id = ? OR grupo = ?')->execute([$status, $ag['id'], $ag['grupo'] ?? $ag['id']]);
     } catch (Throwable $e) { /* coluna antiga: ignora */ }
     if ($erro !== '' && $status === 'falhou') error_log('[agenda] aviso WhatsApp falhou: ' . $erro);
 }

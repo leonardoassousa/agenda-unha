@@ -53,6 +53,7 @@
 .item-corpo p { margin: 0; }
 .item-cliente { font-weight: 700; }
 .item-obs { color: var(--cinza); font-size: .9rem; font-style: italic; }
+.item-dupla { color: var(--cinza); font-size: .9rem; }
 .item-acoes { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center; margin-top: 6px; }
 .item-acoes a, .nowrap { white-space: nowrap; }
 .item-acoes a { color: var(--verniz); font-weight: 600; }
