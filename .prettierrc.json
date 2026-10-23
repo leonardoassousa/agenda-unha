@@ -1,0 +1,9 @@
+{
+  "printWidth": 120,
+  "tabWidth": 2,
+  "singleQuote": true,
+  "trailingComma": "all",
+  "overrides": [
+    { "files": "*.php", "options": { "tabWidth": 4, "phpVersion": "8.0", "trailingCommaPHP": true, "braceStyle": "per-cs" } }
+  ]
+}

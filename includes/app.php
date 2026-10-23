@@ -19,16 +19,11 @@ function db(): PDO
     static $pdo = null;
     if ($pdo === null) {
         $d = cfg('db');
-        $pdo = new PDO(
-            "mysql:host={$d['host']};dbname={$d['nome']};charset=utf8mb4",
-            $d['usuario'],
-            $d['senha'],
-            [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_EMULATE_PREPARES => false,
-            ]
-        );
+        $pdo = new PDO("mysql:host={$d['host']};dbname={$d['nome']};charset=utf8mb4", $d['usuario'], $d['senha'], [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
+        ]);
         $pdo->exec("SET time_zone = '" . date('P') . "'");
     }
     return $pdo;
@@ -46,12 +41,18 @@ function preco(float $v): string
 
 function servicosAtivos(): array
 {
-    return db()->query('SELECT id, nome, descricao, duracao_min, preco, dupla FROM servicos WHERE ativo = 1 ORDER BY ordem, nome')->fetchAll();
+    return db()
+        ->query(
+            'SELECT id, nome, descricao, duracao_min, preco, dupla FROM servicos WHERE ativo = 1 ORDER BY ordem, nome',
+        )
+        ->fetchAll();
 }
 
 function profissionaisAtivas(): array
 {
-    return db()->query('SELECT id, nome, cor, foto FROM profissionais WHERE ativo = 1 ORDER BY ordem, nome')->fetchAll();
+    return db()
+        ->query('SELECT id, nome, cor, foto FROM profissionais WHERE ativo = 1 ORDER BY ordem, nome')
+        ->fetchAll();
 }
 
 /** Horários livres de cada profissional: [id => ['09:00', ...]] */
@@ -59,7 +60,9 @@ function horariosPorProfissional(string $data, int $duracaoMin, array $profIds):
 {
     $saida = array_fill_keys($profIds, []);
     foreach (horariosDisponiveis($data, $duracaoMin, $profIds) as $slot) {
-        foreach ($slot['profissionais'] as $id) $saida[$id][] = $slot['hora'];
+        foreach ($slot['profissionais'] as $id) {
+            $saida[$id][] = $slot['hora'];
+        }
     }
     return $saida;
 }
@@ -68,7 +71,9 @@ function iniciais(string $nome): string
 {
     $partes = preg_split('/\s+/', trim($nome));
     $ini = mb_substr($partes[0], 0, 1);
-    if (count($partes) > 1) $ini .= mb_substr(end($partes), 0, 1);
+    if (count($partes) > 1) {
+        $ini .= mb_substr(end($partes), 0, 1);
+    }
     return mb_strtoupper($ini);
 }
 
@@ -83,7 +88,9 @@ function servicoPorId(int $id): ?array
 function dataPermitida(string $data): bool
 {
     $d = DateTime::createFromFormat('!Y-m-d', $data);
-    if (!$d || $d->format('Y-m-d') !== $data) return false;
+    if (!$d || $d->format('Y-m-d') !== $data) {
+        return false;
+    }
     $hoje = new DateTime('today');
     $limite = (clone $hoje)->modify('+' . (int) cfg('dias_a_frente') . ' days');
     return $d >= $hoje && $d <= $limite;
@@ -97,7 +104,9 @@ function expediente(string $data): ?array
 {
     $dia = (int) date('w', strtotime($data));
     $h = cfg('horarios')[$dia] ?? null;
-    if (!$h) return null;
+    if (!$h) {
+        return null;
+    }
     return [strtotime("$data {$h[0]}"), strtotime("$data {$h[1]}")];
 }
 
@@ -123,7 +132,9 @@ function datasEspeciais(string $de, string $ate): array
         $cache[$k] = [];
         $st = db()->prepare('SELECT * FROM disponibilidade_datas WHERE data BETWEEN ? AND ?');
         $st->execute([$de, $ate]);
-        foreach ($st as $r) $cache[$k][(int) $r['profissional_id']][$r['data']] = $r;
+        foreach ($st as $r) {
+            $cache[$k][(int) $r['profissional_id']][$r['data']] = $r;
+        }
     }
     return $cache[$k];
 }
@@ -139,36 +150,59 @@ function jornada(int $profId, string $data): ?array
     $dia = (int) date('w', strtotime($data));
 
     if ($esp) {
-        if (!(int) $esp['trabalha'] || !$esp['inicio'] || !$esp['fim']) return null;
+        if (!(int) $esp['trabalha'] || !$esp['inicio'] || !$esp['fim']) {
+            return null;
+        }
         $ini = strtotime("$data {$esp['inicio']}");
         $fim = strtotime("$data {$esp['fim']}");
         $pausa = null;
-        $linha = $semana[$dia] ?? null;  // usa a pausa da semana, se couber
-        if ($linha && $linha['pausa_inicio'] && $linha['pausa_fim']) $pausa = [strtotime("$data {$linha['pausa_inicio']}"), strtotime("$data {$linha['pausa_fim']}")];
-        elseif (!$semana && ($alm = cfg('almoco'))) $pausa = [strtotime("$data {$alm[0]}"), strtotime("$data {$alm[1]}")];
+        $linha = $semana[$dia] ?? null; // usa a pausa da semana, se couber
+        if ($linha && $linha['pausa_inicio'] && $linha['pausa_fim']) {
+            $pausa = [strtotime("$data {$linha['pausa_inicio']}"), strtotime("$data {$linha['pausa_fim']}")];
+        } elseif (!$semana && ($alm = cfg('almoco'))) {
+            $pausa = [strtotime("$data {$alm[0]}"), strtotime("$data {$alm[1]}")];
+        }
         return $fim > $ini ? ['ini' => $ini, 'fim' => $fim, 'pausa' => $pausa] : null;
     }
 
     if ($semana) {
         $linha = $semana[$dia] ?? null;
-        if (!$linha) return null;
-        $pausa = $linha['pausa_inicio'] && $linha['pausa_fim']
-            ? [strtotime("$data {$linha['pausa_inicio']}"), strtotime("$data {$linha['pausa_fim']}")] : null;
-        return ['ini' => strtotime("$data {$linha['inicio']}"), 'fim' => strtotime("$data {$linha['fim']}"), 'pausa' => $pausa];
+        if (!$linha) {
+            return null;
+        }
+        $pausa =
+            $linha['pausa_inicio'] && $linha['pausa_fim']
+                ? [strtotime("$data {$linha['pausa_inicio']}"), strtotime("$data {$linha['pausa_fim']}")]
+                : null;
+        return [
+            'ini' => strtotime("$data {$linha['inicio']}"),
+            'fim' => strtotime("$data {$linha['fim']}"),
+            'pausa' => $pausa,
+        ];
     }
 
     $exp = expediente($data);
-    if (!$exp) return null;
+    if (!$exp) {
+        return null;
+    }
     $alm = cfg('almoco');
-    return ['ini' => $exp[0], 'fim' => $exp[1], 'pausa' => $alm ? [strtotime("$data {$alm[0]}"), strtotime("$data {$alm[1]}")] : null];
+    return [
+        'ini' => $exp[0],
+        'fim' => $exp[1],
+        'pausa' => $alm ? [strtotime("$data {$alm[0]}"), strtotime("$data {$alm[1]}")] : null,
+    ];
 }
 
 /** Minutos de trabalho da jornada (sem a pausa). */
 function minutosJornada(?array $j): int
 {
-    if (!$j) return 0;
+    if (!$j) {
+        return 0;
+    }
     $m = ($j['fim'] - $j['ini']) / 60;
-    if ($j['pausa']) $m -= max(0, (min($j['fim'], $j['pausa'][1]) - max($j['ini'], $j['pausa'][0])) / 60);
+    if ($j['pausa']) {
+        $m -= max(0, (min($j['fim'], $j['pausa'][1]) - max($j['ini'], $j['pausa'][0])) / 60);
+    }
     return (int) max(0, $m);
 }
 
@@ -182,7 +216,12 @@ function diasDisponiveis(): array
     $saida = [];
     for ($t = strtotime($hoje); date('Y-m-d', $t) <= $ate; $t = strtotime('+1 day', $t)) {
         $d = date('Y-m-d', $t);
-        foreach ($ids as $id) if (jornada($id, $d)) { $saida[] = $d; break; }
+        foreach ($ids as $id) {
+            if (jornada($id, $d)) {
+                $saida[] = $d;
+                break;
+            }
+        }
     }
     return $saida;
 }
@@ -194,13 +233,19 @@ function diasDisponiveis(): array
 function ocupacao(string $data, array $profIds): array
 {
     $ocup = array_fill_keys($profIds, []);
-    if (!$profIds) return $ocup;
+    if (!$profIds) {
+        return $ocup;
+    }
 
     $ini = "$data 00:00:00";
     $fim = date('Y-m-d', strtotime("$data +1 day")) . ' 00:00:00';
 
-    $st = db()->prepare("SELECT profissional_id, inicio, fim FROM agendamentos
-                          WHERE status IN " . STATUS_ATIVOS . " AND inicio < ? AND fim > ?");
+    $st = db()->prepare(
+        "SELECT profissional_id, inicio, fim FROM agendamentos
+                          WHERE status IN " .
+            STATUS_ATIVOS .
+            ' AND inicio < ? AND fim > ?',
+    );
     $st->execute([$fim, $ini]);
     foreach ($st as $r) {
         if (isset($ocup[$r['profissional_id']])) {
@@ -213,7 +258,9 @@ function ocupacao(string $data, array $profIds): array
     foreach ($st as $r) {
         $intervalo = [strtotime($r['inicio']), strtotime($r['fim'])];
         if ($r['profissional_id'] === null) {
-            foreach ($ocup as $id => $_) $ocup[$id][] = $intervalo;
+            foreach ($ocup as $id => $_) {
+                $ocup[$id][] = $intervalo;
+            }
         } elseif (isset($ocup[$r['profissional_id']])) {
             $ocup[$r['profissional_id']][] = $intervalo;
         }
@@ -229,7 +276,9 @@ function sobrepoe(int $a1, int $a2, int $b1, int $b2): bool
 function livre(array $intervalos, int $ini, int $fim): bool
 {
     foreach ($intervalos as [$a, $b]) {
-        if (sobrepoe($ini, $fim, $a, $b)) return false;
+        if (sobrepoe($ini, $fim, $a, $b)) {
+            return false;
+        }
     }
     return true;
 }
@@ -240,10 +289,18 @@ function livre(array $intervalos, int $ini, int $fim): bool
  */
 function horariosDisponiveis(string $data, int $duracaoMin, array $profIds): array
 {
-    if (!dataPermitida($data) || !$profIds) return [];
+    if (!dataPermitida($data) || !$profIds) {
+        return [];
+    }
     $jornadas = [];
-    foreach ($profIds as $id) if ($j = jornada($id, $data)) $jornadas[$id] = $j;
-    if (!$jornadas) return [];
+    foreach ($profIds as $id) {
+        if ($j = jornada($id, $data)) {
+            $jornadas[$id] = $j;
+        }
+    }
+    if (!$jornadas) {
+        return [];
+    }
 
     $passo = (int) cfg('intervalo_slots_min') * 60;
     $dur = $duracaoMin * 60;
@@ -258,14 +315,24 @@ function horariosDisponiveis(string $data, int $duracaoMin, array $profIds): arr
 
     $saida = [];
     for ($t = $comeco; $t + $dur <= $termino; $t += $passo) {
-        if ($t < $minimo) continue;
+        if ($t < $minimo) {
+            continue;
+        }
         $livres = [];
         foreach ($jornadas as $id => $j) {
-            if ($t < $j['ini'] || $t + $dur > $j['fim']) continue;
-            if ($j['pausa'] && sobrepoe($t, $t + $dur, $j['pausa'][0], $j['pausa'][1])) continue;
-            if (livre($ocup[$id], $t, $t + $dur)) $livres[] = $id;
+            if ($t < $j['ini'] || $t + $dur > $j['fim']) {
+                continue;
+            }
+            if ($j['pausa'] && sobrepoe($t, $t + $dur, $j['pausa'][0], $j['pausa'][1])) {
+                continue;
+            }
+            if (livre($ocup[$id], $t, $t + $dur)) {
+                $livres[] = $id;
+            }
         }
-        if ($livres) $saida[] = ['hora' => date('H:i', $t), 'profissionais' => $livres];
+        if ($livres) {
+            $saida[] = ['hora' => date('H:i', $t), 'profissionais' => $livres];
+        }
     }
     return $saida;
 }
@@ -275,7 +342,9 @@ function horariosDupla(string $data, int $duracaoMin, array $profIds): array
 {
     $saida = [];
     foreach (horariosDisponiveis($data, $duracaoMin, $profIds) as $s) {
-        if (count($s['profissionais']) >= 2) $saida[] = $s;
+        if (count($s['profissionais']) >= 2) {
+            $saida[] = $s;
+        }
     }
     return $saida;
 }
@@ -299,25 +368,39 @@ function nomesJuntos(array $nomes): string
 function lerValor(string $v): float
 {
     $v = preg_replace('/[^\d,.\-]/', '', $v);
-    if ($v === '' || $v === '-') return 0.0;
-    if (strpos($v, ',') !== false) $v = str_replace('.', '', $v);   // 1.234,56
+    if ($v === '' || $v === '-') {
+        return 0.0;
+    }
+    if (strpos($v, ',') !== false) {
+        $v = str_replace('.', '', $v);
+    } // 1.234,56
     return round((float) str_replace(',', '.', $v), 2);
 }
 
 /** Deixa o telefone só com DDD + número (10 ou 11 dígitos). Retorna '' se inválido. */
 function normalizarTelefone(string $tel): string
 {
-    $t = ltrim(preg_replace('/\D/', '', $tel), '0');                      // tira o 0 de "0 73 ..."
-    if (strlen($t) > 11 && strpos($t, '55') === 0) $t = substr($t, 2);   // veio com +55
-    if (strlen($t) < 10 || strlen($t) > 11) return '';
-    if ((int) substr($t, 0, 2) < 11) return '';                            // DDD não existe
+    $t = ltrim(preg_replace('/\D/', '', $tel), '0'); // tira o 0 de "0 73 ..."
+    if (strlen($t) > 11 && strpos($t, '55') === 0) {
+        $t = substr($t, 2);
+    } // veio com +55
+    if (strlen($t) < 10 || strlen($t) > 11) {
+        return '';
+    }
+    if ((int) substr($t, 0, 2) < 11) {
+        return '';
+    } // DDD não existe
     return $t;
 }
 
 function telefoneBonito(string $t): string
 {
-    if (strlen($t) === 11) return sprintf('(%s) %s-%s', substr($t, 0, 2), substr($t, 2, 5), substr($t, 7));
-    if (strlen($t) === 10) return sprintf('(%s) %s-%s', substr($t, 0, 2), substr($t, 2, 4), substr($t, 6));
+    if (strlen($t) === 11) {
+        return sprintf('(%s) %s-%s', substr($t, 0, 2), substr($t, 2, 5), substr($t, 7));
+    }
+    if (strlen($t) === 10) {
+        return sprintf('(%s) %s-%s', substr($t, 0, 2), substr($t, 2, 4), substr($t, 6));
+    }
     return $t;
 }
 
@@ -332,7 +415,9 @@ function dadosDoAgendamento(int $id): array
     $preco = (float) $a['preco'];
     if ($a['grupo']) {
         // Serviço em dupla: junta as duas profissionais e o valor das duas partes
-        $st = db()->prepare('SELECT p.nome, a.preco FROM agendamentos a JOIN profissionais p ON p.id = a.profissional_id WHERE a.grupo = ? ORDER BY a.id');
+        $st = db()->prepare(
+            'SELECT p.nome, a.preco FROM agendamentos a JOIN profissionais p ON p.id = a.profissional_id WHERE a.grupo = ? ORDER BY a.id',
+        );
         $st->execute([$a['grupo']]);
         $partes = $st->fetchAll();
         $nome = nomesJuntos(array_column($partes, 'nome'));
@@ -364,23 +449,37 @@ function dadosDoAgendamento(int $id): array
 function agendar(array $d): array
 {
     $serv = servicoPorId((int) $d['servico']);
-    if (!$serv) throw new InvalidArgumentException('Escolha um serviço da lista.');
+    if (!$serv) {
+        throw new InvalidArgumentException('Escolha um serviço da lista.');
+    }
 
     $data = (string) $d['data'];
     $hora = (string) $d['hora'];
-    if (!dataPermitida($data)) throw new InvalidArgumentException('Esse dia não está disponível. Escolha outro dia.');
-    if (!preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $hora)) throw new InvalidArgumentException('Horário inválido.');
+    if (!dataPermitida($data)) {
+        throw new InvalidArgumentException('Esse dia não está disponível. Escolha outro dia.');
+    }
+    if (!preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $hora)) {
+        throw new InvalidArgumentException('Horário inválido.');
+    }
 
     $tel = normalizarTelefone((string) $d['telefone']);
-    if ($tel === '') throw new InvalidArgumentException('Digite o WhatsApp com DDD, ex.: (73) 99999-9999.');
+    if ($tel === '') {
+        throw new InvalidArgumentException('Digite o WhatsApp com DDD, ex.: (73) 99999-9999.');
+    }
 
     $todas = array_map('intval', array_column(profissionaisAtivas(), 'id'));
     $pedida = (int) $d['profissional'];
-    if ($pedida && !in_array($pedida, $todas, true)) throw new InvalidArgumentException('Profissional não encontrada.');
+    if ($pedida && !in_array($pedida, $todas, true)) {
+        throw new InvalidArgumentException('Profissional não encontrada.');
+    }
     $dupla = !empty($serv['dupla']);
-    if ($dupla) $pedida = 0; // em dupla o sistema escolhe as duas
+    if ($dupla) {
+        $pedida = 0;
+    } // em dupla o sistema escolhe as duas
     $candidatas = $pedida ? [$pedida] : $todas;
-    if (!$candidatas) throw new InvalidArgumentException('Nenhuma profissional disponível no momento.');
+    if (!$candidatas) {
+        throw new InvalidArgumentException('Nenhuma profissional disponível no momento.');
+    }
 
     $ini = strtotime("$data $hora");
     $fim = $ini + (int) $serv['duracao_min'] * 60;
@@ -401,21 +500,32 @@ function agendar(array $d): array
         }
 
         // Mesma cliente com outro horário que bate com esse
-        $st = $pdo->prepare("SELECT inicio FROM agendamentos WHERE status IN " . STATUS_ATIVOS . " AND cliente_telefone = ?
-                              AND inicio < ? AND fim > ? LIMIT 1");
+        $st = $pdo->prepare(
+            'SELECT inicio FROM agendamentos WHERE status IN ' .
+                STATUS_ATIVOS .
+                " AND cliente_telefone = ?
+                              AND inicio < ? AND fim > ? LIMIT 1",
+        );
         $st->execute([$tel, $fimSql, $iniSql]);
         if ($conflito = $st->fetchColumn()) {
-            throw new RuntimeException('Você já tem um horário marcado às ' . substr($conflito, 11, 5)
-                . ' desse dia. Escolha um horário depois que ele terminar, ou fale com o estúdio pelo WhatsApp.');
+            throw new RuntimeException(
+                'Você já tem um horário marcado às ' .
+                    substr($conflito, 11, 5) .
+                    ' desse dia. Escolha um horário depois que ele terminar, ou fale com o estúdio pelo WhatsApp.',
+            );
         }
 
         // Limite de horários futuros por cliente (evita brincadeira e agenda travada)
         $max = (int) (cfg('max_agendamentos_por_cliente') ?? 3);
         if ($max > 0) {
-            $st = $pdo->prepare("SELECT COUNT(DISTINCT COALESCE(grupo, id)) FROM agendamentos WHERE status = 'confirmado' AND cliente_telefone = ? AND fim > NOW()");
+            $st = $pdo->prepare(
+                "SELECT COUNT(DISTINCT COALESCE(grupo, id)) FROM agendamentos WHERE status = 'confirmado' AND cliente_telefone = ? AND fim > NOW()",
+            );
             $st->execute([$tel]);
             if ((int) $st->fetchColumn() >= $max) {
-                throw new RuntimeException("Você já tem $max horários marcados. Pra marcar mais, fale com o estúdio pelo WhatsApp.");
+                throw new RuntimeException(
+                    "Você já tem $max horários marcados. Pra marcar mais, fale com o estúdio pelo WhatsApp.",
+                );
             }
         }
 
@@ -427,12 +537,17 @@ function agendar(array $d): array
 
             $livres = null;
             foreach (horariosDoServico($serv, $data, $candidatas) as $s) {
-                if ($s['hora'] === $hora) { $livres = $s['profissionais']; break; }
+                if ($s['hora'] === $hora) {
+                    $livres = $s['profissionais'];
+                    break;
+                }
             }
             if (!$livres) {
-                throw new RuntimeException($dupla
-                    ? 'Nesse horário não tem mais duas manicures livres juntas. Escolha outro.'
-                    : 'Esse horário não está mais disponível. Escolha outro.');
+                throw new RuntimeException(
+                    $dupla
+                        ? 'Nesse horário não tem mais duas manicures livres juntas. Escolha outro.'
+                        : 'Esse horário não está mais disponível. Escolha outro.',
+                );
             }
 
             // Sem preferência: fica com quem tem menos atendimentos no dia
@@ -440,12 +555,20 @@ function agendar(array $d): array
             $ordem = $livres;
             if (!$pedida && count($livres) > 1) {
                 $in2 = implode(',', array_fill(0, count($livres), '?'));
-                $st = $pdo->prepare("SELECT profissional_id, COUNT(*) n FROM agendamentos
-                                      WHERE status IN " . STATUS_ATIVOS . " AND inicio >= ? AND inicio < ? AND profissional_id IN ($in2)
-                                      GROUP BY profissional_id");
-                $st->execute(array_merge(["$data 00:00:00", date('Y-m-d', strtotime("$data +1 day")) . ' 00:00:00'], $livres));
+                $st = $pdo->prepare(
+                    "SELECT profissional_id, COUNT(*) n FROM agendamentos
+                                      WHERE status IN " .
+                        STATUS_ATIVOS .
+                        " AND inicio >= ? AND inicio < ? AND profissional_id IN ($in2)
+                                      GROUP BY profissional_id",
+                );
+                $st->execute(
+                    array_merge(["$data 00:00:00", date('Y-m-d', strtotime("$data +1 day")) . ' 00:00:00'], $livres),
+                );
                 $carga = array_fill_keys($livres, 0);
-                foreach ($st as $r) $carga[(int) $r['profissional_id']] = (int) $r['n'];
+                foreach ($st as $r) {
+                    $carga[(int) $r['profissional_id']] = (int) $r['n'];
+                }
                 asort($carga);
                 $ordem = array_map('intval', array_keys($carga));
                 $escolhida = $ordem[0];
@@ -460,17 +583,46 @@ function agendar(array $d): array
                 $id = 0;
                 foreach ($partes as $i => [$pid, $valor]) {
                     // Lembrete pra cliente sai uma vez só (pela primeira linha)
-                    $ins->execute([$pid, $serv['id'], $d['cliente_id'] ?? null, $iniSql, $fimSql, $d['nome'], $tel, $d['observacao'] ?: null, $valor, $i ? 'pulado' : 'pendente']);
-                    if (!$id) $id = (int) $pdo->lastInsertId();
-                    $pdo->prepare('UPDATE agendamentos SET grupo = ? WHERE id = ?')->execute([$id, (int) $pdo->lastInsertId()]);
+                    $ins->execute([
+                        $pid,
+                        $serv['id'],
+                        $d['cliente_id'] ?? null,
+                        $iniSql,
+                        $fimSql,
+                        $d['nome'],
+                        $tel,
+                        $d['observacao'] ?: null,
+                        $valor,
+                        $i ? 'pulado' : 'pendente',
+                    ]);
+                    if (!$id) {
+                        $id = (int) $pdo->lastInsertId();
+                    }
+                    $pdo->prepare('UPDATE agendamentos SET grupo = ? WHERE id = ?')->execute([
+                        $id,
+                        (int) $pdo->lastInsertId(),
+                    ]);
                 }
             } else {
-                $ins->execute([$escolhida, $serv['id'], $d['cliente_id'] ?? null, $iniSql, $fimSql, $d['nome'], $tel, $d['observacao'] ?: null, $serv['preco'], 'pendente']);
+                $ins->execute([
+                    $escolhida,
+                    $serv['id'],
+                    $d['cliente_id'] ?? null,
+                    $iniSql,
+                    $fimSql,
+                    $d['nome'],
+                    $tel,
+                    $d['observacao'] ?: null,
+                    $serv['preco'],
+                    'pendente',
+                ]);
                 $id = (int) $pdo->lastInsertId();
             }
             $pdo->commit();
         } catch (Throwable $ex) {
-            if ($pdo->inTransaction()) $pdo->rollBack();
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
             throw $ex;
         }
     } finally {
@@ -493,7 +645,20 @@ function diaSemana(string $data): string
 
 function dataExtenso(string $data): string
 {
-    $meses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+    $meses = [
+        'janeiro',
+        'fevereiro',
+        'março',
+        'abril',
+        'maio',
+        'junho',
+        'julho',
+        'agosto',
+        'setembro',
+        'outubro',
+        'novembro',
+        'dezembro',
+    ];
     $t = strtotime($data);
     return diaSemana($data) . ', ' . date('j', $t) . ' de ' . $meses[(int) date('n', $t) - 1];
 }

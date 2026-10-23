@@ -3,7 +3,9 @@
 
 function prepararCsrf(): void
 {
-    if (empty($_SESSION['csrf'])) $_SESSION['csrf'] = bin2hex(random_bytes(16));
+    if (empty($_SESSION['csrf'])) {
+        $_SESSION['csrf'] = bin2hex(random_bytes(16));
+    }
 }
 
 function conferirCsrf(): void

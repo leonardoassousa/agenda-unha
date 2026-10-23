@@ -14,7 +14,9 @@ function mensagemNovoAgendamento(array $ag): string
         '*Quando:* ' . dataExtenso($ag['data']) . ', às ' . $ag['hora'],
         '*Com:* ' . $ag['profissional'],
     ];
-    if (!empty($ag['observacao'])) $linhas[] = '*Obs.:* ' . $ag['observacao'];
+    if (!empty($ag['observacao'])) {
+        $linhas[] = '*Obs.:* ' . $ag['observacao'];
+    }
     return implode("\n", $linhas);
 }
 
@@ -53,19 +55,44 @@ function enviarWhatsapp(string $numero, string $texto): string
     $para = preg_replace('/\D/', '', $numero);
     $estudio = preg_replace('/\D/', '', (string) ($c['telefone'] ?? ''));
 
-    if ($modo === 'desligado') return 'Aviso desligado no config.php.';
-    if (!$para) return 'Falta o número de destino.';
-    if (!function_exists('curl_init')) return 'A extensão cURL do PHP está desligada.';
+    if ($modo === 'desligado') {
+        return 'Aviso desligado no config.php.';
+    }
+    if (!$para) {
+        return 'Falta o número de destino.';
+    }
+    if (!function_exists('curl_init')) {
+        return 'A extensão cURL do PHP está desligada.';
+    }
 
     if ($modo === 'callmebot') {
-        if ($para !== $estudio) return 'O CallMeBot só manda mensagem pro número do estúdio. Pra mandar pra cliente, use a Evolution API.';
-        if (empty($c['callmebot_apikey'])) return 'Falta a apikey do CallMeBot no config.php.';
-        $url = 'https://api.callmebot.com/whatsapp.php?' . http_build_query([
-            'phone' => '+' . $para, 'text' => $texto, 'apikey' => $c['callmebot_apikey'],
-        ], '', '&', PHP_QUERY_RFC3986);
+        if ($para !== $estudio) {
+            return 'O CallMeBot só manda mensagem pro número do estúdio. Pra mandar pra cliente, use a Evolution API.';
+        }
+        if (empty($c['callmebot_apikey'])) {
+            return 'Falta a apikey do CallMeBot no config.php.';
+        }
+        $url =
+            'https://api.callmebot.com/whatsapp.php?' .
+            http_build_query(
+                [
+                    'phone' => '+' . $para,
+                    'text' => $texto,
+                    'apikey' => $c['callmebot_apikey'],
+                ],
+                '',
+                '&',
+                PHP_QUERY_RFC3986,
+            );
         [$cod, $corpo, $erro] = requisicao('GET', $url);
-        if ($erro) return "Sem conexão com o CallMeBot ($erro).";
-        if ($cod >= 400 || stripos($corpo, 'APIKey is invalid') !== false || stripos($corpo, 'not activated') !== false) {
+        if ($erro) {
+            return "Sem conexão com o CallMeBot ($erro).";
+        }
+        if (
+            $cod >= 400 ||
+            stripos($corpo, 'APIKey is invalid') !== false ||
+            stripos($corpo, 'not activated') !== false
+        ) {
             return 'O CallMeBot recusou: ' . mb_substr(trim(strip_tags($corpo)), 0, 160);
         }
         return '';
@@ -73,15 +100,23 @@ function enviarWhatsapp(string $numero, string $texto): string
 
     if ($modo === 'evolution') {
         foreach (['evolution_url', 'evolution_instancia', 'evolution_apikey'] as $k) {
-            if (empty($c[$k])) return "Falta '$k' no config.php.";
+            if (empty($c[$k])) {
+                return "Falta '$k' no config.php.";
+            }
         }
         $url = rtrim($c['evolution_url'], '/') . '/message/sendText/' . rawurlencode($c['evolution_instancia']);
-        [$cod, $corpo, $erro] = requisicao('POST', $url, json_encode(['number' => $para, 'text' => $texto], JSON_UNESCAPED_UNICODE), [
-            'apikey: ' . $c['evolution_apikey'],
-            'Content-Type: application/json',
-        ]);
-        if ($erro) return "Sem conexão com a Evolution API ($erro).";
-        if ($cod >= 400) return "A Evolution API respondeu $cod: " . mb_substr(trim($corpo), 0, 160);
+        [$cod, $corpo, $erro] = requisicao(
+            'POST',
+            $url,
+            json_encode(['number' => $para, 'text' => $texto], JSON_UNESCAPED_UNICODE),
+            ['apikey: ' . $c['evolution_apikey'], 'Content-Type: application/json'],
+        );
+        if ($erro) {
+            return "Sem conexão com a Evolution API ($erro).";
+        }
+        if ($cod >= 400) {
+            return "A Evolution API respondeu $cod: " . mb_substr(trim($corpo), 0, 160);
+        }
         return '';
     }
 
@@ -102,14 +137,22 @@ function lembreteAutomaticoAtivo(): bool
  */
 function rodarLembretes(): int
 {
-    if (!lembreteAutomaticoAtivo()) return 0;
+    if (!lembreteAutomaticoAtivo()) {
+        return 0;
+    }
     require_once __DIR__ . '/atendimento.php';
     $horas = max(1, (int) ((cfg('lembrete_cliente') ?: [])['horas_antes'] ?? 3));
 
     // Horário marcado já dentro da janela (ex.: marcou 1 h antes) não precisa de lembrete
-    db()->prepare("UPDATE agendamentos SET lembrete = 'pulado' WHERE lembrete = 'pendente' AND status = 'confirmado'
-                   AND criado_em > inicio - INTERVAL ? HOUR AND inicio <= NOW() + INTERVAL ? HOUR")->execute([$horas, $horas]);
-    db()->exec("UPDATE agendamentos SET lembrete = 'pulado' WHERE lembrete = 'pendente' AND (inicio <= NOW() OR status <> 'confirmado')");
+    db()
+        ->prepare(
+            "UPDATE agendamentos SET lembrete = 'pulado' WHERE lembrete = 'pendente' AND status = 'confirmado'
+                   AND criado_em > inicio - INTERVAL ? HOUR AND inicio <= NOW() + INTERVAL ? HOUR",
+        )
+        ->execute([$horas, $horas]);
+    db()->exec(
+        "UPDATE agendamentos SET lembrete = 'pulado' WHERE lembrete = 'pendente' AND (inicio <= NOW() OR status <> 'confirmado')",
+    );
 
     $st = db()->prepare("SELECT a.*, s.nome servico,
             COALESCE((SELECT GROUP_CONCAT(p2.nome ORDER BY a2.id SEPARATOR ' e ') FROM agendamentos a2
@@ -124,10 +167,14 @@ function rodarLembretes(): int
         // "Reserva" o horário antes de mandar: dois disparos ao mesmo tempo não mandam duas vezes
         $res = db()->prepare("UPDATE agendamentos SET lembrete = 'enviado' WHERE id = ? AND lembrete = 'pendente'");
         $res->execute([$a['id']]);
-        if ($res->rowCount() !== 1) continue;
+        if ($res->rowCount() !== 1) {
+            continue;
+        }
         $erro = enviarWhatsapp('55' . $a['cliente_telefone'], mensagemLembrete($a));
         if ($erro !== '') {
-            db()->prepare("UPDATE agendamentos SET lembrete = 'falhou' WHERE id = ?")->execute([$a['id']]);
+            db()
+                ->prepare("UPDATE agendamentos SET lembrete = 'falhou' WHERE id = ?")
+                ->execute([$a['id']]);
             error_log('[agenda] lembrete ' . $a['id'] . ' falhou: ' . $erro);
         } else {
             $enviados++;
@@ -139,12 +186,16 @@ function rodarLembretes(): int
 /** Roda os lembretes no máximo a cada 5 minutos (dispensa agendador no servidor). */
 function lembretesSeHora(): void
 {
-    if (!lembreteAutomaticoAtivo()) return;
+    if (!lembreteAutomaticoAtivo()) {
+        return;
+    }
     $pdo = db();
     $pdo->exec("INSERT IGNORE INTO sistema (chave, valor) VALUES ('lembretes_em', '0')");
     $st = $pdo->prepare("UPDATE sistema SET valor = ? WHERE chave = 'lembretes_em' AND CAST(valor AS UNSIGNED) < ?");
     $st->execute([(string) time(), time() - 300]);
-    if ($st->rowCount() === 1) rodarLembretes();
+    if ($st->rowCount() === 1) {
+        rodarLembretes();
+    }
 }
 
 function requisicao(string $metodo, string $url, ?string $corpo = null, array $headers = []): array
@@ -157,7 +208,9 @@ function requisicao(string $metodo, string $url, ?string $corpo = null, array $h
         CURLOPT_CUSTOMREQUEST => $metodo,
         CURLOPT_HTTPHEADER => $headers,
     ]);
-    if ($corpo !== null) curl_setopt($ch, CURLOPT_POSTFIELDS, $corpo);
+    if ($corpo !== null) {
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $corpo);
+    }
     $resp = curl_exec($ch);
     $erro = $resp === false ? curl_error($ch) : '';
     $cod = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
@@ -170,9 +223,17 @@ function avisarEstudio(array $ag): void
 {
     $erro = enviarWhatsappEstudio(mensagemNovoAgendamento($ag));
     $status = $erro === '' ? 'enviado' : 'falhou';
-    if (($c = cfg('aviso_whatsapp')) && ($c['modo'] ?? 'desligado') === 'desligado') $status = 'desligado';
+    if (($c = cfg('aviso_whatsapp')) && ($c['modo'] ?? 'desligado') === 'desligado') {
+        $status = 'desligado';
+    }
     try {
-        db()->prepare('UPDATE agendamentos SET aviso = ? WHERE id = ? OR grupo = ?')->execute([$status, $ag['id'], $ag['grupo'] ?? $ag['id']]);
-    } catch (Throwable $e) { /* coluna antiga: ignora */ }
-    if ($erro !== '' && $status === 'falhou') error_log('[agenda] aviso WhatsApp falhou: ' . $erro);
+        db()
+            ->prepare('UPDATE agendamentos SET aviso = ? WHERE id = ? OR grupo = ?')
+            ->execute([$status, $ag['id'], $ag['grupo'] ?? $ag['id']]);
+    } catch (Throwable $e) {
+        /* coluna antiga: ignora */
+    }
+    if ($erro !== '' && $status === 'falhou') {
+        error_log('[agenda] aviso WhatsApp falhou: ' . $erro);
+    }
 }
