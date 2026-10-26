@@ -1,5 +1,13 @@
 # Agenda de unhas · Studio Carina Aquino
 
+**Versão 1.1** (o número fica no arquivo `VERSION` e em tags no GitHub, ex.: `v1.1`)
+
+## Versões
+- **1.1** (26/10/2026): dados reais do Studio Carina Aquino (as 3 manicures, os dias de cada uma, horário de terça a sábado, procedimentos, preços e tempos), formas de pagamento na tela da cliente, pé e mão com duas manicures ao mesmo tempo, código formatado.
+- **1.0** (21/10/2026): sistema completo com dados de exemplo (agendamento com login, painel em calendário, caixa, área da equipe, horários de cada colaboradora, lembrete no WhatsApp).
+
+> Os arquivos `sql/atualizar-v2.sql` … `atualizar-v7.sql` são etapas do **banco de dados**, não a versão do sistema.
+
 **Equipe:** Carina Aquino (terça a sábado, 9h às 18h), Victoria Aquino (só sábado, 9h às 18h) e Ana Oliveira (quinta a sábado, 9h às 17h). O estúdio abre de terça a sábado, das 9h às 18h. Cada uma pode mudar os próprios dias em `/equipe`, aba Meus horários.
 
 **Procedimentos:** pé e mão R$ 55, pé R$ 35, mão R$ 35, esmaltação convencional R$ 5, spa dos pés R$ 100, massagem nos pés R$ 20, alongamento R$ 200, banho em gel R$ 150, esmaltação em gel R$ 75, manutenção natural R$ 115, manutenção encapsulada a partir de R$ 135 (o que passar disso, a colaboradora lança como "valor a mais" ao concluir).
