@@ -71,6 +71,21 @@ $waEstudio = preg_replace('/\D/', '', (string) cfg('whatsapp'));
 </head>
 <body>
 
+<!-- Vitrine do estúdio: só aparece no computador (no celular a capa fica na tela de serviços) -->
+<aside class="vitrine" aria-label="Sobre o estúdio">
+  <div class="vitrine-topo">
+    <p class="capa-status <?= $aberto ? 'aberto' : '' ?>"><span class="ponto" aria-hidden="true"></span><?= e($statusTexto) ?></p>
+    <p class="vitrine-nome"><?= e(cfg('nome_estudio')) ?></p>
+    <p class="vitrine-convite">Escolha o serviço, a profissional e o horário. Leva menos de um minuto.</p>
+  </div>
+  <div class="vitrine-info">
+    <?php if (cfg('endereco')): ?><p><span class="vitrine-rotulo">Endereço</span><?= e(cfg('endereco')) ?></p><?php endif; ?>
+    <?php if (cfg('instagram')): ?><p><span class="vitrine-rotulo">Instagram</span><?= e(cfg('instagram')) ?></p><?php endif; ?>
+    <?php if (cfg('pagamento')): ?><p><span class="vitrine-rotulo">Pagamento no studio</span><?= e(cfg('pagamento')) ?><?php if (cfg('pagamento_obs')): ?> <?= e(cfg('pagamento_obs')) ?><?php endif; ?></p><?php endif; ?>
+    <?php if ($waEstudio): ?><a class="vitrine-whats" href="https://wa.me/<?= e($waEstudio) ?>" target="_blank" rel="noopener">Falar no WhatsApp</a><?php endif; ?>
+  </div>
+</aside>
+
 <main id="app">
 
   <!-- ============ 1. SERVIÇO ============ -->
@@ -125,6 +140,7 @@ $waEstudio = preg_replace('/\D/', '', (string) cfg('whatsapp'));
       <h2 class="titulo titulo-menor" id="t-pros">Com quem?</h2>
       <div class="pros" id="pros" role="tablist" aria-labelledby="t-pros"></div>
 
+      <h2 class="titulo titulo-horas" id="t-horas">Horários livres</h2>
       <div class="horas" id="horas" role="radiogroup" aria-label="Horários livres" aria-live="polite"></div>
     </div>
 

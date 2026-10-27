@@ -1386,3 +1386,265 @@ details.concluir[open] summary::before {
   flex-wrap: wrap;
   overflow: visible;
 }
+
+/* ---------- Cabeçalho: celular x computador ----------
+   No celular é a fileira de abas de sempre. No computador vira uma barra lateral vinho
+   com o nome do estúdio, o menu e quem está logada. */
+.lateral-marca,
+.lateral-conta {
+  display: none;
+}
+.topo-equipe {
+  display: block;
+}
+.equipe-acoes {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.equipe-acoes .equipe-sair {
+  margin-left: 0;
+}
+.abas a.aba-outra {
+  background: none;
+  border-style: dashed;
+  color: var(--verniz);
+}
+.login-estudio {
+  margin: 0 0 -8px;
+  color: var(--cinza);
+  font-weight: 600;
+}
+.login code,
+.nota code {
+  font-size: 0.85em;
+  background: color-mix(in srgb, var(--linha) 60%, transparent);
+  padding: 1px 5px;
+  border-radius: 6px;
+}
+.nota-alerta {
+  border-color: var(--verniz);
+}
+.nota-alerta p {
+  margin: 0;
+}
+.tag-painel,
+.tag-voce {
+  display: inline-block;
+  margin: 6px 6px 0 0;
+}
+.tag-painel {
+  background: var(--verniz);
+  color: #fff;
+}
+.tag-voce {
+  background: none;
+  color: var(--tinta);
+  border: 1px solid var(--linha);
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --lateral: 248px;
+    --vinho-painel: #3a0e1e;
+    --creme-painel: #fbeff2;
+    --creme-painel-suave: #d7b5c0;
+  }
+  body:has(.admin-topo) {
+    padding-left: var(--lateral);
+  }
+  .pagina.admin {
+    max-width: 1180px;
+    padding: 44px 48px 80px;
+  }
+  .admin h1 {
+    font-size: 2.8rem;
+  }
+
+  .admin-topo,
+  .topo-equipe {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: var(--lateral);
+    z-index: 30;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 28px;
+    padding: 32px 18px 24px;
+    overflow-y: auto;
+    color: var(--creme-painel);
+    background:
+      radial-gradient(120% 50% at 0% 0%, color-mix(in srgb, var(--verniz) 45%, transparent), transparent 70%),
+      var(--vinho-painel);
+  }
+  .topo-equipe .equipe-topo {
+    display: none;
+  }
+  .lateral-marca {
+    display: block;
+    padding: 0 10px;
+  }
+  .lateral-estudio {
+    margin: 0;
+    font:
+      400 1.75rem/1.02 'Gloock',
+      Georgia,
+      serif;
+    color: #fff;
+    text-wrap: balance;
+  }
+  .lateral-sub {
+    margin: 8px 0 0;
+    font-size: 0.85rem;
+    color: var(--creme-painel-suave);
+  }
+
+  .admin-topo .abas {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+  }
+  .admin-topo .abas a {
+    padding: 10px 12px;
+    border: 0;
+    border-radius: 10px;
+    background: none;
+    color: var(--creme-painel-suave);
+    font-size: 0.98rem;
+    font-weight: 600;
+  }
+  .admin-topo .abas a:hover {
+    color: #fff;
+    background: color-mix(in srgb, #fff 8%, transparent);
+  }
+  .admin-topo .abas a[aria-current='page'] {
+    color: var(--vinho-painel);
+    background: var(--creme-painel);
+  }
+  .admin-topo .abas a.aba-outra {
+    margin-top: 14px;
+    border: 1px dashed color-mix(in srgb, var(--creme-painel) 35%, transparent);
+    color: var(--creme-painel);
+  }
+  .admin-topo .abas a:focus-visible {
+    outline: 2px solid var(--creme-painel);
+    outline-offset: 1px;
+  }
+
+  .lateral-conta {
+    display: grid;
+    gap: 6px;
+    margin-top: auto;
+    padding: 16px 10px 0;
+    border-top: 1px solid color-mix(in srgb, var(--creme-painel) 16%, transparent);
+  }
+  .lateral-nome {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    color: #fff;
+    font-size: 0.95rem;
+  }
+  .lateral-nome .foto {
+    width: 34px;
+    height: 34px;
+    font-size: 0.8rem;
+    box-shadow: 0 0 0 2px var(--vinho-painel), 0 0 0 3px var(--cor);
+  }
+  .lateral-conta .lateral-link {
+    justify-self: start;
+    padding: 0;
+    color: var(--creme-painel-suave);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .lateral-conta .lateral-link:hover {
+    color: #fff;
+  }
+
+  /* Login: cartão no meio da tela */
+  .login {
+    margin: 14vh auto 0;
+    max-width: 380px;
+    padding: 32px;
+    background: var(--branco);
+    border: 1px solid var(--linha);
+    border-radius: 22px;
+  }
+
+  /* Calendário à esquerda, o dia escolhido à direita */
+  .cal-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: 32px;
+    align-items: start;
+  }
+  .cal-layout .detalhe,
+  .cal-layout .vazio-dia {
+    margin-top: 10px;
+    position: sticky;
+    top: 24px;
+  }
+  .calendario {
+    padding: 20px 18px 16px;
+  }
+  .quem {
+    margin: 0;
+    padding: 4px 0 8px;
+  }
+
+  /* Ajustes: acesso da equipe lado a lado, o resto em duas colunas */
+  .admin:has(#acesso) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 40px;
+    align-items: start;
+  }
+  .admin:has(#acesso) > :not(.bloco),
+  .admin:has(#acesso) > #acesso {
+    grid-column: 1 / -1;
+  }
+  .lista-acesso {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 14px;
+  }
+  .lista-acesso li {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .lista-acesso .acesso-form {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .lista-acesso .acesso-form .campo {
+    flex: none;
+    width: 100%;
+  }
+  .lista-acesso .acesso-links {
+    margin-top: auto;
+  }
+  /* Sair já fica na barra lateral */
+  .bloco-sair {
+    display: none;
+  }
+
+  /* Área da equipe: números e lista lado a lado */
+  .equipe .pagina.admin {
+    max-width: 1080px;
+  }
+}
+.login a,
+.erro a {
+  color: var(--verniz);
+  font-weight: 600;
+}

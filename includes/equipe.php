@@ -1,5 +1,7 @@
 <?php
-// Área da equipe: login de cada colaboradora (celular + senha criada pela dona no painel).
+// Login de cada colaboradora (celular + senha criada pela dona no painel).
+// A mesma sessão vale pra área da equipe e pro painel: quem tem "acesso ao painel" (a dona)
+// entra uma vez só e usa os dois.
 require_once __DIR__ . '/app.php';
 require_once __DIR__ . '/sessao.php';
 
@@ -8,6 +10,14 @@ ini_set('session.gc_maxlifetime', (string) (30 * 86400));
 session_name('agenda_equipe');
 session_start();
 prepararCsrf();
+garantirColunaPainel();
+
+/** Banco de antes da versão 1.2: cria a coluna de acesso ao painel sozinho (mesmo que o atualizar-v8.sql). */
+function garantirColunaPainel(): void
+{
+    if (db()->query("SHOW COLUMNS FROM profissionais LIKE 'admin'")->fetch()) return;
+    db()->exec('ALTER TABLE profissionais ADD COLUMN admin TINYINT(1) NOT NULL DEFAULT 0 AFTER senha_hash');
+}
 
 /** Colaboradora logada (ou null). */
 function colaboradora(): ?array
@@ -16,7 +26,7 @@ function colaboradora(): ?array
     if ($c !== false) return $c;
     $id = (int) ($_SESSION['prof_id'] ?? 0);
     if (!$id) return $c = null;
-    $st = db()->prepare('SELECT id, nome, cor, foto, telefone FROM profissionais WHERE id = ? AND ativo = 1 AND senha_hash IS NOT NULL');
+    $st = db()->prepare('SELECT id, nome, cor, foto, telefone, admin FROM profissionais WHERE id = ? AND ativo = 1 AND senha_hash IS NOT NULL');
     $st->execute([$id]);
     $c = $st->fetch() ?: null;
     if (!$c) unset($_SESSION['prof_id']);
@@ -54,6 +64,18 @@ function entrarEquipe(string $telefone, string $senha): string
     return '';
 }
 
+/** Troca a senha da própria colaboradora. Retorna a mensagem pra mostrar. */
+function trocarSenhaPropria(int $id, string $atual, string $nova): string
+{
+    $st = db()->prepare('SELECT senha_hash FROM profissionais WHERE id = ?');
+    $st->execute([$id]);
+    if (!password_verify($atual, (string) $st->fetchColumn())) return 'A senha atual está errada.';
+    if (mb_strlen($nova) < 6) return 'A nova senha precisa ter pelo menos 6 caracteres.';
+    db()->prepare('UPDATE profissionais SET senha_hash = ? WHERE id = ?')->execute([password_hash($nova, PASSWORD_DEFAULT), $id]);
+    session_regenerate_id(true);
+    return 'Senha trocada.';
+}
+
 function fotoColab(array $p, string $classe = ''): string
 {
     return $p['foto']
@@ -87,21 +109,37 @@ function cabecalhoEquipe(string $ativa, array $c): void
 {
     $abas = ['index.php' => 'Minha agenda', 'disponibilidade.php' => 'Meus horários', 'caixa.php' => 'Meu caixa'];
     ?>
-  <header class="equipe-topo" style="--cor: <?= e($c['cor']) ?>">
-    <?= fotoColab($c) ?>
-    <div>
-      <p class="equipe-ola">Olá, <?= e(preg_split('/\s+/', $c['nome'])[0]) ?></p>
-      <p class="equipe-estudio"><?= e(cfg('nome_estudio')) ?></p>
+  <header class="admin-topo topo-equipe" style="--cor: <?= e($c['cor']) ?>">
+    <div class="equipe-topo">
+      <?= fotoColab($c) ?>
+      <div>
+        <p class="equipe-ola">Olá, <?= e(preg_split('/\s+/', $c['nome'])[0]) ?></p>
+        <p class="equipe-estudio"><?= e(cfg('nome_estudio')) ?></p>
+      </div>
+      <div class="equipe-acoes">
+        <form method="post" action="./" class="equipe-sair">
+          <?= campoCsrf() ?>
+          <button class="link" name="acao" value="sair">Sair</button>
+        </form>
+      </div>
     </div>
-    <form method="post" action="./" class="equipe-sair">
-      <?= campoCsrf() ?>
-      <button class="link" name="acao" value="sair">Sair</button>
-    </form>
+    <div class="lateral-marca">
+      <p class="lateral-estudio"><?= e(cfg('nome_estudio')) ?></p>
+      <p class="lateral-sub">Área da equipe</p>
+    </div>
+    <nav class="abas abas-equipe" aria-label="Área da equipe">
+      <?php foreach ($abas as $arq => $rotulo): ?>
+        <a href="<?= $arq === 'index.php' ? './' : $arq ?>" <?= $ativa === $arq ? 'aria-current="page"' : '' ?>><?= $rotulo ?></a>
+      <?php endforeach; ?>
+      <?php if (!empty($c['admin'])): ?><a class="aba-outra" href="../admin/">Painel do estúdio</a><?php endif; ?>
+    </nav>
+    <div class="lateral-conta">
+      <p class="lateral-nome"><?= fotoColab($c) ?><span><?= e($c['nome']) ?></span></p>
+      <form method="post" action="./">
+        <?= campoCsrf() ?>
+        <button class="link lateral-link" name="acao" value="sair">Sair</button>
+      </form>
+    </div>
   </header>
-  <nav class="abas abas-equipe" aria-label="Área da equipe">
-    <?php foreach ($abas as $arq => $rotulo): ?>
-      <a href="<?= $arq === 'index.php' ? './' : $arq ?>" <?= $ativa === $arq ? 'aria-current="page"' : '' ?>><?= $rotulo ?></a>
-    <?php endforeach; ?>
-  </nav>
     <?php
 }

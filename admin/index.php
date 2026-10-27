@@ -4,6 +4,8 @@ require __DIR__ . '/../includes/atendimento.php';
 
 $logada = logada();
 $msg = '';
+$soEquipe = false;
+$temContaPainel = existeContaPainel();
 
 // ---------- Ações ----------
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -12,13 +14,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $volta = ['mes' => $_POST['mes_ref'] ?? '', 'prof' => $_POST['prof_ref'] ?? '', 'dia' => $_POST['dia_ref'] ?? ''];
 
     if ($acao === 'entrar') {
-        if (hash_equals((string) cfg('admin_senha'), (string) ($_POST['senha'] ?? ''))) {
-            session_regenerate_id(true);
-            $_SESSION['admin'] = true;
-            voltarPara('./');
+        if ($temContaPainel) {
+            $msg = entrarEquipe((string) ($_POST['telefone'] ?? ''), (string) ($_POST['senha'] ?? ''));
+            if ($msg === '') {
+                $st = db()->prepare('SELECT admin FROM profissionais WHERE id = ?');
+                $st->execute([(int) $_SESSION['prof_id']]);
+                if ((int) $st->fetchColumn() === 1) voltarPara('./');
+                $msg = 'Essa conta é da área da equipe e não tem acesso ao painel.';
+                $soEquipe = true;
+            }
+        } else {
+            // Primeiro acesso: enquanto ninguém tiver acesso ao painel, vale a senha do config.php
+            if ((string) cfg('admin_senha') !== '' && hash_equals((string) cfg('admin_senha'), (string) ($_POST['senha'] ?? ''))) {
+                session_regenerate_id(true);
+                $_SESSION['admin_inicial'] = true;
+                voltarPara('ajustes.php', [], 'acesso');
+            }
+            sleep(1);
+            $msg = 'Senha incorreta.';
         }
-        sleep(1);
-        $msg = 'Senha incorreta.';
     } elseif ($logada) {
         if ($acao === 'sair') {
             $_SESSION = [];
@@ -128,16 +142,29 @@ headAdmin('Calendário');
 
 <?php if (!$logada): ?>
   <form method="post" class="login">
+    <p class="login-estudio"><?= e(cfg('nome_estudio')) ?></p>
     <h1>Painel</h1>
-    <p class="topo-info"><?= e(cfg('nome_estudio')) ?></p>
     <?= campoCsrf() ?>
     <input type="hidden" name="acao" value="entrar">
-    <label class="campo">
-      <span>Senha</span>
-      <input type="password" name="senha" autocomplete="current-password" required autofocus>
-    </label>
-    <?php if ($msg): ?><p class="erro" role="alert"><?= e($msg) ?></p><?php endif; ?>
+    <?php if ($temContaPainel): ?>
+      <label class="campo">
+        <span>Seu celular</span>
+        <input type="tel" name="telefone" inputmode="numeric" autocomplete="username" placeholder="(73) 99999-9999" value="<?= e((string) ($_POST['telefone'] ?? '')) ?>" required autofocus>
+      </label>
+      <label class="campo">
+        <span>Senha</span>
+        <input type="password" name="senha" autocomplete="current-password" required>
+      </label>
+    <?php else: ?>
+      <p class="topo-info">Primeiro acesso: use a senha que está no <code>config.php</code>. Depois você cria a sua conta com celular e senha.</p>
+      <label class="campo">
+        <span>Senha de primeiro acesso</span>
+        <input type="password" name="senha" autocomplete="current-password" required autofocus>
+      </label>
+    <?php endif; ?>
+    <?php if ($msg): ?><p class="erro" role="alert"><?= e($msg) ?><?php if ($soEquipe): ?> <a href="../equipe/">Ir pra minha agenda</a><?php endif; ?></p><?php endif; ?>
     <button class="botao">Entrar</button>
+    <?php if ($temContaPainel): ?><p class="topo-info">É da equipe? Sua agenda fica em <a href="../equipe/">área da equipe</a>.</p><?php endif; ?>
   </form>
 
 <?php else: ?>
@@ -156,6 +183,7 @@ headAdmin('Calendário');
     <?php endforeach; ?>
   </nav>
 
+  <div class="cal-layout">
   <!-- Mês -->
   <section class="calendario" style="--cor: <?= e($corFiltro) ?>" aria-labelledby="t-mes">
     <div class="cal-topo">
@@ -276,6 +304,7 @@ headAdmin('Calendário');
     </div>
   </section>
   <?php endif; ?>
+  </div>
 <?php endif; ?>
 
 </main>

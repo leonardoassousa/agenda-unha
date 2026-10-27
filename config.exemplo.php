@@ -66,6 +66,7 @@ return [
     // Até quantas horas antes a cliente pode cancelar pelo site (depois disso, só pelo WhatsApp)
     'cancelar_ate_horas' => 2,
 
-    // Senha do painel (/admin). TROQUE antes de colocar no ar.
+    // Senha de PRIMEIRO ACESSO ao painel (/admin). Só vale enquanto ninguém tiver "acesso ao painel":
+    // entre com ela, vá em Ajustes e crie a sua conta (celular + senha). Depois disso ela para de funcionar.
     'admin_senha' => 'troque-esta-senha',
 ];

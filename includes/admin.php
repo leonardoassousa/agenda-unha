@@ -1,16 +1,24 @@
 <?php
 // Sessão e cabeçalho comuns às páginas do painel.
-require_once __DIR__ . '/app.php';
-require_once __DIR__ . '/sessao.php';
+// O login é o mesmo da área da equipe (celular + senha). Entra no painel quem tem "acesso ao painel".
+require_once __DIR__ . '/equipe.php';
 
-session_set_cookie_params(['httponly' => true, 'samesite' => 'Lax', 'secure' => !empty($_SERVER['HTTPS'])]);
-session_name('agenda_admin');
-session_start();
-prepararCsrf();
+/** Conta da equipe logada que tem acesso ao painel (ou null). */
+function contaPainel(): ?array
+{
+    $c = colaboradora();
+    return $c && (int) $c['admin'] === 1 ? $c : null;
+}
+
+/** Já existe alguém com acesso ao painel e senha criada? Enquanto não existir, vale a senha do config.php. */
+function existeContaPainel(): bool
+{
+    return (bool) db()->query('SELECT 1 FROM profissionais WHERE admin = 1 AND ativo = 1 AND senha_hash IS NOT NULL AND telefone IS NOT NULL LIMIT 1')->fetchColumn();
+}
 
 function logada(): bool
 {
-    return !empty($_SESSION['admin']);
+    return contaPainel() !== null || !empty($_SESSION['admin_inicial']);
 }
 
 function exigirLogin(): void
@@ -21,13 +29,30 @@ function exigirLogin(): void
 function cabecalhoAdmin(string $ativa): void
 {
     $abas = ['index.php' => 'Calendário', 'caixa.php' => 'Caixa', 'resumo.php' => 'Resumo', 'clientes.php' => 'Clientes', 'ajustes.php' => 'Ajustes'];
+    $conta = contaPainel();
     ?>
   <header class="admin-topo">
+    <div class="lateral-marca">
+      <p class="lateral-estudio"><?= e(cfg('nome_estudio')) ?></p>
+      <p class="lateral-sub">Painel do estúdio</p>
+    </div>
     <nav class="abas" aria-label="Painel">
       <?php foreach ($abas as $arq => $rotulo): ?>
         <a href="<?= $arq === 'index.php' ? './' : $arq ?>" <?= $ativa === $arq ? 'aria-current="page"' : '' ?>><?= $rotulo ?></a>
       <?php endforeach; ?>
+      <?php if ($conta): ?><a class="aba-outra" href="../equipe/">Minha agenda</a><?php endif; ?>
     </nav>
+    <div class="lateral-conta">
+      <?php if ($conta): ?>
+        <p class="lateral-nome"><?= fotoColab($conta) ?><span><?= e($conta['nome']) ?></span></p>
+      <?php else: ?>
+        <p class="lateral-nome"><span>Primeiro acesso</span></p>
+      <?php endif; ?>
+      <form method="post" action="./">
+        <?= campoCsrf() ?>
+        <button class="link lateral-link" name="acao" value="sair">Sair</button>
+      </form>
+    </div>
   </header>
     <?php
 }

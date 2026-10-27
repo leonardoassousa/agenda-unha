@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS profissionais (
   foto VARCHAR(255) NULL,                     -- caminho da foto (enviada pelo painel)
   telefone VARCHAR(11) NULL,                  -- login da colaboradora na área da equipe
   senha_hash VARCHAR(255) NULL,
+  admin TINYINT(1) NOT NULL DEFAULT 0,        -- 1 = também entra no painel (/admin) com o mesmo celular e senha
   ativo TINYINT(1) NOT NULL DEFAULT 1,
   ordem INT NOT NULL DEFAULT 0,
   UNIQUE KEY uq_prof_tel (telefone)

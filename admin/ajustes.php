@@ -2,6 +2,8 @@
 require __DIR__ . '/../includes/admin.php';
 require __DIR__ . '/../includes/whatsapp.php';
 exigirLogin();
+$eu = contaPainel();
+$euId = $eu ? (int) $eu['id'] : 0;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     conferirCsrf();
@@ -29,15 +31,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         for ($i = 0; $i < 8; $i++) $senha .= $alfabeto[random_int(0, strlen($alfabeto) - 1)];
         db()->prepare('UPDATE profissionais SET telefone = ?, senha_hash = ? WHERE id = ?')->execute([$tel, password_hash($senha, PASSWORD_DEFAULT), $id]);
         db()->prepare('DELETE FROM login_tentativas WHERE chave = ?')->execute(['eq:' . $tel]);
-        $st = db()->prepare('SELECT nome FROM profissionais WHERE id = ?');
+        $st = db()->prepare('SELECT nome, admin FROM profissionais WHERE id = ?');
         $st->execute([$id]);
-        $_SESSION['senha_equipe'] = ['nome' => $st->fetchColumn(), 'telefone' => $tel, 'senha' => $senha];
+        $p = $st->fetch();
+        $_SESSION['senha_equipe'] = ['nome' => $p['nome'], 'telefone' => $tel, 'senha' => $senha, 'admin' => (int) $p['admin']];
         voltarPara('ajustes.php', [], 'acesso');
     }
     if ($acao === 'remover_acesso') {
+        if ((int) $_POST['id'] === $euId) {
+            $_SESSION['aviso_ajustes'] = 'Você não pode tirar o seu próprio acesso.';
+            voltarPara('ajustes.php', [], 'acesso');
+        }
         db()->prepare('UPDATE profissionais SET senha_hash = NULL WHERE id = ?')->execute([(int) $_POST['id']]);
-        $_SESSION['aviso_ajustes'] = 'Acesso removido. Ela não entra mais na área da equipe.';
+        $_SESSION['aviso_ajustes'] = 'Acesso removido. Ela não entra mais na área da equipe nem no painel.';
         voltarPara('ajustes.php', [], 'acesso');
+    }
+    if ($acao === 'painel') {
+        $id = (int) $_POST['id'];
+        $dar = ($_POST['valor'] ?? '') === '1';
+        if (!$dar && $id === $euId) {
+            $_SESSION['aviso_ajustes'] = 'Você não pode tirar o seu próprio acesso ao painel.';
+            voltarPara('ajustes.php', [], 'acesso');
+        }
+        db()->prepare('UPDATE profissionais SET admin = ? WHERE id = ?')->execute([$dar ? 1 : 0, $id]);
+        $st = db()->prepare('SELECT nome, senha_hash IS NOT NULL tem FROM profissionais WHERE id = ?');
+        $st->execute([$id]);
+        $p = $st->fetch();
+        $_SESSION['aviso_ajustes'] = $dar
+            ? ($p['tem'] ? "{$p['nome']} agora entra no painel com o celular e a senha dela." : "{$p['nome']} vai ter acesso ao painel. Falta criar o acesso dela (celular e senha) aqui embaixo.")
+            : "{$p['nome']} não entra mais no painel. A área da equipe dela continua igual.";
+        voltarPara('ajustes.php', [], 'acesso');
+    }
+    if ($acao === 'minha_senha' && $eu) {
+        $_SESSION['aviso_ajustes'] = trocarSenhaPropria((int) $eu['id'], (string) ($_POST['atual'] ?? ''), (string) ($_POST['nova'] ?? ''));
+        voltarPara('ajustes.php', [], 'minha-senha');
     }
     if ($acao === 'remover_foto') {
         removerFoto((int) $_POST['id']);
@@ -76,8 +103,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $aviso = $_SESSION['aviso_ajustes'] ?? '';
 $senhaEquipe = $_SESSION['senha_equipe'] ?? null;
 unset($_SESSION['aviso_ajustes'], $_SESSION['senha_equipe']);
-$profs = db()->query('SELECT id, nome, cor, foto, telefone, senha_hash IS NOT NULL tem_acesso FROM profissionais ORDER BY ordem, nome')->fetchAll();
+$profs = db()->query('SELECT id, nome, cor, foto, telefone, admin, senha_hash IS NOT NULL tem_acesso FROM profissionais ORDER BY ordem, nome')->fetchAll();
 $linkEquipe = (!empty($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . rtrim(dirname(dirname($_SERVER['SCRIPT_NAME'] ?? '/admin/x')), '/') . '/equipe/';
+$linkPainel = rtrim($linkEquipe, '/');
+$linkPainel = substr($linkPainel, 0, -strlen('equipe')) . 'admin/';
+$temContaPainel = existeContaPainel();
 $profPorId = array_column($profs, null, 'id');
 $dataBloq = $_GET['data'] ?? date('Y-m-d');
 if (!DateTime::createFromFormat('!Y-m-d', $dataBloq)) $dataBloq = date('Y-m-d');
@@ -93,9 +123,14 @@ cabecalhoAdmin('ajustes.php');
 
   <section class="bloco" id="acesso">
     <h2>Equipe: acesso e horários</h2>
-    <p class="topo-info">Cada colaboradora entra em <a href="<?= e($linkEquipe) ?>"><?= e($linkEquipe) ?></a> com o celular e a senha que você gerar aqui. Lá ela vê a agenda dela, conclui os atendimentos, lança valor a mais e ajusta os próprios horários.</p>
+    <p class="topo-info">Cada uma tem a própria conta: entra em <a href="<?= e($linkEquipe) ?>"><?= e($linkEquipe) ?></a> com o celular e a senha que você gerar aqui. Lá ela vê a agenda dela, conclui os atendimentos, lança valor a mais e ajusta os próprios horários. Quem tem <strong>acesso ao painel</strong> (a dona) usa a mesma conta pra entrar aqui.</p>
+    <?php if (!$temContaPainel): ?>
+      <div class="nota nota-alerta" role="status">
+        <p><strong>Crie a sua conta.</strong> Você entrou com a senha de primeiro acesso do <code>config.php</code>. Na sua ficha aqui embaixo, toque em <strong>Dar acesso ao painel</strong> e depois em <strong>Criar acesso</strong> com o seu celular. A partir daí o painel pede celular e senha, e a senha do <code>config.php</code> deixa de valer.</p>
+      </div>
+    <?php endif; ?>
     <?php if ($senhaEquipe):
-        $msgWa = "Oi, {$senhaEquipe['nome']}! Seu acesso à agenda do estúdio: $linkEquipe\nCelular: " . telefoneBonito($senhaEquipe['telefone']) . "\nSenha: {$senhaEquipe['senha']}"; ?>
+        $msgWa = "Oi, {$senhaEquipe['nome']}! Seu acesso à agenda do estúdio: $linkEquipe" . ($senhaEquipe['admin'] ? "\nPainel do estúdio: $linkPainel" : '') . "\nCelular: " . telefoneBonito($senhaEquipe['telefone']) . "\nSenha: {$senhaEquipe['senha']}"; ?>
       <div class="nota nota-senha" role="status">
         <p>Senha de <strong><?= e($senhaEquipe['nome']) ?></strong>:</p>
         <p class="senha-gerada"><?= e($senhaEquipe['senha']) ?></p>
@@ -111,6 +146,8 @@ cabecalhoAdmin('ajustes.php');
             <div>
               <strong><?= e($p['nome']) ?></strong>
               <p class="topo-info"><?= $p['tem_acesso'] ? 'Tem acesso com ' . e(telefoneBonito((string) $p['telefone'])) : 'Ainda sem acesso' ?></p>
+              <?php if ($p['admin']): ?><span class="tag tag-painel">Acesso ao painel</span><?php endif; ?>
+              <?php if ((int) $p['id'] === $euId): ?><span class="tag tag-voce">Você</span><?php endif; ?>
             </div>
           </div>
           <form method="post" class="acesso-form">
@@ -123,7 +160,11 @@ cabecalhoAdmin('ajustes.php');
           </form>
           <div class="acesso-links">
             <a href="disponibilidade.php?prof=<?= (int) $p['id'] ?>">Ver e mudar os horários dela</a>
-            <?php if ($p['tem_acesso']): ?>
+            <?php if ((int) $p['id'] !== $euId): ?>
+              <form method="post"><?= campoCsrf() ?><input type="hidden" name="id" value="<?= (int) $p['id'] ?>"><input type="hidden" name="valor" value="<?= $p['admin'] ? 0 : 1 ?>">
+                <button class="link" name="acao" value="painel"><?= $p['admin'] ? 'Tirar acesso ao painel' : 'Dar acesso ao painel' ?></button></form>
+            <?php endif; ?>
+            <?php if ($p['tem_acesso'] && (int) $p['id'] !== $euId): ?>
               <form method="post"><?= campoCsrf() ?><input type="hidden" name="id" value="<?= (int) $p['id'] ?>">
                 <button class="link link-perigo" name="acao" value="remover_acesso" onclick="return confirm('Tirar o acesso de <?= e(addslashes($p['nome'])) ?>?')">Tirar acesso</button></form>
             <?php endif; ?>
@@ -225,7 +266,21 @@ cabecalhoAdmin('ajustes.php');
     </form>
   </section>
 
-  <section class="bloco">
+  <?php if ($eu): ?>
+  <section class="bloco" id="minha-senha">
+    <h2>Minha senha</h2>
+    <p class="topo-info">Você entra com <?= e(telefoneBonito((string) $eu['telefone'])) ?>. A mesma senha vale pro painel e pra sua agenda.</p>
+    <form method="post" class="campos form-bloq">
+      <?= campoCsrf() ?>
+      <input type="hidden" name="acao" value="minha_senha">
+      <label class="campo campo-largo"><span>Senha atual</span><input type="password" name="atual" autocomplete="current-password" required></label>
+      <label class="campo campo-largo"><span>Nova senha <em>(mínimo 6)</em></span><input type="password" name="nova" autocomplete="new-password" minlength="6" required></label>
+      <button class="botao botao-leve campo-largo">Salvar nova senha</button>
+    </form>
+  </section>
+  <?php endif; ?>
+
+  <section class="bloco bloco-sair">
     <h2>Sair do painel</h2>
     <form method="post" action="./">
       <?= campoCsrf() ?>

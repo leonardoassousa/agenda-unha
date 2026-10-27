@@ -188,6 +188,7 @@
       const rotulo = i === 0 ? 'hoje' : i === 1 ? 'amanhã' : SEM[dt.getDay()];
       const lbl = document.createElement('label');
       lbl.className = 'dia';
+      if (i === 0) lbl.style.setProperty('--coluna-dia', dt.getDay() + 1); // no computador os dias ficam alinhados por semana
       lbl.innerHTML = `<input type="radio" name="data" value="${iso}" ${aberto ? '' : 'disabled'}
           aria-label="${rotulo}, ${dt.getDate()} de ${MESES[dt.getMonth()]}${aberto ? '' : ', fechado'}">
         <span class="dia-caixa"><span class="dia-sem">${rotulo}</span><span class="dia-num">${dt.getDate()}</span><span class="dia-mes">${MES[dt.getMonth()]}</span></span>`;

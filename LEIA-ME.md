@@ -3,6 +3,7 @@
 **Versão 1.1** (o número fica no arquivo `VERSION` e em tags no GitHub, ex.: `v1.1`)
 
 ## Versões
+- **1.2** (26/10/2026): cada uma com a própria conta (celular + senha) e a dona entra no painel com essa mesma conta ("acesso ao painel" em Ajustes); a senha do `config.php` vira só de primeiro acesso. Layout de computador: vitrine do estúdio à esquerda na tela da cliente, serviços em duas colunas, dias em calendário e horários do lado; painel e área da equipe com barra lateral e calendário ao lado do dia.
 - **1.1** (26/10/2026): dados reais do Studio Carina Aquino (as 3 manicures, os dias de cada uma, horário de terça a sábado, procedimentos, preços e tempos), formas de pagamento na tela da cliente, pé e mão com duas manicures ao mesmo tempo, código formatado.
 - **1.0** (21/10/2026): sistema completo com dados de exemplo (agendamento com login, painel em calendário, caixa, área da equipe, horários de cada colaboradora, lembrete no WhatsApp).
 
@@ -25,12 +26,14 @@ Link de agendamento pra bio do Instagram. A cliente escolhe o serviço e o dia, 
 ## Rodar no XAMPP
 1. Copie a pasta `agenda-unhas` pra `C:\xampp\htdocs\`.
 2. No phpMyAdmin, crie o banco `agenda_unhas` (utf8mb4) e importe `sql/schema.sql`.
-3. Copie `config.exemplo.php` com o nome `config.php`, abra e ajuste o banco, o nome do estúdio, o WhatsApp, os horários e a **senha do painel**.
+3. Copie `config.exemplo.php` com o nome `config.php`, abra e ajuste o banco, o nome do estúdio, o WhatsApp, os horários e a **senha de primeiro acesso** (`admin_senha`).
 4. Cliente: http://localhost/agenda-unhas/
    Painel: http://localhost/agenda-unhas/admin/
+5. Primeiro acesso ao painel: entre com a `admin_senha`. Em **Ajustes**, na ficha da dona, toque em **Dar acesso ao painel** e depois em **Criar acesso** com o celular dela. Daí em diante o painel pede celular e senha (a mesma da área da equipe) e a `admin_senha` para de valer.
 
 ## Já tinha instalado uma versão anterior?
 Substitua os arquivos (menos o seu `config.php`; copie dele só o bloco novo `aviso_whatsapp` e `max_agendamentos_por_cliente`) e rode no phpMyAdmin, nesta ordem:
+- veio da versão 7: nada pra rodar; a coluna nova (`atualizar-v8.sql`, acesso ao painel) é criada sozinha na primeira vez que alguém abre o painel ou a área da equipe
 - veio da versão 6: só `sql/atualizar-v7.sql` (pé e mão com duas manicures)
 - veio da versão 5: `atualizar-v6.sql` (dados do Studio Carina Aquino) e `atualizar-v7.sql`
 - veio da versão 4: `atualizar-v5.sql` até `atualizar-v7.sql`
@@ -47,6 +50,7 @@ Barra de abas embaixo (onde o dedão alcança): **Agendar**, **Meus horários** 
 O botão voltar do celular funciona entre as telas. Visual em `assets/cliente.css` (tem tema escuro automático).
 
 ## Painel do estúdio (`/admin`)
+Entra quem tem **acesso ao painel** (marcado em Ajustes), com o mesmo celular e senha da área da equipe. Uma conta só: no painel tem o atalho **Minha agenda** e na área da equipe aparece **Painel do estúdio**. Ninguém tira o próprio acesso, então o painel nunca fica sem dona.
 - **Calendário**: o mês inteiro, com o número de horários marcados em cada dia e cor mais forte nos dias mais cheios. No topo escolhe **Todas** ou uma profissional. Tocando no dia aparecem: atendimentos, faturamento, faltas, ocupação da agenda, quantos de cada serviço, quanto cada uma fez e a lista de horários (com Concluir, valor a mais, Faltou, Cancelar e Lembrar no WhatsApp).
 - **Caixa**: escolhe a pessoa (ou Todas) e o mês. Mostra o caixa do mês, quanto cada uma fez e todos os serviços dia a dia, com o total de cada dia. Tocando num dia, aparece só ele, com o total do dia e do mês. Entra no caixa só o que foi **concluído** (valor do serviço + valor a mais).
 - **Resumo**: faturamento por período (hoje, semana, mês, mês passado ou datas escolhidas).

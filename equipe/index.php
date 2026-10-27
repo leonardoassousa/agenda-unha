@@ -17,16 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: ./');
         exit;
     } elseif ($c && $acao === 'trocar_senha') {
-        $st = db()->prepare('SELECT senha_hash FROM profissionais WHERE id = ?');
-        $st->execute([$c['id']]);
-        $nova = (string) ($_POST['nova'] ?? '');
-        if (!password_verify((string) ($_POST['atual'] ?? ''), (string) $st->fetchColumn())) $_SESSION['msg_eq'] = 'A senha atual está errada.';
-        elseif (mb_strlen($nova) < 6) $_SESSION['msg_eq'] = 'A nova senha precisa ter pelo menos 6 caracteres.';
-        else {
-            db()->prepare('UPDATE profissionais SET senha_hash = ? WHERE id = ?')->execute([password_hash($nova, PASSWORD_DEFAULT), $c['id']]);
-            session_regenerate_id(true);
-            $_SESSION['msg_eq'] = 'Senha trocada.';
-        }
+        $_SESSION['msg_eq'] = trocarSenhaPropria((int) $c['id'], (string) ($_POST['atual'] ?? ''), (string) ($_POST['nova'] ?? ''));
         header('Location: ./#senha');
         exit;
     } elseif ($c && in_array($acao, ['concluir', 'salvar_extra', 'reabrir', 'faltou', 'desfazer', 'cancelar'], true)) {
