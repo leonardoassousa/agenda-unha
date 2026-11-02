@@ -57,6 +57,12 @@
     return `${SEMANA[d.getDay()]}, ${d.getDate()} de ${MESES[d.getMonth()]}`;
   };
 
+  // 120 -> "2h", 90 -> "1h30", 15 -> "15 min"
+  const duracaoTxt = (min) => {
+    const h = Math.floor(min / 60), m = min % 60;
+    return h ? `${h}h${m ? String(m).padStart(2, '0') : ''}` : `${m} min`;
+  };
+
   function fotoHtml(p, classe = '') {
     if (!p) return '';
     return p.foto
@@ -154,6 +160,17 @@
   });
 
   // ---------- 1. Serviço ----------
+  // Atalhos das categorias: rola até o grupo sem mexer no histórico (o # na URL voltaria pra tela inicial)
+  const semMovimento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.querySelectorAll('.atalhos a').forEach((a) =>
+    a.addEventListener('click', (ev) => {
+      const alvo = document.querySelector(a.getAttribute('href'));
+      if (!alvo) return;
+      ev.preventDefault();
+      alvo.scrollIntoView({ behavior: semMovimento ? 'auto' : 'smooth', block: 'start' });
+    }),
+  );
+
   document.querySelectorAll('[data-servico]').forEach((b) =>
     b.addEventListener('click', () => {
       const id = Number(b.dataset.servico);
@@ -170,7 +187,7 @@
     const s = servico();
     $('escolhido').innerHTML = s
       ? `<div><p class="escolhido-nome">${esc(s.nome)}</p>
-      <p class="escolhido-info">${s.duracao} min, ${preco(s.preco)}</p></div>
+      <p class="escolhido-info">${duracaoTxt(s.duracao)}, ${preco(s.preco)}</p></div>
       <button type="button" class="link" data-ir="servico">Trocar</button>`
       : '';
   }
@@ -518,7 +535,7 @@
         <div><p class="rev-com">Com</p><p class="rev-prof-nome">${esc(ag.profissional)}</p></div></div>
       <dl><dt>Serviço</dt><dd>${esc(ag.servico)}</dd>
         <dt>Quando</dt><dd>${esc(ag.quando)}</dd>
-        ${ag.duracao ? `<dt>Duração</dt><dd>${ag.duracao} min</dd>` : ''}
+        ${ag.duracao ? `<dt>Duração</dt><dd>${duracaoTxt(ag.duracao)}</dd>` : ''}
         <dt>Valor</dt><dd>${esc(ag.valor)}</dd></dl>`;
   }
 

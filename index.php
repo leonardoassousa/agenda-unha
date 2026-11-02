@@ -55,6 +55,36 @@ function statusEstudio(): array
 }
 [$aberto, $statusTexto] = statusEstudio();
 $waEstudio = preg_replace('/\D/', '', (string) cfg('whatsapp'));
+$horarioResumo = resumoHorario();
+$populares = maisPedidos();
+
+// Serviços agrupados por categoria, na ordem de CATEGORIAS (sem categoria vai pro fim, em "Outros")
+$grupos = [];
+foreach ($servicos as $s) $grupos[$s['categoria'] ?: 'Outros'][] = $s;
+uksort($grupos, function ($a, $b) {
+    $pa = array_search($a, CATEGORIAS, true);
+    $pb = array_search($b, CATEGORIAS, true);
+    return ($pa === false ? 99 : $pa) <=> ($pb === false ? 99 : $pb);
+});
+
+/** Unha com a foto (ou a cor e a inicial) da profissional: a marca da página. */
+function unha(array $p, string $classe = ''): string
+{
+    return $p['foto']
+        ? '<img class="foto ' . $classe . '" src="' . e($p['foto']) . '" alt="" style="--cor:' . e($p['cor']) . '">'
+        : '<span class="foto ' . $classe . '" style="--cor:' . e($p['cor']) . '" aria-hidden="true">' . e(iniciais($p['nome'])) . '</span>';
+}
+
+/** Equipe da capa: as unhas lado a lado com o primeiro nome embaixo. */
+function equipeCapa(array $profissionais): string
+{
+    if (!$profissionais) return '';
+    $h = '<ul class="equipe" aria-label="Quem atende no estúdio">';
+    foreach ($profissionais as $p) {
+        $h .= '<li>' . unha($p, 'foto-capa') . '<span>' . e(preg_split('/\s+/', $p['nome'])[0]) . '</span></li>';
+    }
+    return $h . '</ul>';
+}
 ?>
 <!doctype html>
 <html lang="pt-BR">
@@ -63,11 +93,10 @@ $waEstudio = preg_replace('/\D/', '', (string) cfg('whatsapp'));
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Agendar horário · <?= e(cfg('nome_estudio')) ?></title>
 <meta name="description" content="Escolha o serviço, a profissional e o horário. Leva menos de um minuto.">
-<meta name="theme-color" content="#3A0E1E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Gloock&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/cliente.css">
+<meta name="theme-color" content="#3B0A1C">
+<link rel="preload" href="assets/fonts/bodoni-moda-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/hanken-grotesk-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/cliente.css?v=1.5">
 </head>
 <body>
 
@@ -76,13 +105,19 @@ $waEstudio = preg_replace('/\D/', '', (string) cfg('whatsapp'));
   <div class="vitrine-topo">
     <p class="capa-status <?= $aberto ? 'aberto' : '' ?>"><span class="ponto" aria-hidden="true"></span><?= e($statusTexto) ?></p>
     <p class="vitrine-nome"><?= e(cfg('nome_estudio')) ?></p>
-    <p class="vitrine-convite">Escolha o serviço, a profissional e o horário. Leva menos de um minuto.</p>
+    <p class="vitrine-convite">Escolha o serviço, a profissional e o horário. Seu horário fica confirmado na hora.</p>
+    <?= equipeCapa($profissionais) ?>
   </div>
   <div class="vitrine-info">
+    <?php if ($horarioResumo): ?><p><span class="vitrine-rotulo">Funcionamento</span><?= e($horarioResumo) ?></p><?php endif; ?>
     <?php if (cfg('endereco')): ?><p><span class="vitrine-rotulo">Endereço</span><?= e(cfg('endereco')) ?></p><?php endif; ?>
-    <?php if (cfg('instagram')): ?><p><span class="vitrine-rotulo">Instagram</span><?= e(cfg('instagram')) ?></p><?php endif; ?>
-    <?php if (cfg('pagamento')): ?><p><span class="vitrine-rotulo">Pagamento no studio</span><?= e(cfg('pagamento')) ?><?php if (cfg('pagamento_obs')): ?> <?= e(cfg('pagamento_obs')) ?><?php endif; ?></p><?php endif; ?>
-    <?php if ($waEstudio): ?><a class="vitrine-whats" href="https://wa.me/<?= e($waEstudio) ?>" target="_blank" rel="noopener">Falar no WhatsApp</a><?php endif; ?>
+    <?php if (cfg('pagamento')): ?><p><span class="vitrine-rotulo">Pagamento no estúdio</span><?= e(cfg('pagamento')) ?><?php if (cfg('pagamento_obs')): ?> <?= e(cfg('pagamento_obs')) ?><?php endif; ?></p><?php endif; ?>
+    <?php if ($waEstudio || cfg('instagram')): ?>
+      <p class="vitrine-links">
+        <?php if ($waEstudio): ?><a class="vitrine-whats" href="https://wa.me/<?= e($waEstudio) ?>" target="_blank" rel="noopener">Falar no WhatsApp</a><?php endif; ?>
+        <?php if (cfg('instagram')): ?><a class="vitrine-insta" href="https://instagram.com/<?= e(ltrim((string) cfg('instagram'), '@')) ?>" target="_blank" rel="noopener"><?= e(cfg('instagram')) ?></a><?php endif; ?>
+      </p>
+    <?php endif; ?>
   </div>
 </aside>
 
@@ -94,35 +129,53 @@ $waEstudio = preg_replace('/\D/', '', (string) cfg('whatsapp'));
       <div class="capa-in">
         <p class="capa-status <?= $aberto ? 'aberto' : '' ?>"><span class="ponto" aria-hidden="true"></span><?= e($statusTexto) ?></p>
         <h1><?= e(cfg('nome_estudio')) ?></h1>
-        <p class="capa-info">
-          <?php if (cfg('instagram')): ?><span><?= e(cfg('instagram')) ?></span><?php endif; ?>
-          <?php if (cfg('endereco')): ?><span><?= e(cfg('endereco')) ?></span><?php endif; ?>
-        </p>
+        <p class="capa-convite">Escolha o serviço, a profissional e o horário. Seu horário fica confirmado na hora.</p>
+        <?= equipeCapa($profissionais) ?>
+        <?php if ($horarioResumo || cfg('endereco')): ?>
+          <p class="capa-info">
+            <?php if ($horarioResumo): ?><span><?= e($horarioResumo) ?></span><?php endif; ?>
+            <?php if (cfg('endereco')): ?><span><?= e(cfg('endereco')) ?></span><?php endif; ?>
+          </p>
+        <?php endif; ?>
       </div>
     </header>
     <div class="folha">
       <ol class="passos" aria-label="Etapas do agendamento">
         <li aria-current="step">Serviço</li><li>Horário</li><li>Confirmar</li>
       </ol>
-      <h2 class="titulo" id="t-servico">Qual serviço você quer?</h2>
-      <ul class="servicos">
-        <?php foreach ($servicos as $s): ?>
-          <li>
-            <button type="button" class="servico" data-servico="<?= (int) $s['id'] ?>">
-              <span class="servico-texto">
-                <span class="servico-nome"><?= e($s['nome']) ?></span>
-                <?php if ($s['descricao']): ?><span class="servico-desc"><?= e($s['descricao']) ?></span><?php endif; ?>
-              </span>
-              <span class="servico-valor">
-                <span class="servico-preco"><?= preco((float) $s['preco']) ?></span>
-                <span class="servico-dur"><?= (int) $s['duracao_min'] ?> min</span>
-              </span>
-              <svg class="seta" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
-            </button>
-          </li>
-        <?php endforeach; ?>
-      </ul>
+      <h2 class="titulo titulo-servicos" id="t-servico">Qual serviço você quer?</h2>
+      <?php if (count($grupos) > 1): ?>
+        <nav class="atalhos" aria-label="Tipos de serviço">
+          <?php foreach (array_keys($grupos) as $i => $cat): ?><a href="#cat-<?= $i ?>"><?= e($cat) ?></a><?php endforeach; ?>
+        </nav>
+      <?php endif; ?>
+      <?php $i = 0; foreach ($grupos as $cat => $lista): ?>
+        <section class="grupo" id="cat-<?= $i++ ?>" aria-label="<?= e($cat) ?>">
+          <?php if (count($grupos) > 1): ?><h3 class="grupo-nome"><?= e($cat) ?></h3><?php endif; ?>
+          <ul class="servicos">
+            <?php foreach ($lista as $s): $pop = isset($populares[(int) $s['id']]); ?>
+              <li>
+                <button type="button" class="servico<?= $pop ? ' popular' : '' ?>" data-servico="<?= (int) $s['id'] ?>">
+                  <span class="servico-texto">
+                    <span class="servico-nome"><?= e($s['nome']) ?></span>
+                    <?php if ($s['descricao']): ?><span class="servico-desc"><?= e($s['descricao']) ?></span><?php endif; ?>
+                    <?php if ($pop): ?><span class="selo">Um dos mais pedidos</span><?php endif; ?>
+                  </span>
+                  <span class="servico-valor">
+                    <span class="servico-preco"><?= preco((float) $s['preco']) ?></span>
+                    <span class="servico-dur"><?= e(duracaoTexto((int) $s['duracao_min'])) ?></span>
+                  </span>
+                  <svg class="seta" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+                </button>
+              </li>
+            <?php endforeach; ?>
+          </ul>
+        </section>
+      <?php endforeach; ?>
       <?php if (!$servicos): ?><p class="vazio">Nenhum serviço cadastrado ainda.</p><?php endif; ?>
+      <?php if ($waEstudio): ?>
+        <p class="duvida">Ficou com dúvida sobre algum serviço? <a href="https://wa.me/<?= e($waEstudio) ?>?text=<?= rawurlencode('Oi! Tenho uma dúvida antes de agendar.') ?>" target="_blank" rel="noopener">Pergunte no WhatsApp</a></p>
+      <?php endif; ?>
     </div>
   </section>
 
@@ -223,7 +276,7 @@ $waEstudio = preg_replace('/\D/', '', (string) cfg('whatsapp'));
       <div class="cartao revisao" id="rev-cartao"></div>
       <?php if (cfg('pagamento')): ?>
       <div class="pagamento">
-        <p class="pagamento-titulo">Pagamento no studio</p>
+        <p class="pagamento-titulo">Pagamento no estúdio</p>
         <p><?= e(cfg('pagamento')) ?></p>
         <?php if (cfg('pagamento_obs')): ?><p class="pagamento-obs"><?= e(cfg('pagamento_obs')) ?></p><?php endif; ?>
       </div>
@@ -252,7 +305,7 @@ $waEstudio = preg_replace('/\D/', '', (string) cfg('whatsapp'));
       <p class="subtitulo" id="conf-nota"></p>
       <?php if (cfg('pagamento')): ?>
       <div class="pagamento">
-        <p class="pagamento-titulo">Pagamento no studio</p>
+        <p class="pagamento-titulo">Pagamento no estúdio</p>
         <p><?= e(cfg('pagamento')) ?></p>
         <?php if (cfg('pagamento_obs')): ?><p class="pagamento-obs"><?= e(cfg('pagamento_obs')) ?></p><?php endif; ?>
       </div>

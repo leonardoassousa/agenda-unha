@@ -34,6 +34,14 @@ function e(?string $s): string
     return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
 }
 
+/** 120 -> "2h", 90 -> "1h30", 15 -> "15 min" */
+function duracaoTexto(int $min): string
+{
+    $h = intdiv($min, 60);
+    $m = $min % 60;
+    return $h ? $h . 'h' . ($m ? sprintf('%02d', $m) : '') : "$m min";
+}
+
 function preco(float $v): string
 {
     return 'R$ ' . number_format($v, 2, ',', '.');
@@ -41,11 +49,60 @@ function preco(float $v): string
 
 function servicosAtivos(): array
 {
+    garantirCategoriaServicos();
     return db()
         ->query(
-            'SELECT id, nome, descricao, duracao_min, preco, dupla FROM servicos WHERE ativo = 1 ORDER BY ordem, nome',
+            'SELECT id, nome, descricao, categoria, duracao_min, preco, dupla FROM servicos WHERE ativo = 1 ORDER BY ordem, nome',
         )
         ->fetchAll();
+}
+
+/** Grupos da tela da cliente, na ordem em que aparecem. Serviço sem categoria cai em "Outros". */
+const CATEGORIAS = ['Mãos e pés', 'Gel e alongamento', 'Spa e relaxamento'];
+
+/** Banco de antes da versão 1.5: cria a coluna categoria e preenche os serviços que já existem. */
+function garantirCategoriaServicos(): void
+{
+    static $feito = false;
+    if ($feito) return;
+    $feito = true;
+    if (db()->query("SHOW COLUMNS FROM servicos LIKE 'categoria'")->fetch()) return;
+    db()->exec('ALTER TABLE servicos ADD COLUMN categoria VARCHAR(40) NULL AFTER descricao');
+    $padrao = [
+        'Mãos e pés' => ['Pé e mão', 'Pé e mão com duas manicures', 'Pé', 'Mão', 'Esmaltação convencional'],
+        'Gel e alongamento' => ['Alongamento', 'Banho em gel', 'Esmaltação em gel', 'Manutenção natural', 'Manutenção encapsulada'],
+        'Spa e relaxamento' => ['Spa dos pés', 'Massagem nos pés'],
+    ];
+    $st = db()->prepare('UPDATE servicos SET categoria = ? WHERE nome = ? AND categoria IS NULL');
+    foreach ($padrao as $cat => $nomes) foreach ($nomes as $n) $st->execute([$cat, $n]);
+}
+
+/** Serviços mais marcados nos últimos 60 dias: [servico_id => vezes]. Só entra quem tem 3 ou mais. */
+function maisPedidos(int $quantos = 2): array
+{
+    $st = db()->query(
+        "SELECT servico_id, COUNT(DISTINCT COALESCE(grupo, id)) n FROM agendamentos
+         WHERE status IN ('confirmado','concluido') AND criado_em >= NOW() - INTERVAL 60 DAY
+         GROUP BY servico_id HAVING n >= 3 ORDER BY n DESC LIMIT " . (int) $quantos,
+    );
+    return array_map('intval', array_column($st->fetchAll(), 'n', 'servico_id'));
+}
+
+/** Resumo do horário do config.php pra mostrar à cliente, ex.: "Terça a sábado, das 9h às 18h". '' se não der pra resumir. */
+function resumoHorario(): string
+{
+    $nomes = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+    $abertos = array_filter(cfg('horarios') ?: [], fn($h) => is_array($h));
+    if (!$abertos) return '';
+    $faixas = array_unique(array_map(fn($h) => $h[0] . '-' . $h[1], $abertos));
+    $dias = array_keys($abertos);
+    sort($dias);
+    $seguidos = $dias === range($dias[0], end($dias));
+    if (count($faixas) !== 1 || !$seguidos) return '';
+    [$abre, $fecha] = reset($abertos);
+    $h = fn(string $t) => (int) substr($t, 0, 2) . 'h' . (substr($t, 3, 2) !== '00' ? substr($t, 3, 2) : '');
+    $quando = count($dias) === 1 ? ucfirst($nomes[$dias[0]]) : ucfirst($nomes[$dias[0]]) . ' a ' . $nomes[end($dias)];
+    return "$quando, das {$h($abre)} às {$h($fecha)}";
 }
 
 function profissionaisAtivas(): array

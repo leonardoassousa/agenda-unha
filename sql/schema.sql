@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS servicos (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   nome VARCHAR(100) NOT NULL,
   descricao VARCHAR(255) NULL,
+  categoria VARCHAR(40) NULL,                -- grupo na tela da cliente (Mãos e pés, Gel e alongamento, Spa e relaxamento)
   duracao_min SMALLINT UNSIGNED NOT NULL,
   preco DECIMAL(8,2) NOT NULL DEFAULT 0,
   ativo TINYINT(1) NOT NULL DEFAULT 1,
@@ -131,19 +132,19 @@ INSERT INTO disponibilidade_semana (profissional_id, dia_semana, inicio, fim) VA
   (3, 4, '09:00', '17:00'), (3, 5, '09:00', '17:00'), (3, 6, '09:00', '17:00');
 
 -- Procedimentos e valores. A duração (min) define quanto tempo o horário ocupa na agenda.
-INSERT INTO servicos (nome, descricao, duracao_min, preco, ordem) VALUES
-  ('Pé e mão',                 'Com uma manicure só',                            120,  55.00,  1),
-  ('Pé',                       'Cutilagem e esmaltação',                         60,  35.00,  2),
-  ('Mão',                      'Cutilagem e esmaltação',                         60,  35.00,  3),
-  ('Esmaltação convencional',  'Só a esmaltação',                                10,   5.00,  4),
-  ('Spa dos pés',              'Esfoliação, hidratação e cuidado completo',      60, 100.00,  5),
-  ('Massagem nos pés',         '15 minutos de massagem relaxante',               15,  20.00,  6),
-  ('Alongamento',              'Aplicação completa',                            120, 200.00,  7),
-  ('Banho em gel',             'Gel sobre a unha natural',                       90, 150.00,  8),
-  ('Esmaltação em gel',        'Dura até 3 semanas',                             60,  75.00,  9),
-  ('Manutenção natural',       'Manutenção do banho em gel',                     90, 115.00, 10),
-  ('Manutenção encapsulada',   'Com decoração. A partir de R$ 135, depende do caso', 120, 135.00, 11);
+INSERT INTO servicos (nome, descricao, categoria, duracao_min, preco, ordem) VALUES
+  ('Pé e mão',                 'Com uma manicure só',                            'Mãos e pés',        120,  55.00,  1),
+  ('Pé',                       'Cutilagem e esmaltação',                         'Mãos e pés',         60,  35.00,  2),
+  ('Mão',                      'Cutilagem e esmaltação',                         'Mãos e pés',         60,  35.00,  3),
+  ('Esmaltação convencional',  'Só a esmaltação',                                'Mãos e pés',         10,   5.00,  4),
+  ('Spa dos pés',              'Esfoliação, hidratação e cuidado completo',      'Spa e relaxamento',  60, 100.00,  5),
+  ('Massagem nos pés',         '15 minutos de massagem relaxante',               'Spa e relaxamento',  15,  20.00,  6),
+  ('Alongamento',              'Aplicação completa',                             'Gel e alongamento', 120, 200.00,  7),
+  ('Banho em gel',             'Gel sobre a unha natural',                       'Gel e alongamento',  90, 150.00,  8),
+  ('Esmaltação em gel',        'Dura até 3 semanas',                             'Gel e alongamento',  60,  75.00,  9),
+  ('Manutenção natural',       'Manutenção do banho em gel',                     'Gel e alongamento',  90, 115.00, 10),
+  ('Manutenção encapsulada',   'Com decoração. A partir de R$ 135, depende do caso', 'Gel e alongamento', 120, 135.00, 11);
 
 -- Pé e mão com duas manicures ao mesmo tempo: uma no pé, outra na mão, em 1 hora
-INSERT INTO servicos (nome, descricao, duracao_min, preco, ordem, dupla) VALUES
-  ('Pé e mão com duas manicures', 'Uma faz o pé e a outra a mão, ao mesmo tempo', 60, 55.00, 1, 1);
+INSERT INTO servicos (nome, descricao, categoria, duracao_min, preco, ordem, dupla) VALUES
+  ('Pé e mão com duas manicures', 'Uma faz o pé e a outra a mão, ao mesmo tempo', 'Mãos e pés', 60, 55.00, 1, 1);

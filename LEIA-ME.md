@@ -1,15 +1,16 @@
 # Agenda de unhas · Studio Carina Aquino
 
-**Versão 1.4** (o número fica no arquivo `VERSION` e em tags no GitHub, ex.: `v1.4`)
+**Versão 1.5** (o número fica no arquivo `VERSION` e em tags no GitHub, ex.: `v1.5`)
 
 ## Versões
+- **1.5** (02/11/2026): tela da cliente nova. Capa em laca escura com a equipe em formato de unha (foto ou cor de cada uma), horário de funcionamento e endereço logo na capa, serviços agrupados por tipo (Mãos e pés, Gel e alongamento, Spa e relaxamento) com atalhos, selo "Um dos mais pedidos" (com base nos agendamentos dos últimos 60 dias), duração em horas (2h, 1h30) e link de dúvida no WhatsApp. Fontes Bodoni Moda e Hanken Grotesk servidas do próprio site (`assets/fonts`). A coluna `servicos.categoria` é criada sozinha (mesmo que `sql/atualizar-v9.sql`).
 - **1.4** (02/11/2026): login único em `/equipe/` pra dona e pra equipe. A dona (quem tem acesso ao painel) cai direto no painel com o faturamento; as manicures caem na agenda delas. `/admin/` sem login manda pro login único. O painel é de uma dona só: depois que ela tem acesso, ninguém mais recebe acesso ao painel.
 - **1.3** (02/11/2026): instalador `instalar.bat`: dois cliques e o sistema fica pronto no XAMPP (copia os arquivos, cria o banco e abre no navegador).
 - **1.2** (26/10/2026): cada uma com a própria conta (celular + senha) e a dona entra no painel com essa mesma conta ("acesso ao painel" em Ajustes); a senha do `config.php` vira só de primeiro acesso. Layout de computador: vitrine do estúdio à esquerda na tela da cliente, serviços em duas colunas, dias em calendário e horários do lado; painel e área da equipe com barra lateral e calendário ao lado do dia.
 - **1.1** (26/10/2026): dados reais do Studio Carina Aquino (as 3 manicures, os dias de cada uma, horário de terça a sábado, procedimentos, preços e tempos), formas de pagamento na tela da cliente, pé e mão com duas manicures ao mesmo tempo, código formatado.
 - **1.0** (21/10/2026): sistema completo com dados de exemplo (agendamento com login, painel em calendário, caixa, área da equipe, horários de cada colaboradora, lembrete no WhatsApp).
 
-> Os arquivos `sql/atualizar-v2.sql` … `atualizar-v8.sql` são etapas do **banco de dados**, não a versão do sistema.
+> Os arquivos `sql/atualizar-v2.sql` … `atualizar-v9.sql` são etapas do **banco de dados**, não a versão do sistema.
 
 **Equipe:** Carina Aquino (terça a sábado, 9h às 18h), Victoria Aquino (só sábado, 9h às 18h) e Ana Oliveira (quinta a sábado, 9h às 17h). O estúdio abre de terça a sábado, das 9h às 18h. Cada uma pode mudar os próprios dias em `/equipe`, aba Meus horários.
 
@@ -42,6 +43,7 @@ Ele copia tudo pra `C:\xampp\htdocs\agenda-unhas`, cria o banco `agenda_unhas` c
 
 ## Já tinha instalado uma versão anterior?
 Substitua os arquivos (menos o seu `config.php`; copie dele só o bloco novo `aviso_whatsapp` e `max_agendamentos_por_cliente`) e rode no phpMyAdmin, nesta ordem:
+- veio da versão 8: nada pra rodar; a coluna `categoria` dos serviços (`atualizar-v9.sql`) é criada e preenchida sozinha na primeira vez que a tela da cliente abre. Serviço novo sem categoria aparece no grupo "Outros"
 - veio da versão 7: nada pra rodar; a coluna nova (`atualizar-v8.sql`, acesso ao painel) é criada sozinha na primeira vez que alguém abre o painel ou a área da equipe
 - veio da versão 6: só `sql/atualizar-v7.sql` (pé e mão com duas manicures)
 - veio da versão 5: `atualizar-v6.sql` (dados do Studio Carina Aquino) e `atualizar-v7.sql`
