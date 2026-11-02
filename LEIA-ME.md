@@ -1,13 +1,14 @@
 # Agenda de unhas · Studio Carina Aquino
 
-**Versão 1.1** (o número fica no arquivo `VERSION` e em tags no GitHub, ex.: `v1.1`)
+**Versão 1.3** (o número fica no arquivo `VERSION` e em tags no GitHub, ex.: `v1.3`)
 
 ## Versões
+- **1.3** (02/11/2026): instalador `instalar.bat`: dois cliques e o sistema fica pronto no XAMPP (copia os arquivos, cria o banco e abre no navegador).
 - **1.2** (26/10/2026): cada uma com a própria conta (celular + senha) e a dona entra no painel com essa mesma conta ("acesso ao painel" em Ajustes); a senha do `config.php` vira só de primeiro acesso. Layout de computador: vitrine do estúdio à esquerda na tela da cliente, serviços em duas colunas, dias em calendário e horários do lado; painel e área da equipe com barra lateral e calendário ao lado do dia.
 - **1.1** (26/10/2026): dados reais do Studio Carina Aquino (as 3 manicures, os dias de cada uma, horário de terça a sábado, procedimentos, preços e tempos), formas de pagamento na tela da cliente, pé e mão com duas manicures ao mesmo tempo, código formatado.
 - **1.0** (21/10/2026): sistema completo com dados de exemplo (agendamento com login, painel em calendário, caixa, área da equipe, horários de cada colaboradora, lembrete no WhatsApp).
 
-> Os arquivos `sql/atualizar-v2.sql` … `atualizar-v7.sql` são etapas do **banco de dados**, não a versão do sistema.
+> Os arquivos `sql/atualizar-v2.sql` … `atualizar-v8.sql` são etapas do **banco de dados**, não a versão do sistema.
 
 **Equipe:** Carina Aquino (terça a sábado, 9h às 18h), Victoria Aquino (só sábado, 9h às 18h) e Ana Oliveira (quinta a sábado, 9h às 17h). O estúdio abre de terça a sábado, das 9h às 18h. Cada uma pode mudar os próprios dias em `/equipe`, aba Meus horários.
 
@@ -23,7 +24,14 @@
 
 Link de agendamento pra bio do Instagram. A cliente escolhe o serviço e o dia, e vê as profissionais com foto, cada uma com os próprios horários livres. Pra confirmar, ela entra na conta (celular + senha) ou cria uma (nome completo, celular, e-mail e senha). Logada, ela vê e cancela os próprios horários. O painel tem agenda, resumo financeiro e lista de clientes.
 
-## Rodar no XAMPP
+## Instalação rápida (Windows + XAMPP)
+1. Extraia o zip em qualquer pasta (ex.: Downloads).
+2. No XAMPP Control Panel, dê **Start** no **Apache** e no **MySQL**.
+3. Abra a pasta `agenda-unhas` e dê dois cliques em **`instalar.bat`**.
+
+Ele copia tudo pra `C:\xampp\htdocs\agenda-unhas`, cria o banco `agenda_unhas` com os dados do studio e abre o sistema no navegador. Se o banco já existir, ele não mexe (os dados ficam). Rodar de novo serve pra atualizar os arquivos sem perder o `config.php`.
+
+## Rodar no XAMPP (manual)
 1. Copie a pasta `agenda-unhas` pra `C:\xampp\htdocs\`.
 2. No phpMyAdmin, crie o banco `agenda_unhas` (utf8mb4) e importe `sql/schema.sql`.
 3. Copie `config.exemplo.php` com o nome `config.php`, abra e ajuste o banco, o nome do estúdio, o WhatsApp, os horários e a **senha de primeiro acesso** (`admin_senha`).
