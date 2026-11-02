@@ -53,6 +53,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['aviso_ajustes'] = 'Você não pode tirar o seu próprio acesso ao painel.';
             voltarPara('ajustes.php', [], 'acesso');
         }
+        if ($dar) {
+            // O painel (faturamento) é de uma dona só
+            $st = db()->prepare('SELECT nome FROM profissionais WHERE admin = 1 AND id <> ? LIMIT 1');
+            $st->execute([$id]);
+            if ($dona = $st->fetchColumn()) {
+                $_SESSION['aviso_ajustes'] = "O painel e o faturamento são só da $dona. As outras usam a área da equipe.";
+                voltarPara('ajustes.php', [], 'acesso');
+            }
+        }
         db()->prepare('UPDATE profissionais SET admin = ? WHERE id = ?')->execute([$dar ? 1 : 0, $id]);
         $st = db()->prepare('SELECT nome, senha_hash IS NOT NULL tem FROM profissionais WHERE id = ?');
         $st->execute([$id]);
@@ -105,9 +114,8 @@ $senhaEquipe = $_SESSION['senha_equipe'] ?? null;
 unset($_SESSION['aviso_ajustes'], $_SESSION['senha_equipe']);
 $profs = db()->query('SELECT id, nome, cor, foto, telefone, admin, senha_hash IS NOT NULL tem_acesso FROM profissionais ORDER BY ordem, nome')->fetchAll();
 $linkEquipe = (!empty($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . rtrim(dirname(dirname($_SERVER['SCRIPT_NAME'] ?? '/admin/x')), '/') . '/equipe/';
-$linkPainel = rtrim($linkEquipe, '/');
-$linkPainel = substr($linkPainel, 0, -strlen('equipe')) . 'admin/';
 $temContaPainel = existeContaPainel();
+$temDona = (bool) array_filter($profs, fn($p) => (int) $p['admin'] === 1);
 $profPorId = array_column($profs, null, 'id');
 $dataBloq = $_GET['data'] ?? date('Y-m-d');
 if (!DateTime::createFromFormat('!Y-m-d', $dataBloq)) $dataBloq = date('Y-m-d');
@@ -123,14 +131,14 @@ cabecalhoAdmin('ajustes.php');
 
   <section class="bloco" id="acesso">
     <h2>Equipe: acesso e horários</h2>
-    <p class="topo-info">Cada uma tem a própria conta: entra em <a href="<?= e($linkEquipe) ?>"><?= e($linkEquipe) ?></a> com o celular e a senha que você gerar aqui. Lá ela vê a agenda dela, conclui os atendimentos, lança valor a mais e ajusta os próprios horários. Quem tem <strong>acesso ao painel</strong> (a dona) usa a mesma conta pra entrar aqui.</p>
+    <p class="topo-info">Cada uma tem a própria conta: entra em <a href="<?= e($linkEquipe) ?>"><?= e($linkEquipe) ?></a> com o celular e a senha que você gerar aqui. Lá ela vê a agenda dela, conclui os atendimentos, lança valor a mais e ajusta os próprios horários. O login é um só: quem tem <strong>acesso ao painel</strong> (a dona, a única que vê o faturamento) entra pelo mesmo link e cai direto aqui.</p>
     <?php if (!$temContaPainel): ?>
       <div class="nota nota-alerta" role="status">
         <p><strong>Crie a sua conta.</strong> Você entrou com a senha de primeiro acesso do <code>config.php</code>. Na sua ficha aqui embaixo, toque em <strong>Dar acesso ao painel</strong> e depois em <strong>Criar acesso</strong> com o seu celular. A partir daí o painel pede celular e senha, e a senha do <code>config.php</code> deixa de valer.</p>
       </div>
     <?php endif; ?>
     <?php if ($senhaEquipe):
-        $msgWa = "Oi, {$senhaEquipe['nome']}! Seu acesso à agenda do estúdio: $linkEquipe" . ($senhaEquipe['admin'] ? "\nPainel do estúdio: $linkPainel" : '') . "\nCelular: " . telefoneBonito($senhaEquipe['telefone']) . "\nSenha: {$senhaEquipe['senha']}"; ?>
+        $msgWa = "Oi, {$senhaEquipe['nome']}! Seu acesso à agenda do estúdio: $linkEquipe" . "\nCelular: " . telefoneBonito($senhaEquipe['telefone']) . "\nSenha: {$senhaEquipe['senha']}"; ?>
       <div class="nota nota-senha" role="status">
         <p>Senha de <strong><?= e($senhaEquipe['nome']) ?></strong>:</p>
         <p class="senha-gerada"><?= e($senhaEquipe['senha']) ?></p>
@@ -160,7 +168,7 @@ cabecalhoAdmin('ajustes.php');
           </form>
           <div class="acesso-links">
             <a href="disponibilidade.php?prof=<?= (int) $p['id'] ?>">Ver e mudar os horários dela</a>
-            <?php if ((int) $p['id'] !== $euId): ?>
+            <?php if ((int) $p['id'] !== $euId && ($p['admin'] || !$temDona)): ?>
               <form method="post"><?= campoCsrf() ?><input type="hidden" name="id" value="<?= (int) $p['id'] ?>"><input type="hidden" name="valor" value="<?= $p['admin'] ? 0 : 1 ?>">
                 <button class="link" name="acao" value="painel"><?= $p['admin'] ? 'Tirar acesso ao painel' : 'Dar acesso ao painel' ?></button></form>
             <?php endif; ?>

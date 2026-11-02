@@ -10,12 +10,6 @@ function contaPainel(): ?array
     return $c && (int) $c['admin'] === 1 ? $c : null;
 }
 
-/** Já existe alguém com acesso ao painel e senha criada? Enquanto não existir, vale a senha do config.php. */
-function existeContaPainel(): bool
-{
-    return (bool) db()->query('SELECT 1 FROM profissionais WHERE admin = 1 AND ativo = 1 AND senha_hash IS NOT NULL AND telefone IS NOT NULL LIMIT 1')->fetchColumn();
-}
-
 function logada(): bool
 {
     return contaPainel() !== null || !empty($_SESSION['admin_inicial']);

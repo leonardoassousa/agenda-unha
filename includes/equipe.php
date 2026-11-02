@@ -1,7 +1,7 @@
 <?php
-// Login de cada colaboradora (celular + senha criada pela dona no painel).
+// Login único do estúdio (celular + senha criada pela dona no painel), em /equipe/.
 // A mesma sessão vale pra área da equipe e pro painel: quem tem "acesso ao painel" (a dona)
-// entra uma vez só e usa os dois.
+// entra por ele e cai direto no painel; as outras caem na agenda delas.
 require_once __DIR__ . '/app.php';
 require_once __DIR__ . '/sessao.php';
 
@@ -17,6 +17,12 @@ function garantirColunaPainel(): void
 {
     if (db()->query("SHOW COLUMNS FROM profissionais LIKE 'admin'")->fetch()) return;
     db()->exec('ALTER TABLE profissionais ADD COLUMN admin TINYINT(1) NOT NULL DEFAULT 0 AFTER senha_hash');
+}
+
+/** Já existe alguém com acesso ao painel e senha criada? Enquanto não existir, vale a senha do config.php. */
+function existeContaPainel(): bool
+{
+    return (bool) db()->query('SELECT 1 FROM profissionais WHERE admin = 1 AND ativo = 1 AND senha_hash IS NOT NULL AND telefone IS NOT NULL LIMIT 1')->fetchColumn();
 }
 
 /** Colaboradora logada (ou null). */

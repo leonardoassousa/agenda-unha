@@ -1,8 +1,9 @@
 # Agenda de unhas · Studio Carina Aquino
 
-**Versão 1.3** (o número fica no arquivo `VERSION` e em tags no GitHub, ex.: `v1.3`)
+**Versão 1.4** (o número fica no arquivo `VERSION` e em tags no GitHub, ex.: `v1.4`)
 
 ## Versões
+- **1.4** (02/11/2026): login único em `/equipe/` pra dona e pra equipe. A dona (quem tem acesso ao painel) cai direto no painel com o faturamento; as manicures caem na agenda delas. `/admin/` sem login manda pro login único. O painel é de uma dona só: depois que ela tem acesso, ninguém mais recebe acesso ao painel.
 - **1.3** (02/11/2026): instalador `instalar.bat`: dois cliques e o sistema fica pronto no XAMPP (copia os arquivos, cria o banco e abre no navegador).
 - **1.2** (26/10/2026): cada uma com a própria conta (celular + senha) e a dona entra no painel com essa mesma conta ("acesso ao painel" em Ajustes); a senha do `config.php` vira só de primeiro acesso. Layout de computador: vitrine do estúdio à esquerda na tela da cliente, serviços em duas colunas, dias em calendário e horários do lado; painel e área da equipe com barra lateral e calendário ao lado do dia.
 - **1.1** (26/10/2026): dados reais do Studio Carina Aquino (as 3 manicures, os dias de cada uma, horário de terça a sábado, procedimentos, preços e tempos), formas de pagamento na tela da cliente, pé e mão com duas manicures ao mesmo tempo, código formatado.
@@ -36,8 +37,8 @@ Ele copia tudo pra `C:\xampp\htdocs\agenda-unhas`, cria o banco `agenda_unhas` c
 2. No phpMyAdmin, crie o banco `agenda_unhas` (utf8mb4) e importe `sql/schema.sql`.
 3. Copie `config.exemplo.php` com o nome `config.php`, abra e ajuste o banco, o nome do estúdio, o WhatsApp, os horários e a **senha de primeiro acesso** (`admin_senha`).
 4. Cliente: http://localhost/agenda-unhas/
-   Painel: http://localhost/agenda-unhas/admin/
-5. Primeiro acesso ao painel: entre com a `admin_senha`. Em **Ajustes**, na ficha da dona, toque em **Dar acesso ao painel** e depois em **Criar acesso** com o celular dela. Daí em diante o painel pede celular e senha (a mesma da área da equipe) e a `admin_senha` para de valer.
+   Login (dona e equipe): http://localhost/agenda-unhas/equipe/
+5. Primeiro acesso ao painel: abra http://localhost/agenda-unhas/admin/ e entre com a `admin_senha`. Em **Ajustes**, na ficha da dona, toque em **Dar acesso ao painel** e depois em **Criar acesso** com o celular dela. Daí em diante todo mundo entra pelo login único (`/equipe/`) e a `admin_senha` para de valer.
 
 ## Já tinha instalado uma versão anterior?
 Substitua os arquivos (menos o seu `config.php`; copie dele só o bloco novo `aviso_whatsapp` e `max_agendamentos_por_cliente`) e rode no phpMyAdmin, nesta ordem:
@@ -58,7 +59,7 @@ Barra de abas embaixo (onde o dedão alcança): **Agendar**, **Meus horários** 
 O botão voltar do celular funciona entre as telas. Visual em `assets/cliente.css` (tem tema escuro automático).
 
 ## Painel do estúdio (`/admin`)
-Entra quem tem **acesso ao painel** (marcado em Ajustes), com o mesmo celular e senha da área da equipe. Uma conta só: no painel tem o atalho **Minha agenda** e na área da equipe aparece **Painel do estúdio**. Ninguém tira o próprio acesso, então o painel nunca fica sem dona.
+O login é um só, em `/equipe/`: quem tem **acesso ao painel** (a dona, marcado em Ajustes) entra com o celular e a senha dela e cai direto no painel; as outras caem na agenda delas. Só a dona vê o faturamento, e o painel é de uma dona só (depois que ela tem acesso, o botão some das outras). Abrir `/admin/` sem estar logada manda pro login. Uma conta só: no painel tem o atalho **Minha agenda** e na área da equipe aparece **Painel do estúdio**. Ninguém tira o próprio acesso, então o painel nunca fica sem dona.
 - **Calendário**: o mês inteiro, com o número de horários marcados em cada dia e cor mais forte nos dias mais cheios. No topo escolhe **Todas** ou uma profissional. Tocando no dia aparecem: atendimentos, faturamento, faltas, ocupação da agenda, quantos de cada serviço, quanto cada uma fez e a lista de horários (com Concluir, valor a mais, Faltou, Cancelar e Lembrar no WhatsApp).
 - **Caixa**: escolhe a pessoa (ou Todas) e o mês. Mostra o caixa do mês, quanto cada uma fez e todos os serviços dia a dia, com o total de cada dia. Tocando num dia, aparece só ele, com o total do dia e do mês. Entra no caixa só o que foi **concluído** (valor do serviço + valor a mais).
 - **Resumo**: faturamento por período (hoje, semana, mês, mês passado ou datas escolhidas).

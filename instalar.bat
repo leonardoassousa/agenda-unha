@@ -63,8 +63,8 @@ echo.
 echo  Pronto! Abrindo no navegador...
 echo.
 echo   Cliente: http://localhost/agenda-unhas/
-echo   Painel:  http://localhost/agenda-unhas/admin/   ^(senha: troque-esta-senha^)
-echo   Equipe:  http://localhost/agenda-unhas/equipe/  ^(crie o acesso no Painel, em Ajustes^)
+echo   Login:   http://localhost/agenda-unhas/equipe/  ^(dona e equipe^)
+echo   Primeiro acesso da dona: http://localhost/agenda-unhas/admin/  ^(senha do config.php^)
 echo.
 echo  Se a pagina nao abrir, de Start no Apache no XAMPP e atualize.
 start "" "http://localhost/agenda-unhas/"

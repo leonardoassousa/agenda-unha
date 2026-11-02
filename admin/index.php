@@ -7,6 +7,12 @@ $msg = '';
 $soEquipe = false;
 $temContaPainel = existeContaPainel();
 
+// Login único: com a conta da dona criada, quem não está no painel entra por /equipe/
+if (!$logada && $temContaPainel) {
+    header('Location: ../equipe/');
+    exit;
+}
+
 // ---------- Ações ----------
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     conferirCsrf();
@@ -37,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($acao === 'sair') {
             $_SESSION = [];
             session_destroy();
-            voltarPara('./');
+            voltarPara('../equipe/');
         }
         if (in_array($acao, ['concluir', 'salvar_extra', 'reabrir', 'faltou', 'desfazer', 'cancelar'], true)) {
             $_SESSION['aviso_cal'] = acaoAtendimento($acao, (int) $_POST['id'], $_POST);

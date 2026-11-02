@@ -10,7 +10,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $acao = $_POST['acao'] ?? '';
     if ($acao === 'entrar') {
         $erro = entrarEquipe((string) ($_POST['telefone'] ?? ''), (string) ($_POST['senha'] ?? ''));
-        if ($erro === '') { header('Location: ./'); exit; }
+        if ($erro === '') {
+            // A dona (acesso ao painel) cai direto no painel; as outras, na agenda delas
+            $st = db()->prepare('SELECT admin FROM profissionais WHERE id = ?');
+            $st->execute([(int) $_SESSION['prof_id']]);
+            header('Location: ' . ((int) $st->fetchColumn() === 1 ? '../admin/' : './'));
+            exit;
+        }
     } elseif ($c && $acao === 'sair') {
         $_SESSION = [];
         session_destroy();
@@ -32,7 +38,7 @@ headEquipe($c ? 'Minha agenda' : 'Entrar');
 
 if (!$c): ?>
   <form method="post" class="login">
-    <h1>Área da equipe</h1>
+    <h1>Entrar</h1>
     <p class="topo-info"><?= e(cfg('nome_estudio')) ?></p>
     <?= campoCsrf() ?>
     <input type="hidden" name="acao" value="entrar">
@@ -47,6 +53,9 @@ if (!$c): ?>
     <?php if ($erro): ?><p class="erro" role="alert"><?= e($erro) ?></p><?php endif; ?>
     <button class="botao">Entrar</button>
     <p class="topo-info">A senha é criada pela dona do estúdio, no painel.</p>
+    <?php if (!existeContaPainel()): ?>
+      <p class="topo-info"><a href="../admin/">Primeiro acesso da dona (senha do config.php)</a></p>
+    <?php endif; ?>
   </form>
 <?php else:
     $dia = $_GET['dia'] ?? date('Y-m-d');
