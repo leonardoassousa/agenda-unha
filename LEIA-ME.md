@@ -1,8 +1,9 @@
 # Agenda de unhas · Studio Carina Aquino
 
-**Versão 1.5** (o número fica no arquivo `VERSION` e em tags no GitHub, ex.: `v1.5`)
+**Versão 1.6** (o número fica no arquivo `VERSION` e em tags no GitHub, ex.: `v1.6`)
 
 ## Versões
+- **1.6** (02/11/2026): a equipe aparece em bolinhas redondas (antes era em formato de unha), na capa, na escolha da profissional e na confirmação.
 - **1.5** (02/11/2026): tela da cliente nova. Capa em laca escura com a equipe em formato de unha (foto ou cor de cada uma), horário de funcionamento e endereço logo na capa, serviços agrupados por tipo (Mãos e pés, Gel e alongamento, Spa e relaxamento) com atalhos, selo "Um dos mais pedidos" (com base nos agendamentos dos últimos 60 dias), duração em horas (2h, 1h30) e link de dúvida no WhatsApp. Fontes Bodoni Moda e Hanken Grotesk servidas do próprio site (`assets/fonts`). A coluna `servicos.categoria` é criada sozinha (mesmo que `sql/atualizar-v9.sql`).
 - **1.4** (02/11/2026): login único em `/equipe/` pra dona e pra equipe. A dona (quem tem acesso ao painel) cai direto no painel com o faturamento; as manicures caem na agenda delas. `/admin/` sem login manda pro login único. O painel é de uma dona só: depois que ela tem acesso, ninguém mais recebe acesso ao painel.
 - **1.3** (02/11/2026): instalador `instalar.bat`: dois cliques e o sistema fica pronto no XAMPP (copia os arquivos, cria o banco e abre no navegador).

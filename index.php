@@ -67,7 +67,7 @@ uksort($grupos, function ($a, $b) {
     return ($pa === false ? 99 : $pa) <=> ($pb === false ? 99 : $pb);
 });
 
-/** Unha com a foto (ou a cor e a inicial) da profissional: a marca da página. */
+/** Bolinha com a foto (ou a cor e a inicial) da profissional: a marca da página. */
 function unha(array $p, string $classe = ''): string
 {
     return $p['foto']
@@ -75,7 +75,7 @@ function unha(array $p, string $classe = ''): string
         : '<span class="foto ' . $classe . '" style="--cor:' . e($p['cor']) . '" aria-hidden="true">' . e(iniciais($p['nome'])) . '</span>';
 }
 
-/** Equipe da capa: as unhas lado a lado com o primeiro nome embaixo. */
+/** Equipe da capa: as bolinhas lado a lado com o primeiro nome embaixo. */
 function equipeCapa(array $profissionais): string
 {
     if (!$profissionais) return '';
@@ -96,7 +96,7 @@ function equipeCapa(array $profissionais): string
 <meta name="theme-color" content="#3B0A1C">
 <link rel="preload" href="assets/fonts/bodoni-moda-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/hanken-grotesk-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/cliente.css?v=1.5">
+<link rel="stylesheet" href="assets/cliente.css?v=1.6">
 </head>
 <body>
 

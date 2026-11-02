@@ -1,5 +1,5 @@
 /* Agenda de unhas: tela da cliente (v1.5).
-   Ideia: laca de esmalte. Capa cereja escuro com um reflexo de brilho, a equipe em formato de unha
+   Ideia: laca de esmalte. Capa cereja escuro com um reflexo de brilho, a equipe em bolinhas de esmalte
    (a marca da página) e os serviços como um cardápio de estúdio. Fontes servidas do próprio site. */
 @font-face { font-family: 'Bodoni Moda'; font-weight: 400; font-style: normal; font-display: swap; src: url('fonts/bodoni-moda-latin-400-normal.woff2') format('woff2'); }
 @font-face { font-family: 'Bodoni Moda'; font-weight: 500; font-style: normal; font-display: swap; src: url('fonts/bodoni-moda-latin-500-normal.woff2') format('woff2'); }
@@ -189,7 +189,7 @@ button {
   gap: 2px 18px;
 }
 
-/* Equipe: as unhas lado a lado (no celular e na vitrine do computador) */
+/* Equipe: as bolinhas lado a lado (no celular e na vitrine do computador) */
 .equipe {
   list-style: none;
   margin: 6px 0 0;
@@ -569,11 +569,11 @@ button {
 }
 
 .foto {
-  /* Formato de unha amendoada: ponta arredondada em cima, cutícula mais reta embaixo */
+  /* Bolinha de esmalte: a cor de cada uma, com um ponto de brilho */
   --cor: var(--verniz);
-  width: 46px;
-  height: 58px;
-  border-radius: 50% 50% 44% 44% / 62% 62% 38% 38%;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
   flex: none;
   object-fit: cover;
   color: #ffffff;
@@ -581,25 +581,25 @@ button {
   display: grid;
   place-items: center;
   background:
-    radial-gradient(28% 22% at 34% 24%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 70%),
+    radial-gradient(26% 26% at 33% 28%, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 70%),
     linear-gradient(165deg, color-mix(in srgb, var(--cor) 78%, #fff), var(--cor) 45%, color-mix(in srgb, var(--cor) 72%, #000));
   box-shadow:
     0 0 0 2px var(--cartao),
     0 0 0 3.5px var(--cor);
 }
 .foto-p {
-  width: 36px;
-  height: 46px;
+  width: 42px;
+  height: 42px;
   font-size: 0.95rem;
 }
 .foto-g {
-  width: 68px;
-  height: 86px;
+  width: 80px;
+  height: 80px;
   font-size: 1.7rem;
 }
 .foto-capa {
-  width: 54px;
-  height: 70px;
+  width: 60px;
+  height: 60px;
   font-size: 1.35rem;
 }
 
@@ -1291,9 +1291,9 @@ button {
     margin-top: 10px;
   }
   .vitrine .foto-capa {
-    width: 58px;
-    height: 76px;
-    font-size: 1.45rem;
+    width: 68px;
+    height: 68px;
+    font-size: 1.5rem;
   }
   .vitrine-topo {
     display: grid;
