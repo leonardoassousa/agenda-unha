@@ -1,8 +1,9 @@
 # Agenda de unhas · Studio Carina Aquino
 
-**Versão 1.7** (o número fica no arquivo `VERSION` e em tags no GitHub, ex.: `v1.7`)
+**Versão 1.8** (o número fica no arquivo `VERSION` e em tags no GitHub, ex.: `v1.8`)
 
 ## Versões
+- **1.8** (03/11/2026): "Esqueci a senha" por e-mail. A cliente digita o e-mail da conta, recebe um link (vale 1 hora, uso único) e cria a senha nova sozinha, já entrando na conta. Continua dando pra Carina gerar senha nova pelo painel e mandar no WhatsApp. Envio por SMTP (Gmail do estúdio ou e-mail do domínio), bloco `email` no `config.php`. Barra de abas do computador com fundo sólido e vitrine compacta em tela de notebook.
 - **1.7** (03/11/2026): pronto pra VPS. `instalar.sh` + pasta `servidor/` (Nginx, regras de segurança, PHP com usuário próprio, sessões de 30 dias que o Ubuntu não apaga, backup diário, cron dos lembretes, HTTPS). Ícone na tela inicial do celular (app das clientes e app da equipe; pelo ícone a dona cai direto no painel). Login da equipe também trava por aparelho/rede depois de 20 erros. CSS e JS formatados no padrão (Prettier), com sumário de seções no topo de cada CSS.
 - **1.6** (02/11/2026): a equipe aparece em bolinhas redondas (antes era em formato de unha), na capa, na escolha da profissional e na confirmação.
 - **1.5** (02/11/2026): tela da cliente nova. Capa em laca escura com a equipe em formato de unha (foto ou cor de cada uma), horário de funcionamento e endereço logo na capa, serviços agrupados por tipo (Mãos e pés, Gel e alongamento, Spa e relaxamento) com atalhos, selo "Um dos mais pedidos" (com base nos agendamentos dos últimos 60 dias), duração em horas (2h, 1h30) e link de dúvida no WhatsApp. Fontes Bodoni Moda e Hanken Grotesk servidas do próprio site (`assets/fonts`). A coluna `servicos.categoria` é criada sozinha (mesmo que `sql/atualizar-v9.sql`).
@@ -49,8 +50,8 @@ O `instalar.sh` faz tudo: pacotes, banco com usuário e senha próprios, `config
 1. No painel do domínio (Hostinger), em DNS, crie `A  @  IP-da-VPS` e `A  www  IP-da-VPS`.
 2. No CMD do Windows (troque a versão e o domínio):
    ```
-   scp C:\Users\leona\Downloads\agenda-unhas\agenda-unhas-v1.7.zip root@IP-da-VPS:/root/
-   ssh -t root@IP-da-VPS "cd /root && rm -rf agenda-unhas && unzip -q agenda-unhas-v1.7.zip && bash agenda-unhas/instalar.sh studiocarinaaquino.com.br"
+   scp C:\Users\leona\Downloads\agenda-unhas\agenda-unhas-v1.8.zip root@IP-da-VPS:/root/
+   ssh -t root@IP-da-VPS "cd /root && rm -rf agenda-unhas && unzip -q agenda-unhas-v1.8.zip && bash agenda-unhas/instalar.sh studiocarinaaquino.com.br"
    ```
 3. Na primeira vez ele mostra a **senha de primeiro acesso** do painel. Anote.
 4. Ajuste os dados do estúdio: `nano /var/www/agenda-unhas/config.php` (nome, Instagram, endereço, WhatsApp, horários).
@@ -72,6 +73,7 @@ Os `.htaccess` das pastas só valem no XAMPP (Apache). Na VPS quem bloqueia `inc
 
 ## Já tinha instalado uma versão anterior?
 Substitua os arquivos (menos o seu `config.php`; copie dele só o bloco novo `aviso_whatsapp` e `max_agendamentos_por_cliente`) e rode no phpMyAdmin, nesta ordem:
+- veio da 1.7: nada pra rodar; as colunas do link de senha (`atualizar-v10.sql`) são criadas sozinhas. No `config.php`, copie os blocos novos `url_site` e `email`
 - veio da versão 8: nada pra rodar; a coluna `categoria` dos serviços (`atualizar-v9.sql`) é criada e preenchida sozinha na primeira vez que a tela da cliente abre. Serviço novo sem categoria aparece no grupo "Outros"
 - veio da versão 7: nada pra rodar; a coluna nova (`atualizar-v8.sql`, acesso ao painel) é criada sozinha na primeira vez que alguém abre o painel ou a área da equipe
 - veio da versão 6: só `sql/atualizar-v7.sql` (pé e mão com duas manicures)
@@ -117,10 +119,19 @@ Algumas horas antes do horário (padrão 3 h, em `lembrete_cliente` no `config.p
 - Cadastro: nome completo, celular (WhatsApp), e-mail e senha (mínimo 6). Celular e e-mail não se repetem entre contas.
 - Fica logada por 30 dias no mesmo celular.
 - "Meus horários" (no topo, quando logada): mostra os próximos horários e deixa cancelar até `cancelar_ate_horas` antes (padrão 2 h). O estúdio recebe aviso do cancelamento no WhatsApp.
-- Esqueceu a senha: no painel, aba **Clientes**, toque em "Gerar nova senha". A senha aparece uma vez, com botão pra mandar pro WhatsApp da cliente.
+- Esqueceu a senha, dois caminhos:
+  - **Sozinha, por e-mail** (precisa do bloco `email` ligado no `config.php`): em "Esqueci a senha" ela digita o e-mail da conta e recebe um link. O link vale 1 hora e funciona uma vez; ao criar a senha nova ela já entra na conta. A resposta é sempre a mesma, tendo conta ou não (ninguém descobre quem é cliente), e dá pra pedir no máximo 3 links por hora no mesmo e-mail.
+  - **Pelo estúdio**: no painel, aba **Clientes**, toque em "Gerar nova senha". A senha aparece uma vez, com botão pra mandar pro WhatsApp da cliente. Com o e-mail desligado, o "Esqueci a senha" manda a cliente falar no WhatsApp.
 - 5 senhas erradas seguidas no mesmo celular travam o login por 15 minutos. Gerar uma senha nova destrava na hora.
 - Senhas são guardadas com hash (`password_hash`), nunca em texto.
 - Se ela já tinha marcado horário antes de ter conta, com o mesmo celular, esses horários passam a aparecer na conta dela.
+
+## E-mail de "esqueci a senha"
+No `config.php`, bloco `email`, troque `'modo' => 'desligado'` por `'smtp'` e preencha:
+- **Gmail do estúdio** (mais fácil): na conta Google, ative a verificação em 2 etapas e crie uma **senha de app** em myaccount.google.com/apppasswords. Use `smtp.gmail.com`, porta `465`, `'ssl'`, usuário = o Gmail e senha = os 16 caracteres da senha de app. O remetente tem que ser o próprio Gmail. Limite do Gmail: 500 e-mails por dia (sobra).
+- **E-mail do domínio** (ex.: contato@studiocarinaaquino.com.br, se tiver caixa de e-mail na Hostinger): `smtp.hostinger.com`, porta `465`, `'ssl'`, usuário e senha da caixa.
+- Na VPS, o `instalar.sh` já preenche o `url_site` com o domínio (é o endereço que vai no link do e-mail). No XAMPP pode deixar vazio.
+- Se o e-mail não sair, o motivo fica no log do PHP (na VPS: `/var/log/agenda-unhas/php.log`, procure "e-mail de senha nova").
 
 ## Aviso no WhatsApp do estúdio
 A cada horário marcado chega uma mensagem no WhatsApp do estúdio com cliente, telefone, serviço, valor, dia, hora e profissional.

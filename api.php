@@ -2,6 +2,7 @@
 require __DIR__ . '/includes/app.php';
 require __DIR__ . '/includes/whatsapp.php';
 require __DIR__ . '/includes/cliente.php';
+require __DIR__ . '/includes/email.php';
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 
@@ -61,7 +62,7 @@ try {
     // Só abre sessão quando precisa (e não cria cookie pra quem só está olhando horários)
     $temCookie = isset($_COOKIE['agenda_cliente']);
     if (
-        in_array($acao, ['entrar', 'cadastrar'], true) ||
+        in_array($acao, ['entrar', 'cadastrar', 'redefinir'], true) ||
         ($temCookie && in_array($acao, ['eu', 'sair', 'agendar', 'cancelar', 'senha'], true))
     ) {
         iniciarSessaoCliente();
@@ -86,6 +87,35 @@ try {
             (string) ($in['email'] ?? ''),
             (string) ($in['senha'] ?? ''),
         );
+        responder(['ok' => true, 'cliente' => clientePublico($c), 'horarios' => horariosDaCliente((int) $c['id'])]);
+    }
+
+    // Esqueci a senha: manda o link por e-mail (a resposta é a mesma tendo conta ou não)
+    if ($acao === 'esqueci' && $ehPost) {
+        $in = corpoJson();
+        if (!emailAtivo()) {
+            responder(['erro' => 'Fale com o estúdio pelo WhatsApp que elas geram uma senha nova pra você.'], 409);
+        }
+        $pedido = pedirLinkSenha((string) ($in['email'] ?? ''));
+        $resposta = ['ok' => true];
+        if (!$pedido) {
+            responder($resposta);
+        }
+        responderEDepois($resposta, function () use ($pedido) {
+            [$assunto, $html, $texto] = emailRedefinirSenha(
+                $pedido['nome'],
+                urlSite() . '/?redefinir=' . $pedido['token'],
+            );
+            $erro = enviarEmail($pedido['email'], $pedido['nome'], $assunto, $html, $texto);
+            if ($erro !== '') {
+                error_log('[agenda] e-mail de senha nova não saiu: ' . $erro);
+            }
+        });
+    }
+
+    if ($acao === 'redefinir' && $ehPost) {
+        $in = corpoJson();
+        $c = redefinirSenhaPorLink((string) ($in['token'] ?? ''), (string) ($in['senha'] ?? ''));
         responder(['ok' => true, 'cliente' => clientePublico($c), 'horarios' => horariosDaCliente((int) $c['id'])]);
     }
 

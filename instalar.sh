@@ -75,7 +75,8 @@ if [ "$NOVO_CONFIG" = 1 ]; then
     $s = preg_replace("/(\x27usuario\x27\s*=>\s*)\x27[^\x27]*\x27/", "\${1}\x27".$argv[2]."\x27", $s, 1);
     $s = preg_replace("/(\x27senha\x27\s*=>\s*)\x27[^\x27]*\x27/", "\${1}\x27".$argv[3]."\x27", $s, 1);
     $s = preg_replace("/(\x27admin_senha\x27\s*=>\s*)\x27[^\x27]*\x27/", "\${1}\x27".$argv[4]."\x27", $s, 1);
-    file_put_contents($f, $s);' "$DESTINO/config.php" "$USUARIO_BANCO" "$SENHA_DB" "$SENHA_ADMIN"
+    $s = preg_replace("/(\x27url_site\x27\s*=>\s*)\x27[^\x27]*\x27/", "\${1}\x27https://".$argv[5]."\x27", $s, 1);
+    file_put_contents($f, $s);' "$DESTINO/config.php" "$USUARIO_BANCO" "$SENHA_DB" "$SENHA_ADMIN" "$DOMINIO"
 fi
 TABELAS="$($SQL -N -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='$BANCO'")"
 if [ "$TABELAS" = 0 ]; then

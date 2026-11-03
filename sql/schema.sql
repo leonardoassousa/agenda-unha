@@ -33,6 +33,8 @@ CREATE TABLE IF NOT EXISTS clientes (
   telefone VARCHAR(11) NOT NULL,            -- só DDD + número
   email VARCHAR(150) NOT NULL,
   senha_hash VARCHAR(255) NOT NULL,
+  reset_hash CHAR(64) NULL,                -- link de "esqueci a senha" (só o hash)
+  reset_expira DATETIME NULL,
   criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   ultimo_login DATETIME NULL,
   UNIQUE KEY uq_cli_tel (telefone),

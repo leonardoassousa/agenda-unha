@@ -1,5 +1,6 @@
 <?php
 require __DIR__ . '/includes/cliente.php';
+require __DIR__ . '/includes/email.php';
 
 // Já logada? (só abre sessão se ela já tiver o cookie)
 $cliente = null;
@@ -7,6 +8,18 @@ if (isset($_COOKIE['agenda_cliente'])) {
     iniciarSessaoCliente();
     $cliente = clientePublico(clienteAtual());
     session_write_close();
+}
+
+// Veio pelo link do e-mail de "esqueci a senha"?
+$redefinir = null;
+if (isset($_GET['redefinir'])) {
+    $token = (string) $_GET['redefinir'];
+    $dona = clientePorLink($token);
+    $redefinir = [
+        'token' => $dona ? $token : '',
+        'valido' => (bool) $dona,
+        'nome' => $dona ? explode(' ', trim($dona['nome']))[0] : '',
+    ];
 }
 
 $servicos = servicosAtivos();
@@ -29,6 +42,8 @@ $dadosJs = [
     'cliente' => $cliente,
     'avisoAutomatico' => ((cfg('aviso_whatsapp') ?: [])['modo'] ?? 'desligado') !== 'desligado',
     'cancelarAteHoras' => (int) (cfg('cancelar_ate_horas') ?? 2),
+    'emailSenha' => emailAtivo(),
+    'redefinir' => $redefinir,
 ];
 
 // Aberto agora? (mostrado no topo)
@@ -102,7 +117,7 @@ function equipeCapa(array $profissionais): string
 <meta name="apple-mobile-web-app-title" content="<?= e(cfg('nome_estudio')) ?>">
 <link rel="preload" href="assets/fonts/bodoni-moda-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/hanken-grotesk-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/cliente.css?v=1.7">
+<link rel="stylesheet" href="assets/cliente.css?v=1.8">
 </head>
 <body>
 
@@ -236,9 +251,21 @@ function equipeCapa(array $profissionais): string
             </span>
           </label>
           <button type="submit" class="botao botao-largo" id="btn-entrar">Entrar</button>
-          <details class="esqueci">
+          <details class="esqueci" id="esqueci">
             <summary>Esqueci a senha</summary>
-            <p>Fale com o estúdio pelo WhatsApp e elas geram uma senha nova pra você.
+            <?php if (emailAtivo()): ?>
+              <div class="esqueci-email" id="esqueci-form">
+                <p>Digite o e-mail da sua conta que a gente manda um link pra você criar uma senha nova.</p>
+                <label class="campo">
+                  <span>E-mail</span>
+                  <input type="email" id="esq-email" autocomplete="email" maxlength="150" placeholder="maria@gmail.com">
+                </label>
+                <p class="erro" id="erro-esqueci" role="alert" hidden></p>
+                <button type="button" class="botao botao-leve botao-largo" id="btn-esqueci">Enviar link</button>
+              </div>
+              <p class="ok" id="ok-esqueci" role="status" hidden></p>
+            <?php endif; ?>
+            <p class="esqueci-whats"><?= emailAtivo() ? 'Não lembra o e-mail? Fale com o estúdio pelo WhatsApp que elas geram uma senha nova pra você.' : 'Fale com o estúdio pelo WhatsApp e elas geram uma senha nova pra você.' ?>
               <?php if ($waEstudio): ?><a href="https://wa.me/<?= e($waEstudio) ?>?text=<?= rawurlencode('Oi! Esqueci a senha da minha conta de agendamento.') ?>" target="_blank" rel="noopener">Abrir conversa</a><?php endif; ?>
             </p>
           </details>
@@ -268,6 +295,29 @@ function equipeCapa(array $profissionais): string
         </form>
 
         <p class="erro" id="erro-auth" role="alert" hidden></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SENHA NOVA (link do e-mail) ============ -->
+  <section class="tela" id="tela-redefinir" hidden tabindex="-1" aria-labelledby="t-redefinir">
+    <div class="folha folha-solta">
+      <h2 class="titulo titulo-grande" id="t-redefinir">Crie sua senha nova</h2>
+      <p class="subtitulo" id="redef-sub"></p>
+      <form class="cartao auth form" id="form-redefinir" novalidate>
+        <label class="campo">
+          <span>Senha nova <em>(mínimo 6 caracteres)</em></span>
+          <span class="senha-caixa">
+            <input type="password" id="redef-senha" autocomplete="new-password" minlength="6">
+            <button type="button" class="ver-senha" aria-label="Mostrar senha" aria-pressed="false">Mostrar</button>
+          </span>
+        </label>
+        <p class="erro" id="erro-redefinir" role="alert" hidden></p>
+        <button type="submit" class="botao botao-largo" id="btn-redefinir">Salvar e entrar</button>
+      </form>
+      <div class="cartao auth" id="redef-vencido" hidden>
+        <p style="margin:0">Esse link expirou ou já foi usado. O link vale por 1 hora e funciona uma vez só.</p>
+        <button type="button" class="botao botao-largo" id="redef-pedir">Pedir outro link</button>
       </div>
     </div>
   </section>
@@ -389,6 +439,6 @@ function equipeCapa(array $profissionais): string
 </nav>
 
 <script>window.AGENDA = <?= json_encode($dadosJs, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?>;</script>
-<script src="assets/app.js"></script>
+<script src="assets/app.js?v=1.8"></script>
 </body>
 </html>

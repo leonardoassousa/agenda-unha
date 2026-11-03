@@ -180,6 +180,101 @@ function cadastrarCliente(string $nome, string $telefone, string $email, string 
     return clienteAtual();
 }
 
+// ---------- Esqueci a senha: link por e-mail ----------
+const REDEFINIR_VALIDADE_MIN = 60;
+
+/** Cria as colunas do link de senha nova se o banco for de antes da versão 1.8. */
+function garantirColunasRedefinicao(): void
+{
+    static $feito = false;
+    if ($feito) {
+        return;
+    }
+    $feito = true;
+    if (db()->query("SHOW COLUMNS FROM clientes LIKE 'reset_hash'")->fetch()) {
+        return;
+    }
+    db()->exec(
+        'ALTER TABLE clientes ADD COLUMN reset_hash CHAR(64) NULL AFTER senha_hash, ADD COLUMN reset_expira DATETIME NULL AFTER reset_hash',
+    );
+}
+
+/** Limita pedidos de link: 3 por hora no mesmo e-mail e 10 por hora no mesmo aparelho. */
+function pedidosDeLinkDemais(string $email): bool
+{
+    db()->exec('DELETE FROM login_tentativas WHERE criado_em < NOW() - INTERVAL 1 DAY');
+    $st = db()->prepare('SELECT COUNT(*) FROM login_tentativas WHERE chave = ? AND criado_em > NOW() - INTERVAL 1 HOUR');
+    $st->execute(['link:' . $email]);
+    if ((int) $st->fetchColumn() >= 3) {
+        return true;
+    }
+    $st->execute(['linkip:' . ipCliente()]);
+    return (int) $st->fetchColumn() >= 10;
+}
+
+/**
+ * Pedido de "esqueci a senha". Retorna os dados do e-mail a mandar (ou null se não tem conta com esse e-mail).
+ * A resposta pra cliente é sempre a mesma, pra ninguém descobrir quem tem conta.
+ */
+function pedirLinkSenha(string $email): ?array
+{
+    garantirColunasRedefinicao();
+    $email = mb_strtolower(trim($email));
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        throw new InvalidArgumentException('Digite o e-mail da sua conta, ex.: maria@gmail.com.');
+    }
+    if (pedidosDeLinkDemais($email)) {
+        throw new RuntimeException('Você já pediu o link algumas vezes. Olhe seu e-mail (e o spam) ou espere 1 hora.');
+    }
+    $st = db()->prepare('INSERT INTO login_tentativas (chave) VALUES (?)');
+    $st->execute(['link:' . $email]);
+    $st->execute(['linkip:' . ipCliente()]);
+
+    $st = db()->prepare('SELECT id, nome, email FROM clientes WHERE email = ?');
+    $st->execute([$email]);
+    $c = $st->fetch();
+    if (!$c) {
+        return null;
+    }
+    $token = bin2hex(random_bytes(32));
+    db()
+        ->prepare('UPDATE clientes SET reset_hash = ?, reset_expira = NOW() + INTERVAL ' . REDEFINIR_VALIDADE_MIN . ' MINUTE WHERE id = ?')
+        ->execute([hash('sha256', $token), $c['id']]);
+    return ['nome' => $c['nome'], 'email' => $c['email'], 'token' => $token];
+}
+
+/** Cliente dona do link (válido e dentro do prazo) ou null. */
+function clientePorLink(string $token): ?array
+{
+    if (!preg_match('/^[a-f0-9]{64}$/', $token)) {
+        return null;
+    }
+    garantirColunasRedefinicao();
+    $st = db()->prepare('SELECT id, nome FROM clientes WHERE reset_hash = ? AND reset_expira > NOW()');
+    $st->execute([hash('sha256', $token)]);
+    return $st->fetch() ?: null;
+}
+
+/** Grava a senha nova do link, invalida o link e já deixa a cliente logada. */
+function redefinirSenhaPorLink(string $token, string $nova): array
+{
+    $c = clientePorLink($token);
+    if (!$c) {
+        throw new RuntimeException('Esse link expirou ou já foi usado. Peça outro em "Esqueci a senha".');
+    }
+    if (mb_strlen($nova) < 6) {
+        throw new InvalidArgumentException('A senha precisa ter pelo menos 6 caracteres.');
+    }
+    if (mb_strlen($nova) > 72) {
+        throw new InvalidArgumentException('Senha muito longa.');
+    }
+    db()
+        ->prepare('UPDATE clientes SET senha_hash = ?, reset_hash = NULL, reset_expira = NULL WHERE id = ?')
+        ->execute([password_hash($nova, PASSWORD_DEFAULT), $c['id']]);
+    logarCliente((int) $c['id']);
+    return clienteAtual();
+}
+
 function sairCliente(): void
 {
     $_SESSION = [];

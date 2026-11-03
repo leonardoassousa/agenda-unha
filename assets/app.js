@@ -94,7 +94,7 @@
   const semRede = () => ({ ok: false, status: 0, j: { erro: 'Sem conexão. Verifique a internet e tente de novo.' } });
 
   // ---------- Telas (o voltar do celular funciona) ----------
-  const TELAS = ['servico', 'horario', 'login', 'revisao', 'confirmado', 'meus', 'conta'];
+  const TELAS = ['servico', 'horario', 'login', 'redefinir', 'revisao', 'confirmado', 'meus', 'conta'];
   const ABA = {
     servico: 'agendar',
     horario: 'agendar',
@@ -102,6 +102,7 @@
     confirmado: 'agendar',
     meus: 'meus',
     conta: 'conta',
+    redefinir: 'conta',
   };
   let telaAtual = 'servico';
   let destinoLogin = 'conta';
@@ -115,6 +116,7 @@
       destino = tela;
       tela = 'login';
     }
+    if (tela === 'redefinir' && !A.redefinir) tela = 'login';
     if (tela === 'login' && A.cliente) tela = destino || 'conta';
     if (tela === 'login') destinoLogin = destino || destinoLogin;
 
@@ -136,6 +138,7 @@
 
     if (tela === 'horario') renderEscolhido();
     if (tela === 'login') renderLogin();
+    if (tela === 'redefinir') renderRedefinir();
     if (tela === 'revisao') renderRevisao();
     if (tela === 'meus') carregarMeus();
     if (tela === 'conta') renderPerfil();
@@ -514,6 +517,113 @@
     autenticar('cadastrar', { nome, telefone: tel, email, senha }, $('btn-criar'), 'Criar conta');
   });
 
+  // ---------- Esqueci a senha (link por e-mail) ----------
+  async function pedirLink() {
+    const campo = $('esq-email');
+    const email = campo.value.trim();
+    mensagem($('erro-esqueci'), '');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      mensagem($('erro-esqueci'), 'Digite o e-mail da sua conta, ex.: maria@gmail.com.');
+      campo.focus();
+      return;
+    }
+    const botao = $('btn-esqueci');
+    botao.disabled = true;
+    botao.textContent = 'Enviando…';
+    try {
+      const { ok, j } = await api('esqueci', { email }).catch(semRede);
+      if (!ok) {
+        mensagem($('erro-esqueci'), j.erro || 'Não deu certo. Tente de novo.');
+        return;
+      }
+      $('esqueci-form').hidden = true;
+      mensagem(
+        $('ok-esqueci'),
+        `Pronto! Se ${email} tiver conta aqui, o link pra criar a senha nova chega em instantes. Olhe também a caixa de spam.`,
+      );
+    } finally {
+      botao.disabled = false;
+      botao.textContent = 'Enviar link';
+    }
+  }
+  if ($('btn-esqueci')) {
+    $('btn-esqueci').addEventListener('click', pedirLink);
+    // Enter no e-mail pede o link (e não tenta entrar)
+    $('esq-email').addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') {
+        ev.preventDefault();
+        pedirLink();
+      }
+    });
+    $('esqueci').addEventListener('toggle', () => {
+      if (!$('esqueci').open) return;
+      $('esqueci-form').hidden = false;
+      mensagem($('ok-esqueci'), '');
+    });
+  }
+
+  function renderRedefinir() {
+    const r = A.redefinir;
+    $('form-redefinir').hidden = !r.valido;
+    $('redef-vencido').hidden = r.valido;
+    $('t-redefinir').textContent = r.valido ? 'Crie sua senha nova' : 'Link vencido';
+    $('redef-sub').textContent = r.valido
+      ? `Oi, ${r.nome}! Escolha a senha que você vai usar pra entrar.`
+      : 'Peça um link novo e use logo que ele chegar.';
+  }
+
+  $('form-redefinir').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const senha = $('redef-senha').value;
+    const erro = $('erro-redefinir');
+    mensagem(erro, '');
+    if (senha.length < 6) {
+      mensagem(erro, 'A senha precisa ter pelo menos 6 caracteres.');
+      $('redef-senha').focus();
+      return;
+    }
+    const botao = $('btn-redefinir');
+    botao.disabled = true;
+    botao.textContent = 'Salvando…';
+    try {
+      const { ok, j } = await api('redefinir', { token: A.redefinir.token, senha }).catch(semRede);
+      if (!ok) {
+        mensagem(erro, j.erro || 'Não deu certo. Tente de novo.');
+        return;
+      }
+      $('redef-senha').value = '';
+      A.redefinir = null;
+      A.cliente = j.cliente;
+      meusHorarios = j.horarios || null;
+      renderTab();
+      irPara('servico', { replace: true });
+      mensagemTopo('Senha nova salva. Você já está na sua conta.');
+    } finally {
+      botao.disabled = false;
+      botao.textContent = 'Salvar e entrar';
+    }
+  });
+
+  $('redef-pedir').addEventListener('click', () => {
+    A.redefinir = null;
+    irPara('login', { replace: true, destino: 'conta' });
+    const esq = $('esqueci');
+    if (esq && $('btn-esqueci')) {
+      esq.open = true;
+      $('esq-email').focus();
+    }
+  });
+
+  // Aviso curto no topo (some sozinho)
+  function mensagemTopo(texto) {
+    const el = document.createElement('p');
+    el.className = 'aviso-topo';
+    el.setAttribute('role', 'status');
+    el.textContent = texto;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+  }
+
   async function sair(proxima = 'servico', destino) {
     await api('sair', {}).catch(() => {});
     A.cliente = null;
@@ -746,6 +856,11 @@
   atualizarCta();
   renderTab();
   const inicial = (location.hash || '').slice(1);
-  history.replaceState({ tela: 'servico' }, '', location.pathname + location.search);
-  if (['meus', 'conta'].includes(inicial)) irPara(inicial, { destino: inicial });
+  // Tira o ?redefinir=... da barra de endereço (o link é de uso único e não deve ficar no histórico)
+  const busca = new URLSearchParams(location.search);
+  busca.delete('redefinir');
+  const resto = busca.toString();
+  history.replaceState({ tela: 'servico' }, '', location.pathname + (resto ? '?' + resto : ''));
+  if (A.redefinir) irPara('redefinir', { replace: true });
+  else if (['meus', 'conta'].includes(inicial)) irPara(inicial, { destino: inicial });
 })();

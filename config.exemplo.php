@@ -18,6 +18,10 @@ return [
 
     'fuso' => 'America/Bahia',
 
+    // Endereço do site, sem barra no fim (usado nos links dos e-mails). Ex.: 'https://studiocarinaaquino.com.br'
+    // Vazio = descobre sozinho (serve no localhost). O instalar.sh preenche na VPS.
+    'url_site' => '',
+
     // Formas de pagamento (aparecem pra cliente antes de confirmar). '' esconde.
     'pagamento' => 'Dinheiro, Pix, cartão de crédito ou débito.',
     'pagamento_obs' => 'Não parcelamos: no crédito é só à vista.',
@@ -52,6 +56,20 @@ return [
         'evolution_url' => '', // ex.: https://evo.seudominio.com.br
         'evolution_instancia' => '',
         'evolution_apikey' => '',
+    ],
+
+    // E-mail de "esqueci a senha" (a cliente recebe um link e cria a senha nova sozinha).
+    // Desligado: o botão "Esqueci a senha" manda falar com o estúdio no WhatsApp, como antes.
+    // Veja o LEIA-ME: dá pra usar um Gmail do estúdio (com senha de app) ou o e-mail do domínio.
+    'email' => [
+        'modo' => 'desligado', // 'desligado' ou 'smtp'
+        'remetente_nome' => 'Studio Carina Aquino',
+        'remetente_email' => '', // ex.: studiocarinaaquino@gmail.com
+        'smtp_host' => 'smtp.gmail.com', // Gmail: smtp.gmail.com · Hostinger: smtp.hostinger.com
+        'smtp_porta' => 465,
+        'smtp_seguranca' => 'ssl', // 465 = 'ssl' · 587 = 'tls'
+        'smtp_usuario' => '', // normalmente o próprio e-mail
+        'smtp_senha' => '', // Gmail: a "senha de app" de 16 letras (não é a senha normal)
     ],
 
     // Lembrete no WhatsApp da CLIENTE antes do horário (só funciona com a Evolution API)

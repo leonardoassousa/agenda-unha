@@ -1005,6 +1005,44 @@ button {
   color: var(--verniz);
   font-weight: 600;
 }
+.esqueci-email {
+  display: grid;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 14px;
+  border: 1px solid var(--linha);
+  border-radius: 14px;
+  background: var(--fundo);
+}
+.esqueci-email p {
+  margin: 0;
+}
+.esqueci .ok {
+  margin-top: 10px;
+  font-weight: 500;
+}
+.esqueci-whats {
+  font-size: 0.86rem;
+}
+
+/* Aviso curto no topo (ex.: senha nova salva) */
+.aviso-topo {
+  position: fixed;
+  top: calc(12px + env(safe-area-inset-top, 0px));
+  left: 50%;
+  z-index: 60;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - 32px);
+  margin: 0;
+  padding: 12px 18px;
+  border-radius: 999px;
+  background: var(--vinho);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.92rem;
+  box-shadow: 0 8px 24px rgba(59, 10, 28, 0.25);
+}
 
 /* ---------- Cartão do horário escolhido (no login) ---------- */
 .escolha {
@@ -3305,10 +3343,9 @@ button {
             </span>
           </label>
           <button type="submit" class="botao botao-largo" id="btn-entrar">Entrar</button>
-          <details class="esqueci">
+          <details class="esqueci" id="esqueci">
             <summary>Esqueci a senha</summary>
-            <p>Fale com o estúdio pelo WhatsApp e elas geram uma senha nova pra você.
-              <a href="https://wa.me/5573999999999?text=Oi%21%20Esqueci%20a%20senha%20da%20minha%20conta%20de%20agendamento." target="_blank" rel="noopener">Abrir conversa</a>            </p>
+                        <p class="esqueci-whats">Fale com o estúdio pelo WhatsApp e elas geram uma senha nova pra você.              <a href="https://wa.me/5573999999999?text=Oi%21%20Esqueci%20a%20senha%20da%20minha%20conta%20de%20agendamento." target="_blank" rel="noopener">Abrir conversa</a>            </p>
           </details>
         </form>
 
@@ -3336,6 +3373,29 @@ button {
         </form>
 
         <p class="erro" id="erro-auth" role="alert" hidden></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SENHA NOVA (link do e-mail) ============ -->
+  <section class="tela" id="tela-redefinir" hidden tabindex="-1" aria-labelledby="t-redefinir">
+    <div class="folha folha-solta">
+      <h2 class="titulo titulo-grande" id="t-redefinir">Crie sua senha nova</h2>
+      <p class="subtitulo" id="redef-sub"></p>
+      <form class="cartao auth form" id="form-redefinir" novalidate>
+        <label class="campo">
+          <span>Senha nova <em>(mínimo 6 caracteres)</em></span>
+          <span class="senha-caixa">
+            <input type="password" id="redef-senha" autocomplete="new-password" minlength="6">
+            <button type="button" class="ver-senha" aria-label="Mostrar senha" aria-pressed="false">Mostrar</button>
+          </span>
+        </label>
+        <p class="erro" id="erro-redefinir" role="alert" hidden></p>
+        <button type="submit" class="botao botao-largo" id="btn-redefinir">Salvar e entrar</button>
+      </form>
+      <div class="cartao auth" id="redef-vencido" hidden>
+        <p style="margin:0">Esse link expirou ou já foi usado. O link vale por 1 hora e funciona uma vez só.</p>
+        <button type="button" class="botao botao-largo" id="redef-pedir">Pedir outro link</button>
       </div>
     </div>
   </section>
@@ -3450,7 +3510,7 @@ button {
 
 </div>
 <div id="painel" hidden></div>
-<script>window.AGENDA = {"servicos":[{"id":1,"nome":"Pé e mão","descricao":"Com uma manicure só","duracao":120,"preco":55,"dupla":false},{"id":12,"nome":"Pé e mão com duas manicures","descricao":"Uma faz o pé e a outra a mão, ao mesmo tempo","duracao":60,"preco":55,"dupla":true},{"id":2,"nome":"Pé","descricao":"Cutilagem e esmaltação","duracao":60,"preco":35,"dupla":false},{"id":3,"nome":"Mão","descricao":"Cutilagem e esmaltação","duracao":60,"preco":35,"dupla":false},{"id":4,"nome":"Esmaltação convencional","descricao":"Só a esmaltação","duracao":10,"preco":5,"dupla":false},{"id":5,"nome":"Spa dos pés","descricao":"Esfoliação, hidratação e cuidado completo","duracao":60,"preco":100,"dupla":false},{"id":6,"nome":"Massagem nos pés","descricao":"15 minutos de massagem relaxante","duracao":15,"preco":20,"dupla":false},{"id":7,"nome":"Alongamento","descricao":"Aplicação completa","duracao":120,"preco":200,"dupla":false},{"id":8,"nome":"Banho em gel","descricao":"Gel sobre a unha natural","duracao":90,"preco":150,"dupla":false},{"id":9,"nome":"Esmaltação em gel","descricao":"Dura até 3 semanas","duracao":60,"preco":75,"dupla":false},{"id":10,"nome":"Manutenção natural","descricao":"Manutenção do banho em gel","duracao":90,"preco":115,"dupla":false},{"id":11,"nome":"Manutenção encapsulada","descricao":"Com decoração. A partir de R$ 135, depende do caso","duracao":120,"preco":135,"dupla":false}],"profissionais":[{"id":1,"nome":"Carina Aquino","cor":"#9B1B3A","foto":null,"iniciais":"CA"},{"id":2,"nome":"Victoria Aquino","cor":"#C2577A","foto":null,"iniciais":"VA"},{"id":3,"nome":"Ana Oliveira","cor":"#6E3B5C","foto":null,"iniciais":"AO"}],"diasDisponiveis":["2026-11-03","2026-11-04","2026-11-05","2026-11-06","2026-11-07","2026-11-10","2026-11-11","2026-11-12","2026-11-13","2026-11-14","2026-11-17","2026-11-18","2026-11-19","2026-11-20","2026-11-21","2026-11-24","2026-11-25","2026-11-26","2026-11-27","2026-11-28","2026-12-01","2026-12-02","2026-12-03"],"diasAFrente":30,"hoje":"2026-11-03","whatsapp":"5573999999999","estudio":"Studio Carina Aquino","cliente":null,"avisoAutomatico":false,"cancelarAteHoras":2};</script>
+<script>window.AGENDA = {"servicos":[{"id":1,"nome":"Pé e mão","descricao":"Com uma manicure só","duracao":120,"preco":55,"dupla":false},{"id":12,"nome":"Pé e mão com duas manicures","descricao":"Uma faz o pé e a outra a mão, ao mesmo tempo","duracao":60,"preco":55,"dupla":true},{"id":2,"nome":"Pé","descricao":"Cutilagem e esmaltação","duracao":60,"preco":35,"dupla":false},{"id":3,"nome":"Mão","descricao":"Cutilagem e esmaltação","duracao":60,"preco":35,"dupla":false},{"id":4,"nome":"Esmaltação convencional","descricao":"Só a esmaltação","duracao":10,"preco":5,"dupla":false},{"id":5,"nome":"Spa dos pés","descricao":"Esfoliação, hidratação e cuidado completo","duracao":60,"preco":100,"dupla":false},{"id":6,"nome":"Massagem nos pés","descricao":"15 minutos de massagem relaxante","duracao":15,"preco":20,"dupla":false},{"id":7,"nome":"Alongamento","descricao":"Aplicação completa","duracao":120,"preco":200,"dupla":false},{"id":8,"nome":"Banho em gel","descricao":"Gel sobre a unha natural","duracao":90,"preco":150,"dupla":false},{"id":9,"nome":"Esmaltação em gel","descricao":"Dura até 3 semanas","duracao":60,"preco":75,"dupla":false},{"id":10,"nome":"Manutenção natural","descricao":"Manutenção do banho em gel","duracao":90,"preco":115,"dupla":false},{"id":11,"nome":"Manutenção encapsulada","descricao":"Com decoração. A partir de R$ 135, depende do caso","duracao":120,"preco":135,"dupla":false}],"profissionais":[{"id":1,"nome":"Carina Aquino","cor":"#9B1B3A","foto":null,"iniciais":"CA"},{"id":2,"nome":"Victoria Aquino","cor":"#C2577A","foto":null,"iniciais":"VA"},{"id":3,"nome":"Ana Oliveira","cor":"#6E3B5C","foto":null,"iniciais":"AO"}],"diasDisponiveis":["2026-11-03","2026-11-04","2026-11-05","2026-11-06","2026-11-07","2026-11-10","2026-11-11","2026-11-12","2026-11-13","2026-11-14","2026-11-17","2026-11-18","2026-11-19","2026-11-20","2026-11-21","2026-11-24","2026-11-25","2026-11-26","2026-11-27","2026-11-28","2026-12-01","2026-12-02","2026-12-03"],"diasAFrente":30,"hoje":"2026-11-03","whatsapp":"5573999999999","estudio":"Studio Carina Aquino","cliente":null,"avisoAutomatico":false,"cancelarAteHoras":2,"emailSenha":false,"redefinir":null};</script>
 <script>
 (function () {
   const A = window.AGENDA;
@@ -3707,7 +3767,7 @@ button {
   const semRede = () => ({ ok: false, status: 0, j: { erro: 'Sem conexão. Verifique a internet e tente de novo.' } });
 
   // ---------- Telas (o voltar do celular funciona) ----------
-  const TELAS = ['servico', 'horario', 'login', 'revisao', 'confirmado', 'meus', 'conta'];
+  const TELAS = ['servico', 'horario', 'login', 'redefinir', 'revisao', 'confirmado', 'meus', 'conta'];
   const ABA = {
     servico: 'agendar',
     horario: 'agendar',
@@ -3715,6 +3775,7 @@ button {
     confirmado: 'agendar',
     meus: 'meus',
     conta: 'conta',
+    redefinir: 'conta',
   };
   let telaAtual = 'servico';
   let destinoLogin = 'conta';
@@ -3728,6 +3789,7 @@ button {
       destino = tela;
       tela = 'login';
     }
+    if (tela === 'redefinir' && !A.redefinir) tela = 'login';
     if (tela === 'login' && A.cliente) tela = destino || 'conta';
     if (tela === 'login') destinoLogin = destino || destinoLogin;
 
@@ -3749,6 +3811,7 @@ button {
 
     if (tela === 'horario') renderEscolhido();
     if (tela === 'login') renderLogin();
+    if (tela === 'redefinir') renderRedefinir();
     if (tela === 'revisao') renderRevisao();
     if (tela === 'meus') carregarMeus();
     if (tela === 'conta') renderPerfil();
@@ -4127,6 +4190,113 @@ button {
     autenticar('cadastrar', { nome, telefone: tel, email, senha }, $('btn-criar'), 'Criar conta');
   });
 
+  // ---------- Esqueci a senha (link por e-mail) ----------
+  async function pedirLink() {
+    const campo = $('esq-email');
+    const email = campo.value.trim();
+    mensagem($('erro-esqueci'), '');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      mensagem($('erro-esqueci'), 'Digite o e-mail da sua conta, ex.: maria@gmail.com.');
+      campo.focus();
+      return;
+    }
+    const botao = $('btn-esqueci');
+    botao.disabled = true;
+    botao.textContent = 'Enviando…';
+    try {
+      const { ok, j } = await api('esqueci', { email }).catch(semRede);
+      if (!ok) {
+        mensagem($('erro-esqueci'), j.erro || 'Não deu certo. Tente de novo.');
+        return;
+      }
+      $('esqueci-form').hidden = true;
+      mensagem(
+        $('ok-esqueci'),
+        `Pronto! Se ${email} tiver conta aqui, o link pra criar a senha nova chega em instantes. Olhe também a caixa de spam.`,
+      );
+    } finally {
+      botao.disabled = false;
+      botao.textContent = 'Enviar link';
+    }
+  }
+  if ($('btn-esqueci')) {
+    $('btn-esqueci').addEventListener('click', pedirLink);
+    // Enter no e-mail pede o link (e não tenta entrar)
+    $('esq-email').addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') {
+        ev.preventDefault();
+        pedirLink();
+      }
+    });
+    $('esqueci').addEventListener('toggle', () => {
+      if (!$('esqueci').open) return;
+      $('esqueci-form').hidden = false;
+      mensagem($('ok-esqueci'), '');
+    });
+  }
+
+  function renderRedefinir() {
+    const r = A.redefinir;
+    $('form-redefinir').hidden = !r.valido;
+    $('redef-vencido').hidden = r.valido;
+    $('t-redefinir').textContent = r.valido ? 'Crie sua senha nova' : 'Link vencido';
+    $('redef-sub').textContent = r.valido
+      ? `Oi, ${r.nome}! Escolha a senha que você vai usar pra entrar.`
+      : 'Peça um link novo e use logo que ele chegar.';
+  }
+
+  $('form-redefinir').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const senha = $('redef-senha').value;
+    const erro = $('erro-redefinir');
+    mensagem(erro, '');
+    if (senha.length < 6) {
+      mensagem(erro, 'A senha precisa ter pelo menos 6 caracteres.');
+      $('redef-senha').focus();
+      return;
+    }
+    const botao = $('btn-redefinir');
+    botao.disabled = true;
+    botao.textContent = 'Salvando…';
+    try {
+      const { ok, j } = await api('redefinir', { token: A.redefinir.token, senha }).catch(semRede);
+      if (!ok) {
+        mensagem(erro, j.erro || 'Não deu certo. Tente de novo.');
+        return;
+      }
+      $('redef-senha').value = '';
+      A.redefinir = null;
+      A.cliente = j.cliente;
+      meusHorarios = j.horarios || null;
+      renderTab();
+      irPara('servico', { replace: true });
+      mensagemTopo('Senha nova salva. Você já está na sua conta.');
+    } finally {
+      botao.disabled = false;
+      botao.textContent = 'Salvar e entrar';
+    }
+  });
+
+  $('redef-pedir').addEventListener('click', () => {
+    A.redefinir = null;
+    irPara('login', { replace: true, destino: 'conta' });
+    const esq = $('esqueci');
+    if (esq && $('btn-esqueci')) {
+      esq.open = true;
+      $('esq-email').focus();
+    }
+  });
+
+  // Aviso curto no topo (some sozinho)
+  function mensagemTopo(texto) {
+    const el = document.createElement('p');
+    el.className = 'aviso-topo';
+    el.setAttribute('role', 'status');
+    el.textContent = texto;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+  }
+
   async function sair(proxima = 'servico', destino) {
     await api('sair', {}).catch(() => {});
     A.cliente = null;
@@ -4359,8 +4529,13 @@ button {
   atualizarCta();
   renderTab();
   const inicial = (location.hash || '').slice(1);
-  history.replaceState({ tela: 'servico' }, '', location.pathname + location.search);
-  if (['meus', 'conta'].includes(inicial)) irPara(inicial, { destino: inicial });
+  // Tira o ?redefinir=... da barra de endereço (o link é de uso único e não deve ficar no histórico)
+  const busca = new URLSearchParams(location.search);
+  busca.delete('redefinir');
+  const resto = busca.toString();
+  history.replaceState({ tela: 'servico' }, '', location.pathname + (resto ? '?' + resto : ''));
+  if (A.redefinir) irPara('redefinir', { replace: true });
+  else if (['meus', 'conta'].includes(inicial)) irPara(inicial, { destino: inicial });
 })();
 
 </script>
