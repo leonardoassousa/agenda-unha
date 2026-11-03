@@ -1452,6 +1452,29 @@ button {
     background: color-mix(in srgb, #fff 10%, transparent);
   }
 
+  /* Notebook (tela baixa): vitrine mais compacta pra caber acima da barra de abas */
+  @media (max-height: 900px) {
+    .vitrine {
+      gap: 24px;
+      padding-top: 32px;
+      padding-bottom: 120px;
+    }
+    .vitrine-topo {
+      gap: 16px;
+    }
+    .vitrine-nome {
+      font-size: clamp(2.6rem, 3.6vw, 3.8rem);
+    }
+    .vitrine .foto-capa {
+      width: 58px;
+      height: 58px;
+      font-size: 1.3rem;
+    }
+    .vitrine-info {
+      gap: 10px;
+    }
+  }
+
   /* A capa do celular sai: a vitrine faz esse papel */
   .capa {
     display: none;
@@ -1558,7 +1581,7 @@ button {
     gap: 6px;
     padding: 20px clamp(32px, 3.4vw, 56px) 40px;
     padding-inline: clamp(32px, 3.4vw, 56px);
-    background: none;
+    background: var(--vinho); /* sólida: o texto da vitrine passa por baixo sem encavalar */
     border-top: 0;
   }
   .tabbar::before {
