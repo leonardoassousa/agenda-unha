@@ -59,7 +59,8 @@
 
   // 120 -> "2h", 90 -> "1h30", 15 -> "15 min"
   const duracaoTxt = (min) => {
-    const h = Math.floor(min / 60), m = min % 60;
+    const h = Math.floor(min / 60),
+      m = min % 60;
     return h ? `${h}h${m ? String(m).padStart(2, '0') : ''}` : `${m} min`;
   };
 

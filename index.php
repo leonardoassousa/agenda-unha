@@ -94,9 +94,15 @@ function equipeCapa(array $profissionais): string
 <title>Agendar horário · <?= e(cfg('nome_estudio')) ?></title>
 <meta name="description" content="Escolha o serviço, a profissional e o horário. Leva menos de um minuto.">
 <meta name="theme-color" content="#3B0A1C">
+<link rel="manifest" href="manifest.php">
+<link rel="icon" href="assets/icones/cliente-32.png" type="image/png">
+<link rel="apple-touch-icon" href="assets/icones/cliente-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="<?= e(cfg('nome_estudio')) ?>">
 <link rel="preload" href="assets/fonts/bodoni-moda-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/hanken-grotesk-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/cliente.css?v=1.6">
+<link rel="stylesheet" href="assets/cliente.css?v=1.7">
 </head>
 <body>
 

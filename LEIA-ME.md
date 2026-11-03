@@ -1,8 +1,9 @@
 # Agenda de unhas · Studio Carina Aquino
 
-**Versão 1.6** (o número fica no arquivo `VERSION` e em tags no GitHub, ex.: `v1.6`)
+**Versão 1.7** (o número fica no arquivo `VERSION` e em tags no GitHub, ex.: `v1.7`)
 
 ## Versões
+- **1.7** (03/11/2026): pronto pra VPS. `instalar.sh` + pasta `servidor/` (Nginx, regras de segurança, PHP com usuário próprio, sessões de 30 dias que o Ubuntu não apaga, backup diário, cron dos lembretes, HTTPS). Ícone na tela inicial do celular (app das clientes e app da equipe; pelo ícone a dona cai direto no painel). Login da equipe também trava por aparelho/rede depois de 20 erros. CSS e JS formatados no padrão (Prettier), com sumário de seções no topo de cada CSS.
 - **1.6** (02/11/2026): a equipe aparece em bolinhas redondas (antes era em formato de unha), na capa, na escolha da profissional e na confirmação.
 - **1.5** (02/11/2026): tela da cliente nova. Capa em laca escura com a equipe em formato de unha (foto ou cor de cada uma), horário de funcionamento e endereço logo na capa, serviços agrupados por tipo (Mãos e pés, Gel e alongamento, Spa e relaxamento) com atalhos, selo "Um dos mais pedidos" (com base nos agendamentos dos últimos 60 dias), duração em horas (2h, 1h30) e link de dúvida no WhatsApp. Fontes Bodoni Moda e Hanken Grotesk servidas do próprio site (`assets/fonts`). A coluna `servicos.categoria` é criada sozinha (mesmo que `sql/atualizar-v9.sql`).
 - **1.4** (02/11/2026): login único em `/equipe/` pra dona e pra equipe. A dona (quem tem acesso ao painel) cai direto no painel com o faturamento; as manicures caem na agenda delas. `/admin/` sem login manda pro login único. O painel é de uma dona só: depois que ela tem acesso, ninguém mais recebe acesso ao painel.
@@ -41,6 +42,33 @@ Ele copia tudo pra `C:\xampp\htdocs\agenda-unhas`, cria o banco `agenda_unhas` c
 4. Cliente: http://localhost/agenda-unhas/
    Login (dona e equipe): http://localhost/agenda-unhas/equipe/
 5. Primeiro acesso ao painel: abra http://localhost/agenda-unhas/admin/ e entre com a `admin_senha`. Em **Ajustes**, na ficha da dona, toque em **Dar acesso ao painel** e depois em **Criar acesso** com o celular dela. Daí em diante todo mundo entra pelo login único (`/equipe/`) e a `admin_senha` para de valer.
+
+## Colocar no ar (VPS com Ubuntu + Nginx)
+O `instalar.sh` faz tudo: pacotes, banco com usuário e senha próprios, `config.php`, Nginx, HTTPS, backup e lembretes. Rodar de novo atualiza sem apagar banco, fotos nem `config.php`.
+
+1. No painel do domínio (Hostinger), em DNS, crie `A  @  IP-da-VPS` e `A  www  IP-da-VPS`.
+2. No CMD do Windows (troque a versão e o domínio):
+   ```
+   scp C:\Users\leona\Downloads\agenda-unhas\agenda-unhas-v1.7.zip root@IP-da-VPS:/root/
+   ssh -t root@IP-da-VPS "cd /root && rm -rf agenda-unhas && unzip -q agenda-unhas-v1.7.zip && bash agenda-unhas/instalar.sh studiocarinaaquino.com.br"
+   ```
+3. Na primeira vez ele mostra a **senha de primeiro acesso** do painel. Anote.
+4. Ajuste os dados do estúdio: `nano /var/www/agenda-unhas/config.php` (nome, Instagram, endereço, WhatsApp, horários).
+5. Pra atualizar depois: mesmos dois comandos com o zip novo, sem o domínio no fim.
+
+Onde fica cada coisa na VPS:
+- site: `/var/www/agenda-unhas` (código é do root; o PHP roda com o usuário `agenda` e só grava nas fotos)
+- Nginx: `/etc/nginx/sites-available/agenda-unhas` + `/etc/nginx/snippets/agenda-seguranca.conf`
+- PHP: `/etc/php/<versão>/fpm/pool.d/agenda.conf` (erros em `/var/log/agenda-unhas/php.log`)
+- backup diário (3h40, guarda 14 dias): `/root/backups/agenda-AAAAMMDD.sql.gz` e `agenda-fotos-AAAAMMDD.tgz`
+- lembretes no WhatsApp: cron do usuário `agenda` a cada 10 min (`/var/log/agenda-unhas/lembretes.log`)
+
+Os `.htaccess` das pastas só valem no XAMPP (Apache). Na VPS quem bloqueia `includes/`, `sql/`, `cron/`, `config.php` etc. é o `servidor/nginx-seguranca.conf`.
+
+## Ícone na tela inicial do celular
+- **Clientes:** abrir o site e tocar em "Adicionar à tela inicial" (Chrome: menu ⋮; iPhone/Safari: botão Compartilhar). Abre como app, com o ícone CA em laca escura.
+- **Equipe:** abrir `/equipe/` e fazer o mesmo. O ícone é o CA em fundo claro, com o nome "Agenda". Pelo ícone, a dona cai direto no painel e as outras na agenda delas.
+- Os ícones ficam em `assets/icones/` (cliente-* e equipe-*); o nome que aparece vem do `nome_estudio` do `config.php` (`manifest.php`).
 
 ## Já tinha instalado uma versão anterior?
 Substitua os arquivos (menos o seu `config.php`; copie dele só o bloco novo `aviso_whatsapp` e `max_agendamentos_por_cliente`) e rode no phpMyAdmin, nesta ordem:
@@ -137,6 +165,8 @@ A pasta `uploads/profissionais` precisa ter permissão de escrita no servidor.
 ## Arquivos
 - `index.php`: página da cliente
 - `api.php`: horários livres e criação do agendamento
+- `instalar.sh` e `servidor/`: instalação na VPS (Nginx, PHP, segurança)
+- `manifest.php` e `assets/icones/`: ícone na tela inicial do celular
 - `admin/index.php`: calendário do mês e detalhe do dia
 - `admin/ajustes.php`: bloqueios, fotos, teste do aviso, sair
 - `admin/resumo.php`: resumo financeiro

@@ -1,3 +1,20 @@
+/* =========================================================
+   Agenda de unhas · painel (/admin) e área da equipe (/equipe)
+   Carregado depois do style.css. Gloock (títulos) + Figtree (texto).
+   Seções (procure pelo nome com Ctrl+F):
+     - Base do painel
+     - Resumo
+     - Clientes
+     - Calendário
+     - Ajustes finos do painel no celular
+     - Atendimento: concluir e valor a mais
+     - Caixa
+     - Disponibilidade
+     - Acesso da equipe (ajustes)
+     - Área da equipe
+     - Cabeçalho: celular x computador
+   ========================================================= */
+/* ---------- Base do painel ---------- */
 .admin {
   padding-bottom: 60px;
 }
@@ -306,7 +323,7 @@
   outline-offset: 3px;
 }
 
-/* Resumo */
+/* ---------- Resumo ---------- */
 .periodo-outro {
   display: flex;
   flex-wrap: wrap;
@@ -499,7 +516,7 @@
   font-size: 0.82rem;
 }
 
-/* Clientes */
+/* ---------- Clientes ---------- */
 .busca {
   margin: 20px 0 8px;
 }
@@ -897,7 +914,7 @@
   font-size: 1rem;
 }
 
-/* Ajustes finos do painel no celular */
+/* ---------- Ajustes finos do painel no celular ---------- */
 .admin-topo {
   justify-content: flex-start;
 }
@@ -1387,7 +1404,8 @@ details.concluir[open] summary::before {
   overflow: visible;
 }
 
-/* ---------- Cabeçalho: celular x computador ----------
+/* ---------- Cabeçalho: celular x computador ---------- */
+/*
    No celular é a fileira de abas de sempre. No computador vira uma barra lateral vinho
    com o nome do estúdio, o menu e quem está logada. */
 .lateral-marca,
@@ -1476,8 +1494,7 @@ details.concluir[open] summary::before {
     padding: 32px 18px 24px;
     overflow-y: auto;
     color: var(--creme-painel);
-    background:
-      radial-gradient(120% 50% at 0% 0%, color-mix(in srgb, var(--verniz) 45%, transparent), transparent 70%),
+    background: radial-gradient(120% 50% at 0% 0%, color-mix(in srgb, var(--verniz) 45%, transparent), transparent 70%),
       var(--vinho-painel);
   }
   .topo-equipe .equipe-topo {
@@ -1557,7 +1574,9 @@ details.concluir[open] summary::before {
     width: 34px;
     height: 34px;
     font-size: 0.8rem;
-    box-shadow: 0 0 0 2px var(--vinho-painel), 0 0 0 3px var(--cor);
+    box-shadow:
+      0 0 0 2px var(--vinho-painel),
+      0 0 0 3px var(--cor);
   }
   .lateral-conta .lateral-link {
     justify-self: start;

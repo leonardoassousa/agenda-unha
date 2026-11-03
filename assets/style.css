@@ -1,3 +1,27 @@
+/* =========================================================
+   Agenda de unhas · base do painel (/admin) e da área da equipe (/equipe)
+   Cores e raio no :root logo abaixo. O admin.css vem depois e completa o visual.
+   Seções (procure pelo nome com Ctrl+F):
+     - Cores
+     - Barra de navegação
+     - Telas
+     - Cartão do horário escolhido (na tela de login)
+     - Revisão
+     - Meus horários
+     - Conta
+     - Topo
+     - Etapas
+     - Inputs escondidos mas acessíveis
+     - Serviços
+     - Ícone de unha (tela de confirmação sem foto)
+     - Dias
+     - Horários
+     - Dados
+     - Conta
+     - Rodapé fixo
+     - Confirmação
+   ========================================================= */
+/* ---------- Cores ---------- */
 :root {
   --leite: #fbf3f4;
   --branco: #ffffff;
@@ -41,7 +65,7 @@ button {
   padding: 28px 16px 140px;
 }
 
-/* Barra de navegação */
+/* ---------- Barra de navegação ---------- */
 .navbar {
   position: sticky;
   top: 0;
@@ -154,7 +178,7 @@ button {
   }
 }
 
-/* Telas */
+/* ---------- Telas ---------- */
 .tela:focus {
   outline: none;
 }
@@ -205,7 +229,7 @@ button {
   scroll-margin-top: 72px;
 }
 
-/* Cartão do horário escolhido (na tela de login) */
+/* ---------- Cartão do horário escolhido (na tela de login) ---------- */
 .escolha-cartao {
   display: flex;
   align-items: center;
@@ -232,7 +256,7 @@ button {
   font-size: 0.92rem;
 }
 
-/* Revisão */
+/* ---------- Revisão ---------- */
 .revisao-cartao {
   background: var(--branco);
   border: 1px solid var(--linha);
@@ -296,7 +320,7 @@ button {
   font-size: 1.05rem;
 }
 
-/* Meus horários */
+/* ---------- Meus horários ---------- */
 .meus-lista {
   list-style: none;
   margin: 0;
@@ -350,7 +374,7 @@ button {
   white-space: nowrap;
 }
 
-/* Conta */
+/* ---------- Conta ---------- */
 .perfil {
   display: flex;
   align-items: center;
@@ -411,7 +435,7 @@ button {
   font-weight: 600;
 }
 
-/* Topo */
+/* ---------- Topo ---------- */
 .topo h1 {
   font:
     400 clamp(2.4rem, 9vw, 3.4rem) / 1 'Gloock',
@@ -429,7 +453,7 @@ button {
   gap: 4px 16px;
 }
 
-/* Etapas */
+/* ---------- Etapas ---------- */
 .etapa {
   margin-top: 40px;
 }
@@ -453,7 +477,7 @@ button {
   font-weight: 700;
 }
 
-/* Inputs escondidos mas acessíveis */
+/* ---------- Inputs escondidos mas acessíveis ---------- */
 .servico input,
 .chip input {
   position: absolute;
@@ -463,7 +487,7 @@ button {
   pointer-events: none;
 }
 
-/* Serviços */
+/* ---------- Serviços ---------- */
 .servicos {
   display: grid;
   border-top: 1px solid var(--linha);
@@ -514,7 +538,7 @@ button {
   outline-offset: -2px;
 }
 
-/* Ícone de unha (tela de confirmação sem foto) */
+/* ---------- Ícone de unha (tela de confirmação sem foto) ---------- */
 .unha {
   --cor: var(--verniz);
   width: 44px;
@@ -614,7 +638,7 @@ button {
   color: #ffffff;
 }
 
-/* Dias */
+/* ---------- Dias ---------- */
 .dias {
   display: flex;
   gap: 8px;
@@ -670,7 +694,7 @@ button {
   outline-offset: 2px;
 }
 
-/* Horários */
+/* ---------- Horários ---------- */
 .hora {
   display: block;
   text-align: center;
@@ -689,7 +713,7 @@ button {
   font-size: 0.95rem;
 }
 
-/* Dados */
+/* ---------- Dados ---------- */
 .campos {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -755,7 +779,7 @@ button {
   color: var(--erro);
 }
 
-/* Conta */
+/* ---------- Conta ---------- */
 .auth {
   background: var(--branco);
   border: 1px solid var(--linha);
@@ -839,7 +863,7 @@ button {
 .erro-auth {
   order: 0;
 }
-/* Rodapé fixo */
+/* ---------- Rodapé fixo ---------- */
 .rodape {
   position: fixed;
   left: 0;
@@ -917,7 +941,7 @@ button {
   background: var(--branco);
 }
 
-/* Confirmação */
+/* ---------- Confirmação ---------- */
 .confirmado {
   justify-items: start;
 }

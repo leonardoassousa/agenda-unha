@@ -1,13 +1,79 @@
-/* Agenda de unhas: tela da cliente (v1.5).
-   Ideia: laca de esmalte. Capa cereja escuro com um reflexo de brilho, a equipe em bolinhas de esmalte
-   (a marca da página) e os serviços como um cardápio de estúdio. Fontes servidas do próprio site. */
-@font-face { font-family: 'Bodoni Moda'; font-weight: 400; font-style: normal; font-display: swap; src: url('fonts/bodoni-moda-latin-400-normal.woff2') format('woff2'); }
-@font-face { font-family: 'Bodoni Moda'; font-weight: 500; font-style: normal; font-display: swap; src: url('fonts/bodoni-moda-latin-500-normal.woff2') format('woff2'); }
-@font-face { font-family: 'Bodoni Moda'; font-weight: 400; font-style: italic; font-display: swap; src: url('fonts/bodoni-moda-latin-400-italic.woff2') format('woff2'); }
-@font-face { font-family: 'Hanken Grotesk'; font-weight: 400; font-style: normal; font-display: swap; src: url('fonts/hanken-grotesk-latin-400-normal.woff2') format('woff2'); }
-@font-face { font-family: 'Hanken Grotesk'; font-weight: 500; font-style: normal; font-display: swap; src: url('fonts/hanken-grotesk-latin-500-normal.woff2') format('woff2'); }
-@font-face { font-family: 'Hanken Grotesk'; font-weight: 600; font-style: normal; font-display: swap; src: url('fonts/hanken-grotesk-latin-600-normal.woff2') format('woff2'); }
-@font-face { font-family: 'Hanken Grotesk'; font-weight: 700; font-style: normal; font-display: swap; src: url('fonts/hanken-grotesk-latin-700-normal.woff2') format('woff2'); }
+/* =========================================================
+   Agenda de unhas · tela da cliente (index.php)
+   Identidade: laca de esmalte. Porcelana, cereja (verniz) e a capa em laca escura (vinho).
+   Bodoni Moda (títulos e preços) + Hanken Grotesk (texto), servidas de assets/fonts.
+   Cores e fontes ficam no :root logo abaixo; o resto usa só as variáveis.
+   Seções (procure pelo nome com Ctrl+F):
+     - Fontes e cores
+     - Base
+     - Estrutura
+     - Capa e equipe
+     - Serviços: cardápio do estúdio
+     - Serviço escolhido (topo do passo 2)
+     - Dias
+     - Profissionais (abas com foto)
+     - Horários
+     - Barra de continuar
+     - Botões e links
+     - Formulários
+     - Cartão do horário escolhido (no login)
+     - Revisão / confirmado
+     - Meus horários
+     - Conta
+     - Barra de abas
+     - Formas de pagamento (revisão e confirmação)
+     - Computador
+   ========================================================= */
+/* ---------- Fontes e cores ---------- */
+@font-face {
+  font-family: 'Bodoni Moda';
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url('fonts/bodoni-moda-latin-400-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Bodoni Moda';
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  src: url('fonts/bodoni-moda-latin-500-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Bodoni Moda';
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  src: url('fonts/bodoni-moda-latin-400-italic.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url('fonts/hanken-grotesk-latin-400-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  src: url('fonts/hanken-grotesk-latin-500-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  src: url('fonts/hanken-grotesk-latin-600-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  src: url('fonts/hanken-grotesk-latin-700-normal.woff2') format('woff2');
+}
 
 :root {
   --fundo: #fbf7f6; /* porcelana */
@@ -73,6 +139,7 @@
   color-scheme: dark;
 }
 
+/* ---------- Base ---------- */
 * {
   box-sizing: border-box;
 }
@@ -123,14 +190,20 @@ button {
   padding-bottom: 120px;
 }
 
+/* ---------- Capa e equipe ---------- */
 /* Capa: laca escura com um reflexo de luz na diagonal, como esmalte recém-passado */
 .capa {
   position: relative;
   overflow: hidden;
   color: var(--creme);
   padding: calc(26px + env(safe-area-inset-top, 0px)) 16px 58px;
-  background:
-    linear-gradient(115deg, transparent 38%, rgba(255, 255, 255, 0.07) 46%, rgba(255, 255, 255, 0.02) 52%, transparent 60%),
+  background: linear-gradient(
+      115deg,
+      transparent 38%,
+      rgba(255, 255, 255, 0.07) 46%,
+      rgba(255, 255, 255, 0.02) 52%,
+      transparent 60%
+    ),
     radial-gradient(120% 80% at 100% 0%, color-mix(in srgb, var(--verniz) 70%, transparent), transparent 65%),
     var(--vinho);
 }
@@ -433,7 +506,7 @@ button {
   stroke-linejoin: round;
 }
 
-/* Serviço escolhido (topo do passo 2) */
+/* ---------- Serviço escolhido (topo do passo 2) ---------- */
 .escolhido {
   display: flex;
   align-items: center;
@@ -580,9 +653,13 @@ button {
   font: 500 1.15rem/1 var(--display);
   display: grid;
   place-items: center;
-  background:
-    radial-gradient(26% 26% at 33% 28%, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 70%),
-    linear-gradient(165deg, color-mix(in srgb, var(--cor) 78%, #fff), var(--cor) 45%, color-mix(in srgb, var(--cor) 72%, #000));
+  background: radial-gradient(26% 26% at 33% 28%, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 70%),
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--cor) 78%, #fff),
+      var(--cor) 45%,
+      color-mix(in srgb, var(--cor) 72%, #000)
+    );
   box-shadow:
     0 0 0 2px var(--cartao),
     0 0 0 3.5px var(--cor);
@@ -914,7 +991,7 @@ button {
   font-weight: 600;
 }
 
-/* Cartão do horário escolhido (no login) */
+/* ---------- Cartão do horário escolhido (no login) ---------- */
 .escolha {
   display: flex;
   align-items: center;
@@ -1204,7 +1281,7 @@ button {
   }
 }
 
-/* Formas de pagamento (revisão e confirmação) */
+/* ---------- Formas de pagamento (revisão e confirmação) ---------- */
 .pagamento {
   background: var(--verniz-claro);
   border-radius: 14px;
@@ -1254,8 +1331,8 @@ button {
   display: none;
 }
 
-/* ---------- Computador ----------
-   A capa vira uma vitrine vinho fixa à esquerda (nome do estúdio grande, endereço, pagamento)
+/* ---------- Computador ---------- */
+/*    A capa vira uma vitrine vinho fixa à esquerda (nome do estúdio grande, endereço, pagamento)
    e o agendamento ocupa a direita, mais largo. A barra de abas sobe pra dentro da vitrine. */
 .vitrine {
   display: none;
@@ -1280,8 +1357,13 @@ button {
     padding: 40px clamp(32px, 3.4vw, 56px) 130px;
     overflow-y: auto;
     color: var(--creme);
-    background:
-      linear-gradient(120deg, transparent 34%, rgba(255, 255, 255, 0.06) 44%, rgba(255, 255, 255, 0.015) 51%, transparent 58%),
+    background: linear-gradient(
+        120deg,
+        transparent 34%,
+        rgba(255, 255, 255, 0.06) 44%,
+        rgba(255, 255, 255, 0.015) 51%,
+        transparent 58%
+      ),
       radial-gradient(90% 60% at 100% 0%, color-mix(in srgb, var(--verniz) 65%, transparent), transparent 70%),
       radial-gradient(70% 50% at 0% 100%, color-mix(in srgb, var(--verniz) 26%, transparent), transparent 70%),
       var(--vinho);

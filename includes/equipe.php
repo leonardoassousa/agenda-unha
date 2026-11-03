@@ -52,16 +52,22 @@ function entrarEquipe(string $telefone, string $senha): string
     $tel = normalizarTelefone($telefone);
     if ($tel === '' || $senha === '') return 'Digite seu celular com DDD e a senha.';
     $chave = 'eq:' . $tel;
+    $chaveIp = 'eqip:' . substr((string) ($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45);
     db()->exec('DELETE FROM login_tentativas WHERE criado_em < NOW() - INTERVAL 1 DAY');
     $st = db()->prepare('SELECT COUNT(*) FROM login_tentativas WHERE chave = ? AND criado_em > NOW() - INTERVAL 15 MINUTE');
     $st->execute([$chave]);
-    if ((int) $st->fetchColumn() >= 5) return 'Muitas tentativas erradas. Espere 15 minutos ou peça uma senha nova pra dona do estúdio.';
+    $porCelular = (int) $st->fetchColumn();
+    $st->execute([$chaveIp]);
+    // 5 erros no mesmo celular, ou 20 no mesmo aparelho/rede (robô testando vários números)
+    if ($porCelular >= 5 || (int) $st->fetchColumn() >= 20) return 'Muitas tentativas erradas. Espere 15 minutos ou peça uma senha nova pra dona do estúdio.';
 
     $st = db()->prepare('SELECT id, senha_hash FROM profissionais WHERE telefone = ? AND ativo = 1');
     $st->execute([$tel]);
     $p = $st->fetch();
     if (!$p || !$p['senha_hash'] || !password_verify($senha, $p['senha_hash'])) {
-        db()->prepare('INSERT INTO login_tentativas (chave) VALUES (?)')->execute([$chave]);
+        $ins = db()->prepare('INSERT INTO login_tentativas (chave) VALUES (?)');
+        $ins->execute([$chave]);
+        $ins->execute([$chaveIp]);
         sleep(1);
         return 'Celular ou senha incorretos. Se esqueceu, peça uma senha nova pra dona do estúdio.';
     }
@@ -99,6 +105,12 @@ function headEquipe(string $titulo): void
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#3A0E1E">
+<link rel="manifest" href="../manifest.php?app=equipe">
+<link rel="icon" href="../assets/icones/equipe-32.png" type="image/png">
+<link rel="apple-touch-icon" href="../assets/icones/equipe-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Agenda">
 <title><?= e($titulo) ?> · Equipe · <?= e(cfg('nome_estudio')) ?></title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

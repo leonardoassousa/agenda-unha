@@ -5,6 +5,12 @@ require __DIR__ . '/../includes/atendimento.php';
 $erro = '';
 $c = colaboradora();
 
+// Aberto pelo ícone da tela inicial: a dona (acesso ao painel) vai direto pro painel
+if ($c && (int) $c['admin'] === 1 && isset($_GET['app']) && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    header('Location: ../admin/');
+    exit();
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     conferirCsrf();
     $acao = $_POST['acao'] ?? '';
