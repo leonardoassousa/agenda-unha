@@ -394,12 +394,16 @@ function horariosDisponiveis(string $data, int $duracaoMin, array $profIds): arr
     return $saida;
 }
 
-/** Serviço em dupla: só os horários em que pelo menos duas estão livres juntas. */
-function horariosDupla(string $data, int $duracaoMin, array $profIds): array
+/**
+ * Serviço em dupla: horários em que duas estão livres juntas.
+ * Com $par (as duas que a cliente escolheu), só os horários em que essas duas estão livres.
+ */
+function horariosDupla(string $data, int $duracaoMin, array $profIds, ?array $par = null): array
 {
     $saida = [];
-    foreach (horariosDisponiveis($data, $duracaoMin, $profIds) as $s) {
-        if (count($s['profissionais']) >= 2) {
+    foreach (horariosDisponiveis($data, $duracaoMin, $par ?: $profIds) as $s) {
+        $ok = $par ? !array_diff($par, $s['profissionais']) : count($s['profissionais']) >= 2;
+        if ($ok) {
             $saida[] = $s;
         }
     }
@@ -407,11 +411,28 @@ function horariosDupla(string $data, int $duracaoMin, array $profIds): array
 }
 
 /** Horários do serviço: em dupla ou normal. */
-function horariosDoServico(array $serv, string $data, array $profIds): array
+function horariosDoServico(array $serv, string $data, array $profIds, ?array $par = null): array
 {
     return !empty($serv['dupla'])
-        ? horariosDupla($data, (int) $serv['duracao_min'], $profIds)
+        ? horariosDupla($data, (int) $serv['duracao_min'], $profIds, $par)
         : horariosDisponiveis($data, (int) $serv['duracao_min'], $profIds);
+}
+
+/** As duas manicures escolhidas pra um serviço em dupla: [id, id] válidos, ou null. */
+function lerPar($valor): ?array
+{
+    if (is_string($valor)) {
+        $valor = explode(',', $valor);
+    }
+    if (!is_array($valor)) {
+        return null;
+    }
+    $ids = array_values(array_unique(array_filter(array_map('intval', $valor))));
+    if (count($ids) !== 2) {
+        return null;
+    }
+    $todas = array_map('intval', array_column(profissionaisAtivas(), 'id'));
+    return array_diff($ids, $todas) ? null : $ids;
 }
 
 /** "Ana", "Ana e Bia" */
@@ -469,16 +490,18 @@ function dadosDoAgendamento(int $id): array
     $a = $st->fetch();
     $nome = $a['profissional'];
     $profId = (int) $a['profissional_id'];
+    $ids = [$profId];
     $preco = (float) $a['preco'];
     if ($a['grupo']) {
         // Serviço em dupla: junta as duas profissionais e o valor das duas partes
         $st = db()->prepare(
-            'SELECT p.nome, a.preco FROM agendamentos a JOIN profissionais p ON p.id = a.profissional_id WHERE a.grupo = ? ORDER BY a.id',
+            'SELECT p.id, p.nome, a.preco FROM agendamentos a JOIN profissionais p ON p.id = a.profissional_id WHERE a.grupo = ? ORDER BY a.id',
         );
         $st->execute([$a['grupo']]);
         $partes = $st->fetchAll();
         $nome = nomesJuntos(array_column($partes, 'nome'));
         $preco = array_sum(array_map('floatval', array_column($partes, 'preco')));
+        $ids = array_map('intval', array_column($partes, 'id'));
         $profId = 0;
     }
     return [
@@ -487,12 +510,19 @@ function dadosDoAgendamento(int $id): array
         'servico' => $a['servico'],
         'profissional' => $nome,
         'profissional_id' => $profId,
+        'profissionais_ids' => $ids,
         'data' => substr($a['inicio'], 0, 10),
         'hora' => substr($a['inicio'], 11, 5),
         'preco' => $preco,
+        'hora_fim' => substr($a['fim'], 11, 5),
+        'duracao_min' => (int) ((strtotime($a['fim']) - strtotime($a['inicio'])) / 60),
+        'cliente_id' => $a['cliente_id'] ? (int) $a['cliente_id'] : null,
         'cliente_nome' => $a['cliente_nome'],
         'cliente_telefone' => $a['cliente_telefone'],
         'observacao' => $a['observacao'],
+        'origem' => $a['origem'] ?? 'site',
+        'serie' => !empty($a['serie']) ? (int) $a['serie'] : null,
+        'criado_em' => $a['criado_em'],
     ];
 }
 
@@ -530,10 +560,16 @@ function agendar(array $d): array
         throw new InvalidArgumentException('Profissional não encontrada.');
     }
     $dupla = !empty($serv['dupla']);
+    $par = null;
     if ($dupla) {
+        // Em dupla a cliente escolhe as duas; sem escolha (pedido antigo), o sistema escolhe
         $pedida = 0;
-    } // em dupla o sistema escolhe as duas
-    $candidatas = $pedida ? [$pedida] : $todas;
+        $par = lerPar($d['dupla'] ?? null);
+        if (isset($d['dupla']) && !$par) {
+            throw new InvalidArgumentException('Escolha as duas manicures que vão te atender.');
+        }
+    }
+    $candidatas = $par ?: ($pedida ? [$pedida] : $todas);
     if (!$candidatas) {
         throw new InvalidArgumentException('Nenhuma profissional disponível no momento.');
     }
@@ -573,10 +609,14 @@ function agendar(array $d): array
         }
 
         // Limite de horários futuros por cliente (evita brincadeira e agenda travada)
+        // (horários marcados pelo estúdio, como o horário fixo, não contam)
         $max = (int) (cfg('max_agendamentos_por_cliente') ?? 3);
         if ($max > 0) {
+            if (function_exists('garantirEstruturaPainel')) {
+                garantirEstruturaPainel();
+            }
             $st = $pdo->prepare(
-                "SELECT COUNT(DISTINCT COALESCE(grupo, id)) FROM agendamentos WHERE status = 'confirmado' AND cliente_telefone = ? AND fim > NOW()",
+                "SELECT COUNT(DISTINCT COALESCE(grupo, id)) FROM agendamentos WHERE status = 'confirmado' AND cliente_telefone = ? AND fim > NOW() AND origem = 'site'",
             );
             $st->execute([$tel]);
             if ((int) $st->fetchColumn() >= $max) {
@@ -593,7 +633,7 @@ function agendar(array $d): array
             $pdo->prepare("SELECT id FROM profissionais WHERE id IN ($in) FOR UPDATE")->execute($candidatas);
 
             $livres = null;
-            foreach (horariosDoServico($serv, $data, $candidatas) as $s) {
+            foreach (horariosDoServico($serv, $data, $candidatas, $par) as $s) {
                 if ($s['hora'] === $hora) {
                     $livres = $s['profissionais'];
                     break;
@@ -602,15 +642,17 @@ function agendar(array $d): array
             if (!$livres) {
                 throw new RuntimeException(
                     $dupla
-                        ? 'Nesse horário não tem mais duas manicures livres juntas. Escolha outro.'
+                        ? ($par
+                            ? 'Nesse horário as duas não estão mais livres juntas. Escolha outro.'
+                            : 'Nesse horário não tem mais duas manicures livres juntas. Escolha outro.')
                         : 'Esse horário não está mais disponível. Escolha outro.',
                 );
             }
 
             // Sem preferência: fica com quem tem menos atendimentos no dia
             $escolhida = $livres[0];
-            $ordem = $livres;
-            if (!$pedida && count($livres) > 1) {
+            $ordem = $par ?: $livres;
+            if (!$pedida && !$par && count($livres) > 1) {
                 $in2 = implode(',', array_fill(0, count($livres), '?'));
                 $st = $pdo->prepare(
                     "SELECT profissional_id, COUNT(*) n FROM agendamentos

@@ -1,8 +1,9 @@
 <?php
 require __DIR__ . '/includes/app.php';
-require __DIR__ . '/includes/whatsapp.php';
+require_once __DIR__ . '/includes/whatsapp.php';
 require __DIR__ . '/includes/cliente.php';
-require __DIR__ . '/includes/email.php';
+require_once __DIR__ . '/includes/painel_agenda.php';
+require_once __DIR__ . '/includes/email.php';
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 
@@ -156,17 +157,10 @@ try {
 
         $ids = array_map('intval', array_column(profissionaisAtivas(), 'id'));
         $data = (string) ($_GET['data'] ?? '');
+        // Horários livres de cada uma. Em dupla, a tela cruza os horários das duas que a cliente escolher.
         $lista = [];
-        if ($serv['dupla']) {
-            // Duas manicures juntas: um "cartão" só (id 0) com os horários em que duas estão livres
-            $lista[] = [
-                'id' => 0,
-                'horarios' => array_column(horariosDupla($data, (int) $serv['duracao_min'], $ids), 'hora'),
-            ];
-        } else {
-            foreach (horariosPorProfissional($data, (int) $serv['duracao_min'], $ids) as $id => $horas) {
-                $lista[] = ['id' => $id, 'horarios' => $horas];
-            }
+        foreach (horariosPorProfissional($data, (int) $serv['duracao_min'], $ids) as $id => $horas) {
+            $lista[] = ['id' => $id, 'horarios' => $horas, 'trabalha' => jornada($id, $data) !== null];
         }
         // Aproveita a visita pra mandar lembretes que estão na hora (sem atrasar a resposta)
         if (lembreteAutomaticoAtivo()) {
@@ -186,6 +180,7 @@ try {
         if ($prof && !in_array($prof, $ids, true)) {
             responder(['erro' => 'Profissional inválida.'], 400);
         }
+        $par = $serv['dupla'] ? lerPar($_GET['par'] ?? '') : null;
         $d = (string) ($_GET['depois'] ?? date('Y-m-d'));
         if (!DateTime::createFromFormat('!Y-m-d', $d)) {
             $d = date('Y-m-d');
@@ -195,7 +190,7 @@ try {
             if (!dataPermitida($dia)) {
                 break;
             }
-            if (horariosDoServico($serv, $dia, $prof && !$serv['dupla'] ? [$prof] : $ids)) {
+            if (horariosDoServico($serv, $dia, $prof && !$serv['dupla'] ? [$prof] : $ids, $par)) {
                 responder(['data' => $dia]);
             }
         }
@@ -228,6 +223,7 @@ try {
             'telefone' => $c['telefone'],
             'cliente_id' => (int) $c['id'],
             'observacao' => $obs,
+            'dupla' => $in['dupla'] ?? null,
         ]);
         $resposta = [
             'ok' => true,
@@ -235,6 +231,7 @@ try {
                 'servico' => $ag['servico'],
                 'profissional' => $ag['profissional'],
                 'profissional_id' => $ag['profissional_id'],
+                'profissionais_ids' => $ag['profissionais_ids'],
                 'data' => $ag['data'],
                 'hora' => $ag['hora'],
                 'data_extenso' => dataExtenso($ag['data']),

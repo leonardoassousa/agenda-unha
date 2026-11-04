@@ -118,6 +118,7 @@ function urlSite(): string
     $https = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
     $host = preg_replace('/[^a-z0-9.:-]/i', '', (string) ($_SERVER['HTTP_HOST'] ?? 'localhost'));
     $pasta = rtrim(str_replace('\\', '/', dirname((string) ($_SERVER['SCRIPT_NAME'] ?? '/'))), '/');
+    $pasta = preg_replace('#/(admin|equipe|cron)$#', '', $pasta); // chamado de dentro do painel ou da equipe
     return ($https ? 'https' : 'http') . '://' . $host . $pasta;
 }
 

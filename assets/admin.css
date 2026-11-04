@@ -12,6 +12,7 @@
      - Disponibilidade
      - Acesso da equipe (ajustes)
      - Área da equipe
+     - Marcar horário pelo painel
      - Cabeçalho: celular x computador
    ========================================================= */
 /* ---------- Base do painel ---------- */
@@ -586,6 +587,17 @@
     monospace;
   letter-spacing: 0.08em;
   user-select: all;
+}
+
+.cli-acoes {
+  display: grid;
+  gap: 6px;
+  justify-items: end;
+  text-align: right;
+}
+.cli-sem-senha {
+  font-size: 0.85rem;
+  color: var(--cinza);
 }
 
 /* ---------- Calendário ---------- */
@@ -1402,6 +1414,175 @@ details.concluir[open] summary::before {
 .abas {
   flex-wrap: wrap;
   overflow: visible;
+}
+
+/* ---------- Marcar horário pelo painel ---------- */
+.marcar {
+  display: grid;
+  gap: 18px;
+  max-width: 640px;
+  margin-top: 20px;
+}
+.marcar-parte {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 18px;
+  background: var(--branco);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  min-width: 0;
+}
+.marcar-parte legend {
+  float: left;
+  width: 100%;
+  margin-bottom: 4px;
+  padding: 0;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+.marcar-parte .topo-info {
+  margin: 0;
+}
+.cli-escolhida {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--leite);
+  border-radius: 10px;
+}
+.cli-escolhida p {
+  margin: 0;
+  display: grid;
+}
+.cli-escolhida span {
+  color: var(--cinza);
+  font-size: 0.92rem;
+}
+.cli-buscar {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+}
+.cli-buscar .campo {
+  width: 100%;
+}
+.cli-resultados {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: grid;
+  gap: 6px;
+}
+.cli-resultados:empty {
+  display: none;
+}
+.cli-item {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--leite);
+  border: 1px solid var(--linha);
+  border-radius: 10px;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.cli-item:hover,
+.cli-item:focus-visible {
+  border-color: var(--verniz);
+}
+.cli-item span {
+  color: var(--cinza);
+  white-space: nowrap;
+}
+.cli-vazio {
+  color: var(--cinza);
+  font-size: 0.92rem;
+}
+.marcar-pros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 8px;
+}
+.marcar-pro {
+  --cor: var(--verniz);
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 12px 6px 10px;
+  border: 1px solid var(--linha);
+  border-radius: 12px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.92rem;
+  cursor: pointer;
+}
+.marcar-pro input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.marcar-pro:has(input:checked) {
+  border-color: var(--cor);
+  box-shadow: 0 0 0 1px var(--cor);
+  background: var(--leite);
+}
+.marcar-pro:has(input:focus-visible) {
+  outline: 2px solid var(--verniz);
+  outline-offset: 2px;
+}
+.livres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.livre {
+  padding: 8px 12px;
+  background: var(--branco);
+  border: 1px solid var(--linha);
+  border-radius: 10px;
+  font: inherit;
+  font-weight: 600;
+  color: inherit;
+  cursor: pointer;
+}
+.livre.ativo {
+  background: var(--tinta);
+  border-color: var(--tinta);
+  color: #fff;
+}
+.marcar-check {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  cursor: pointer;
+}
+.marcar-check input {
+  margin-top: 4px;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--verniz);
+}
+.marcar-enviar {
+  justify-self: start;
+  min-width: 220px;
+}
+.marcar-dia {
+  margin-right: 8px;
+}
+.item-serie {
+  margin: 4px 0 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--verniz);
 }
 
 /* ---------- Cabeçalho: celular x computador ---------- */

@@ -31,8 +31,8 @@ CREATE TABLE IF NOT EXISTS clientes (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   nome VARCHAR(100) NOT NULL,
   telefone VARCHAR(11) NOT NULL,            -- só DDD + número
-  email VARCHAR(150) NOT NULL,
-  senha_hash VARCHAR(255) NOT NULL,
+  email VARCHAR(150) NULL,                  -- ficha feita pelo estúdio pode não ter e-mail
+  senha_hash VARCHAR(255) NOT NULL,        -- '' = ficha feita pelo estúdio (ela cria a senha em "Criar conta")
   reset_hash CHAR(64) NULL,                -- link de "esqueci a senha" (só o hash)
   reset_expira DATETIME NULL,
   criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -67,8 +67,11 @@ CREATE TABLE IF NOT EXISTS agendamentos (
   aviso ENUM('pendente','enviado','falhou','desligado') NOT NULL DEFAULT 'pendente', -- aviso no WhatsApp do estúdio
   lembrete ENUM('pendente','enviado','falhou','pulado') NOT NULL DEFAULT 'pendente', -- lembrete no WhatsApp da cliente
   grupo INT UNSIGNED NULL,                     -- serviço em dupla: as duas linhas têm o id da primeira
+  origem ENUM('site','painel') NOT NULL DEFAULT 'site', -- marcado pela cliente no link ou pela dona no painel
+  serie INT UNSIGNED NULL,                     -- horário fixo semanal (tabela series)
   criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   KEY idx_grupo (grupo),
+  KEY idx_serie (serie),
   KEY idx_prof_inicio (profissional_id, inicio),
   KEY idx_inicio (inicio),
   KEY idx_tel (cliente_telefone, inicio),
@@ -106,6 +109,15 @@ CREATE TABLE IF NOT EXISTS disponibilidade_datas (
 CREATE TABLE IF NOT EXISTS sistema (
   chave VARCHAR(50) PRIMARY KEY,
   valor VARCHAR(255) NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Horário fixo: a mesma cliente toda semana no mesmo dia e hora (marcado pelo painel)
+CREATE TABLE IF NOT EXISTS series (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  dia_semana TINYINT UNSIGNED NOT NULL,
+  hora TIME NOT NULL,
+  ate DATE NOT NULL,
+  criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Folgas, consultas, horário de almoço diferente etc.
@@ -150,3 +162,6 @@ INSERT INTO servicos (nome, descricao, categoria, duracao_min, preco, ordem) VAL
 -- Pé e mão com duas manicures ao mesmo tempo: uma no pé, outra na mão, em 1 hora
 INSERT INTO servicos (nome, descricao, categoria, duracao_min, preco, ordem, dupla) VALUES
   ('Pé e mão com duas manicures', 'Uma faz o pé e a outra a mão, ao mesmo tempo', 'Mãos e pés', 60, 55.00, 1, 1);
+
+-- Estrutura já na versão 1.9 (o sistema não precisa ajustar nada)
+INSERT INTO sistema (chave, valor) VALUES ('estrutura', '1.9');

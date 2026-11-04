@@ -44,10 +44,13 @@ return [
     'antecedencia_min' => 60, // não deixa marcar com menos de 1h de antecedência
     'dias_a_frente' => 30, // até quantos dias pra frente dá pra marcar
 
-    // Aviso no WhatsApp do estúdio a cada agendamento (veja o LEIA-ME)
+    // WhatsApp (veja o LEIA-ME): aviso de cada agendamento/cancelamento no grupo da equipe
+    // e lembrete pra cliente. Com a Evolution API, as mensagens saem do número conectado nela (o do estúdio).
     'aviso_whatsapp' => [
         'modo' => 'desligado', // 'desligado', 'callmebot' ou 'evolution'
-        'telefone' => '5573999999999', // número que RECEBE o aviso, com 55 + DDD
+        // Grupo que RECEBE os avisos (só Evolution). Descubra o código com: php cron/whatsapp-grupos.php
+        'grupo' => '', // ex.: '120363012345678901@g.us'
+        'telefone' => '5573999999999', // sem grupo, o aviso vai pra esse número (55 + DDD)
 
         // CallMeBot (grátis): mande "I allow callmebot to send me messages" pro bot e cole a apikey aqui
         'callmebot_apikey' => '',
@@ -75,7 +78,7 @@ return [
     // Lembrete no WhatsApp da CLIENTE antes do horário (só funciona com a Evolution API)
     'lembrete_cliente' => [
         'ativo' => true,
-        'horas_antes' => 3, // manda 3 horas antes
+        'horas_antes' => 2, // manda 2 horas antes
     ],
 
     // Quantos horários futuros a mesma cliente (mesmo WhatsApp) pode ter ao mesmo tempo. 0 = sem limite

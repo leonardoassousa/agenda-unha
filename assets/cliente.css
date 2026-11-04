@@ -1341,22 +1341,48 @@ button {
   margin-top: 4px !important;
 }
 
-/* Serviço em dupla (duas manicures ao mesmo tempo): um cartão só, deitado */
-.pros-dupla {
-  grid-template-columns: 1fr;
-}
+/* Serviço em dupla: a cliente marca as duas manicures (as três aparecem, quem não atende fica apagada) */
 .pros-dupla .pro {
-  grid-template-columns: auto 1fr;
-  grid-template-rows: auto auto;
-  justify-items: start;
-  align-items: center;
-  column-gap: 14px;
-  row-gap: 2px;
-  padding: 12px 16px;
-  text-align: left;
+  position: relative;
+  cursor: pointer;
 }
-.pros-dupla .pro .foto {
-  grid-row: span 2;
+.pro.escolhida {
+  border-color: var(--cor);
+  box-shadow:
+    0 0 0 1px var(--cor),
+    var(--sombra);
+}
+.pro.escolhida .pro-vagas {
+  color: var(--tinta);
+}
+.pro:disabled {
+  cursor: not-allowed;
+}
+.pro-marca {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--cor);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.pro-marca:empty {
+  display: none;
+}
+/* Duas fotos juntas (resumo e "Meus horários" de serviço em dupla) */
+.foto-par {
+  display: inline-flex;
+  flex: none;
+}
+.foto-par > .foto + .foto {
+  margin-left: -10px;
+  box-shadow: 0 0 0 2px var(--cartao);
 }
 .dupla-nota {
   margin: 0 0 14px;

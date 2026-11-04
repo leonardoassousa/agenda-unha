@@ -1,6 +1,6 @@
 <?php
 require __DIR__ . '/../includes/equipe.php';
-require __DIR__ . '/../includes/atendimento.php';
+require_once __DIR__ . '/../includes/atendimento.php';
 
 $erro = '';
 $c = colaboradora();
@@ -70,7 +70,9 @@ if (!$c): ?>
     $lista = buscarAtendimentos($dia, $dia, (int) $c['id']);
     $ativos = array_filter($lista, fn($a) => in_array($a['status'], ['confirmado', 'concluido'], true));
     $concl = array_filter($lista, fn($a) => $a['status'] === 'concluido');
-    $caixaDia = array_sum(array_map(fn($a) => (float) $a['preco'] + (float) $a['extra_valor'], $concl));
+    // Próximo atendimento do dia (o caixa fica só no painel da dona)
+    $proximos = array_filter($ativos, fn($a) => $a['status'] === 'confirmado' && strtotime($a['inicio']) > time());
+    $proximo = $proximos ? min(array_column($proximos, 'inicio')) : null;
     $pendentes = count(array_filter($ativos, fn($a) => $a['status'] === 'confirmado' && strtotime($a['inicio']) <= time()));
     $j = jornada((int) $c['id'], $dia);
     $msg = $_SESSION['msg_eq'] ?? '';
@@ -103,9 +105,9 @@ if (!$c): ?>
       <p class="numero-detalhe"><?= $pendentes ? $pendentes . ' esperando concluir' : 'nada pendente' ?></p>
     </div>
     <div class="numero">
-      <p class="numero-rotulo">Caixa do dia</p>
-      <p class="numero-valor"><?= preco($caixaDia) ?></p>
-      <p class="numero-detalhe">só concluídos</p>
+      <p class="numero-rotulo">Próximo</p>
+      <p class="numero-valor"><?= $proximo ? substr($proximo, 11, 5) : '—' ?></p>
+      <p class="numero-detalhe"><?= $proximo ? plural(count($proximos), 'horário pela frente', 'horários pela frente') : 'nada pela frente' ?></p>
     </div>
   </div>
 

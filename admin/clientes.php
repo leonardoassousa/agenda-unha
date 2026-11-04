@@ -47,7 +47,7 @@ headAdmin('Clientes');
 cabecalhoAdmin('clientes.php');
 ?>
   <h1>Clientes</h1>
-  <p class="topo-info"><?= $total ?> <?= $total === 1 ? 'cliente cadastrada' : 'clientes cadastradas' ?></p>
+  <p class="topo-info"><?= $total ?> <?= $total === 1 ? 'cliente cadastrada' : 'clientes cadastradas' ?> · <a href="agendar.php">+ Marcar horário pra uma cliente</a></p>
 
   <?php if ($senhaNova):
       $msg = "Oi, {$senhaNova['nome']}! Sua nova senha pra agendar é: {$senhaNova['senha']}"; ?>
@@ -73,24 +73,28 @@ cabecalhoAdmin('clientes.php');
           <p class="cli-nome"><?= e($c['nome']) ?></p>
           <p class="cli-info">
             <a href="https://wa.me/55<?= e($c['telefone']) ?>" target="_blank" rel="noopener"><?= e(telefoneBonito($c['telefone'])) ?></a>
-            <span><?= e($c['email']) ?></span>
+            <?php if ($c['email']): ?><span><?= e($c['email']) ?></span><?php endif; ?>
           </p>
           <p class="cli-info">
             <?= (int) $c['feitos'] ?> <?= (int) $c['feitos'] === 1 ? 'atendimento' : 'atendimentos' ?>
             <?php if ($c['faltas']): ?>, <?= (int) $c['faltas'] ?> <?= (int) $c['faltas'] === 1 ? 'falta' : 'faltas' ?><?php endif; ?>
-            <?php if ($c['proximo']): ?><br>Próximo: <a href="./?data=<?= e(substr($c['proximo'], 0, 10)) ?>"><?= date('d/m \à\s H:i', strtotime($c['proximo'])) ?></a><?php endif; ?>
+            <?php if ($c['proximo']): ?><br>Próximo: <a href="./?<?= e(http_build_query(['mes' => substr($c['proximo'], 0, 7), 'dia' => substr($c['proximo'], 0, 10)])) ?>#detalhe"><?= date('d/m \à\s H:i', strtotime($c['proximo'])) ?></a><?php endif; ?>
+            <?php if ($c['senha_hash'] === ''): ?><br><span class="cli-sem-senha">Ficha feita pelo estúdio (ela ainda não criou senha)</span><?php endif; ?>
           </p>
         </div>
+        <div class="cli-acoes">
+        <a class="link" href="agendar.php?cliente=<?= (int) $c['id'] ?>">Marcar horário</a>
         <form method="post">
           <?= campoCsrf() ?>
           <input type="hidden" name="id" value="<?= (int) $c['id'] ?>">
           <input type="hidden" name="q" value="<?= e($q) ?>">
           <button class="link" name="acao" value="nova_senha" onclick="return confirm('Gerar uma senha nova pra <?= e(addslashes($c['nome'])) ?>? A senha antiga para de funcionar.')">Gerar nova senha</button>
         </form>
+        </div>
       </li>
     <?php endforeach; ?>
     <?php if (!$clientes): ?>
-      <li class="vazio"><?= $q !== '' ? 'Ninguém encontrado com essa busca.' : 'Ainda não tem cliente cadastrada. Elas aparecem aqui quando criam conta pelo link.' ?></li>
+      <li class="vazio"><?= $q !== '' ? 'Ninguém encontrado com essa busca.' : 'Ainda não tem cliente cadastrada. Elas aparecem aqui quando criam conta pelo link ou quando você marca um horário em "Marcar horário".' ?></li>
     <?php endif; ?>
   </ul>
 

@@ -22,7 +22,7 @@ function exigirLogin(): void
 
 function cabecalhoAdmin(string $ativa): void
 {
-    $abas = ['index.php' => 'Calendário', 'caixa.php' => 'Caixa', 'resumo.php' => 'Resumo', 'clientes.php' => 'Clientes', 'ajustes.php' => 'Ajustes'];
+    $abas = ['index.php' => 'Calendário', 'agendar.php' => 'Marcar horário', 'caixa.php' => 'Caixa', 'resumo.php' => 'Resumo', 'clientes.php' => 'Clientes', 'ajustes.php' => 'Ajustes'];
     $conta = contaPainel();
     ?>
   <header class="admin-topo">
@@ -70,8 +70,8 @@ function headAdmin(string $titulo): void
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Gloock&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../assets/style.css">
-<link rel="stylesheet" href="../assets/admin.css">
+<link rel="stylesheet" href="../assets/style.css?v=1.9">
+<link rel="stylesheet" href="../assets/admin.css?v=1.9">
 </head>
 <body>
 <main class="pagina admin">

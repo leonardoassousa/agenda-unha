@@ -1,6 +1,6 @@
 <?php
 require __DIR__ . '/includes/cliente.php';
-require __DIR__ . '/includes/email.php';
+require_once __DIR__ . '/includes/email.php';
 
 // Já logada? (só abre sessão se ela já tiver o cookie)
 $cliente = null;
@@ -117,7 +117,7 @@ function equipeCapa(array $profissionais): string
 <meta name="apple-mobile-web-app-title" content="<?= e(cfg('nome_estudio')) ?>">
 <link rel="preload" href="assets/fonts/bodoni-moda-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/hanken-grotesk-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/cliente.css?v=1.8">
+<link rel="stylesheet" href="assets/cliente.css?v=1.9">
 </head>
 <body>
 
@@ -439,6 +439,6 @@ function equipeCapa(array $profissionais): string
 </nav>
 
 <script>window.AGENDA = <?= json_encode($dadosJs, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?>;</script>
-<script src="assets/app.js?v=1.8"></script>
+<script src="assets/app.js?v=1.9"></script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 <?php
 require __DIR__ . '/../includes/admin.php';
-require __DIR__ . '/../includes/whatsapp.php';
+require_once __DIR__ . '/../includes/whatsapp.php';
 exigirLogin();
 $eu = contaPainel();
 $euId = $eu ? (int) $eu['id'] : 0;
@@ -80,9 +80,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         voltarPara('ajustes.php', [], 'equipe');
     }
     if ($acao === 'testar_aviso') {
-        $erro = enviarWhatsappEstudio("Teste do aviso de agendamento ✅\nSe chegou, está tudo certo.");
+        $erro = enviarWhatsappEstudio("✅ *Teste do aviso de agendamento*\n" . cfg('nome_estudio') . "\n\nSe chegou aqui, os avisos de horário marcado e cancelado vão chegar neste grupo.");
         $_SESSION['aviso_ajustes'] = $erro === ''
-            ? 'Mensagem de teste enviada. Confira o WhatsApp do estúdio (pode levar até 1 minuto).'
+            ? 'Mensagem de teste enviada. Confira o grupo (ou o WhatsApp do estúdio); pode levar até 1 minuto.'
             : 'O teste não foi: ' . $erro;
         voltarPara('ajustes.php', [], 'whatsapp');
     }
@@ -121,7 +121,10 @@ $dataBloq = $_GET['data'] ?? date('Y-m-d');
 if (!DateTime::createFromFormat('!Y-m-d', $dataBloq)) $dataBloq = date('Y-m-d');
 $profBloq = (int) ($_GET['prof'] ?? 0);
 $bloqueios = db()->query("SELECT * FROM bloqueios WHERE fim > NOW() ORDER BY inicio LIMIT 60")->fetchAll();
-$modoAviso = (cfg('aviso_whatsapp') ?: [])['modo'] ?? 'desligado';
+$cfgWa = cfg('aviso_whatsapp') ?: [];
+$modoAviso = $cfgWa['modo'] ?? 'desligado';
+$paraGrupo = $modoAviso === 'evolution' && !empty($cfgWa['grupo']);
+$horasLembrete = (int) ((cfg('lembrete_cliente') ?: [])['horas_antes'] ?? 2);
 
 headAdmin('Ajustes');
 cabecalhoAdmin('ajustes.php');
@@ -262,11 +265,19 @@ cabecalhoAdmin('ajustes.php');
   </section>
 
   <section class="bloco" id="whatsapp">
-    <h2>Aviso no WhatsApp</h2>
+    <h2>WhatsApp</h2>
     <p class="topo-info">
-      <?= $modoAviso === 'desligado'
-          ? 'Desligado. Pra ligar, preencha o bloco aviso_whatsapp no config.php.'
-          : 'Ligado. A cada horário marcado ou cancelado chega uma mensagem no WhatsApp do estúdio.' ?>
+      <?php if ($modoAviso === 'desligado'): ?>
+        Desligado. Pra ligar, preencha o bloco aviso_whatsapp no config.php (veja o LEIA-ME).
+      <?php else: ?>
+        Ligado. A cada horário marcado ou cancelado chega uma mensagem <?= $paraGrupo ? 'no grupo da equipe' : 'no WhatsApp do estúdio' ?>.
+      <?php endif; ?>
+    </p>
+    <p class="topo-info">
+      Lembrete pra cliente:
+      <?= lembreteAutomaticoAtivo()
+          ? "ligado, sai sozinho $horasLembrete h antes do horário."
+          : 'desligado (precisa da Evolution API). Dá pra mandar na mão pelo botão "Lembrar no WhatsApp" de cada horário.' ?>
     </p>
     <form method="post" class="form-teste">
       <?= campoCsrf() ?>

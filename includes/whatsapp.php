@@ -1,36 +1,147 @@
 <?php
-// Aviso no WhatsApp do estúdio quando entra um agendamento.
-// Configuração em config.php, bloco 'aviso_whatsapp'.
+// WhatsApp: aviso de agendamento e cancelamento no grupo da equipe e lembrete pra cliente.
+// Configuração em config.php, bloco 'aviso_whatsapp' (e 'lembrete_cliente').
 
+require_once __DIR__ . '/email.php'; // urlSite()
+
+const LINHA_WA = '━━━━━━━━━━━━━━━';
+
+/** Quantos atendimentos concluídos a cliente já teve (serviço em dupla conta uma vez). */
+function visitasAnteriores(string $telefone, string $antesDe): int
+{
+    $st = db()->prepare(
+        "SELECT COUNT(DISTINCT COALESCE(grupo, id)) FROM agendamentos WHERE cliente_telefone = ? AND status = 'concluido' AND inicio < ?",
+    );
+    $st->execute([$telefone, $antesDe]);
+    return (int) $st->fetchColumn();
+}
+
+function linkPainelDia(string $data): string
+{
+    return urlSite() . '/admin/?' . http_build_query(['mes' => substr($data, 0, 7), 'dia' => $data]) . '#detalhe';
+}
+
+/** Linha do horário fixo: "🔁 Toda sexta, até 18/12 · 7 horários" */
+function linhaSerie(?int $serie): ?string
+{
+    if (!$serie || !function_exists('dadosSerie')) {
+        return null;
+    }
+    $s = dadosSerie($serie);
+    return $s ? '🔁 ' . $s['texto'] . ' · ' . plural($s['restantes'], 'horário', 'horários') : null;
+}
+
+/** Aviso de agendamento novo (vai pro grupo da equipe ou pro WhatsApp do estúdio). */
 function mensagemNovoAgendamento(array $ag): string
 {
     $tel = $ag['cliente_telefone'];
+    $antes = visitasAnteriores($tel, $ag['data'] . ' ' . $ag['hora'] . ':00');
+    $dupla = !empty($ag['grupo']);
     $linhas = [
-        '*Novo agendamento* ✅',
+        '💅 *Novo agendamento*',
+        cfg('nome_estudio'),
+        LINHA_WA,
         '',
-        '*Cliente:* ' . $ag['cliente_nome'],
-        '*WhatsApp:* ' . telefoneBonito($tel) . ' (wa.me/55' . $tel . ')',
-        '*Serviço:* ' . $ag['servico'] . ' (' . preco((float) $ag['preco']) . ')',
-        '*Quando:* ' . dataExtenso($ag['data']) . ', às ' . $ag['hora'],
-        '*Com:* ' . $ag['profissional'],
+        '👤 *' . $ag['cliente_nome'] . '*',
+        '📱 ' . telefoneBonito($tel),
+        'wa.me/55' . $tel,
+        $antes ? '⭐ Cliente da casa · ' . ($antes + 1) . 'ª visita' : '🆕 Primeira vez no estúdio',
+        '',
+        '✨ *' . $ag['servico'] . '*',
+        '💰 ' . preco((float) $ag['preco']) . ' · ⏱ ' . duracaoTexto((int) ($ag['duracao_min'] ?? 0)),
+        '',
+        '📅 *' . ucfirst(dataExtenso($ag['data'])) . '*',
+        '🕑 ' . $ag['hora'] . (!empty($ag['hora_fim']) ? ' às ' . $ag['hora_fim'] : ''),
+        ($dupla ? '👩👩 Com *' : '👩 Com *') . $ag['profissional'] . '*',
     ];
-    if (!empty($ag['observacao'])) {
-        $linhas[] = '*Obs.:* ' . $ag['observacao'];
+    if ($serie = linhaSerie($ag['serie'] ?? null)) {
+        $linhas[] = $serie;
     }
+    if (!empty($ag['observacao'])) {
+        $linhas[] = '';
+        $linhas[] = '📝 _"' . $ag['observacao'] . '"_';
+    }
+    $quando = !empty($ag['criado_em']) ? ' às ' . date('H:i', strtotime($ag['criado_em'])) : '';
+    $linhas[] = '';
+    $linhas[] = LINHA_WA;
+    $linhas[] = (($ag['origem'] ?? 'site') === 'painel' ? 'Marcado pelo painel' : 'Marcado pelo site') . $quando;
+    $linhas[] = 'Ver no painel: ' . linkPainelDia($ag['data']);
     return implode("\n", $linhas);
 }
 
-function mensagemCancelamento(array $ag): string
+/**
+ * Aviso de horário desmarcado. $quem: "pela cliente, pelo site", "pelo painel", "pela Ana"...
+ * $serieCancelados > 1: desmarcou o horário fixo (este e os próximos).
+ */
+function mensagemCancelamento(array $ag, string $quem = 'pela cliente, pelo site', int $serieCancelados = 0): string
 {
-    return implode("\n", [
-        '*Horário cancelado pela cliente* ❌',
+    $linhas = [
+        '❌ *Horário cancelado*',
+        cfg('nome_estudio'),
+        LINHA_WA,
         '',
-        '*Cliente:* ' . $ag['cliente_nome'] . ' (' . telefoneBonito($ag['cliente_telefone']) . ')',
-        '*Serviço:* ' . $ag['servico'],
-        '*Era:* ' . dataExtenso($ag['data']) . ', às ' . $ag['hora'] . ', com ' . $ag['profissional'],
+        '👤 *' . $ag['cliente_nome'] . '*',
+        '📱 ' . telefoneBonito($ag['cliente_telefone']),
         '',
-        'O horário já está livre no link.',
-    ]);
+        '✨ ' . $ag['servico'],
+        '📅 ' . ucfirst(dataExtenso($ag['data'])) . ', às ' . $ag['hora'],
+        (!empty($ag['grupo']) ? '👩👩 Com ' : '👩 Com ') . $ag['profissional'],
+    ];
+    if ($serieCancelados > 1) {
+        $linhas[] = '🔁 Horário fixo desmarcado: esse e os próximos (' . $serieCancelados . ' horários)';
+    }
+    $linhas[] = '';
+    $linhas[] = LINHA_WA;
+    $linhas[] = 'Cancelado ' . $quem;
+    $linhas[] = $serieCancelados > 1 ? '✅ Os horários já estão livres no link.' : '✅ O horário já está livre no link.';
+    return implode("\n", $linhas);
+}
+
+/** Lembrete que a cliente recebe antes do horário. $a: linha do agendamento + servico + profissional. */
+function mensagemLembreteCliente(array $a): string
+{
+    $nome = preg_split('/\s+/', trim($a['cliente_nome']))[0];
+    $data = substr($a['inicio'], 0, 10);
+    $quando = $data === date('Y-m-d') ? '*hoje*' : ($data === date('Y-m-d', strtotime('+1 day')) ? '*amanhã*' : '*' . dataExtenso($data) . '*');
+    $linhas = [
+        "Oi, $nome! 💅",
+        '',
+        "Passando pra lembrar do seu horário $quando no *" . cfg('nome_estudio') . '*:',
+        '',
+        '✨ ' . $a['servico'],
+        '🕑 ' . substr($a['inicio'], 11, 5) . ', com ' . $a['profissional'],
+    ];
+    if ($end = trim((string) cfg('endereco'))) {
+        $linhas[] = '📍 ' . $end;
+    }
+    $linhas[] = '';
+    $linhas[] = 'Te esperamos! Se não puder vir, avisa por aqui pra gente liberar o horário pra outra cliente 💕';
+    return implode("\n", $linhas);
+}
+
+/** Roda $fn depois de mandar a resposta (o WhatsApp não atrasa a tela). */
+function depoisDaResposta(callable $fn): void
+{
+    register_shutdown_function(function () use ($fn) {
+        if (function_exists('fastcgi_finish_request')) {
+            fastcgi_finish_request();
+        }
+        ignore_user_abort(true);
+        try {
+            $fn();
+        } catch (Throwable $e) {
+            error_log('[agenda] depois da resposta: ' . $e);
+        }
+    });
+}
+
+/** Avisa o grupo sobre um cancelamento (não faz nada se o aviso estiver desligado). */
+function avisarCancelamento(array $ag, string $quem, int $serieCancelados = 0): void
+{
+    $erro = enviarWhatsappEstudio(mensagemCancelamento($ag, $quem, $serieCancelados));
+    if ($erro !== '' && (cfg('aviso_whatsapp')['modo'] ?? 'desligado') !== 'desligado') {
+        error_log('[agenda] aviso de cancelamento falhou: ' . $erro);
+    }
 }
 
 /**
@@ -40,7 +151,9 @@ function mensagemCancelamento(array $ag): string
 function enviarWhatsappEstudio(string $texto): string
 {
     $c = cfg('aviso_whatsapp') ?: [];
-    return enviarWhatsapp((string) ($c['telefone'] ?? ''), $texto);
+    // Grupo da equipe (Evolution API) ou, sem grupo, o número do estúdio
+    $destino = ($c['modo'] ?? '') === 'evolution' && !empty($c['grupo']) ? (string) $c['grupo'] : (string) ($c['telefone'] ?? '');
+    return enviarWhatsapp($destino, $texto);
 }
 
 /**
@@ -52,7 +165,8 @@ function enviarWhatsapp(string $numero, string $texto): string
 {
     $c = cfg('aviso_whatsapp') ?: [];
     $modo = $c['modo'] ?? 'desligado';
-    $para = preg_replace('/\D/', '', $numero);
+    // Grupo do WhatsApp (ex.: 120363012345678901@g.us) vai do jeito que está; número fica só com dígitos
+    $para = str_ends_with(trim($numero), '@g.us') ? trim($numero) : preg_replace('/\D/', '', $numero);
     $estudio = preg_replace('/\D/', '', (string) ($c['telefone'] ?? ''));
 
     if ($modo === 'desligado') {
@@ -141,7 +255,7 @@ function rodarLembretes(): int
         return 0;
     }
     require_once __DIR__ . '/atendimento.php';
-    $horas = max(1, (int) ((cfg('lembrete_cliente') ?: [])['horas_antes'] ?? 3));
+    $horas = max(1, (int) ((cfg('lembrete_cliente') ?: [])['horas_antes'] ?? 2));
 
     // Horário marcado já dentro da janela (ex.: marcou 1 h antes) não precisa de lembrete
     db()
@@ -160,7 +274,7 @@ function rodarLembretes(): int
         FROM agendamentos a
         JOIN servicos s ON s.id = a.servico_id JOIN profissionais p ON p.id = a.profissional_id
         WHERE a.lembrete = 'pendente' AND a.status = 'confirmado' AND a.inicio > NOW() AND a.inicio <= NOW() + INTERVAL ? HOUR
-        ORDER BY a.inicio LIMIT 30");
+        ORDER BY a.inicio LIMIT " . (PHP_SAPI === 'cli' ? 30 : 8));
     $st->execute([$horas]);
     $enviados = 0;
     foreach ($st->fetchAll() as $a) {
@@ -170,7 +284,12 @@ function rodarLembretes(): int
         if ($res->rowCount() !== 1) {
             continue;
         }
-        $erro = enviarWhatsapp('55' . $a['cliente_telefone'], mensagemLembrete($a));
+        if (isset($pausar)) {
+            // Um de cada vez, com pausa: envio em rajada é o que faz o WhatsApp desconfiar
+            sleep(PHP_SAPI === 'cli' ? random_int(4, 8) : 2);
+        }
+        $pausar = true;
+        $erro = enviarWhatsapp('55' . $a['cliente_telefone'], mensagemLembreteCliente($a));
         if ($erro !== '') {
             db()
                 ->prepare("UPDATE agendamentos SET lembrete = 'falhou' WHERE id = ?")
@@ -228,8 +347,8 @@ function avisarEstudio(array $ag): void
     }
     try {
         db()
-            ->prepare('UPDATE agendamentos SET aviso = ? WHERE id = ? OR grupo = ?')
-            ->execute([$status, $ag['id'], $ag['grupo'] ?? $ag['id']]);
+            ->prepare('UPDATE agendamentos SET aviso = ? WHERE id = ? OR grupo = ?' . (!empty($ag['serie']) ? ' OR serie = ?' : ''))
+            ->execute(array_merge([$status, $ag['id'], $ag['grupo'] ?? $ag['id']], !empty($ag['serie']) ? [$ag['serie']] : []));
     } catch (Throwable $e) {
         /* coluna antiga: ignora */
     }

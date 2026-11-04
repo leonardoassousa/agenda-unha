@@ -1,6 +1,6 @@
 <?php
 require __DIR__ . '/../includes/admin.php';
-require __DIR__ . '/../includes/atendimento.php';
+require_once __DIR__ . '/../includes/atendimento.php';
 
 $logada = logada();
 $msg = '';
@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             session_destroy();
             voltarPara('../equipe/');
         }
-        if (in_array($acao, ['concluir', 'salvar_extra', 'reabrir', 'faltou', 'desfazer', 'cancelar'], true)) {
+        if (in_array($acao, ['concluir', 'salvar_extra', 'reabrir', 'faltou', 'desfazer', 'cancelar', 'cancelar_serie'], true)) {
             $_SESSION['aviso_cal'] = acaoAtendimento($acao, (int) $_POST['id'], $_POST);
             voltarPara('./', $volta, 'detalhe');
         }
@@ -54,6 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // ---------- Dados do calendário ----------
 if ($logada) {
+    garantirEstruturaPainel();
     $profs = db()->query('SELECT id, nome, cor, foto FROM profissionais WHERE ativo = 1 ORDER BY ordem, nome')->fetchAll();
     $profPorId = array_column($profs, null, 'id');
     $filtroProf = (int) ($_GET['prof'] ?? 0);
@@ -302,10 +303,11 @@ headAdmin('Calendário');
       <?php endif; ?>
       <ol class="lista">
         <?php foreach ($doDia as $a): ?>
-          <?= cartaoAtendimento($a, $a['cor'], ['mes_ref' => $mes, 'prof_ref' => $filtroProf, 'dia_ref' => $dia], !$filtroProf) ?>
+          <?= cartaoAtendimento($a, $a['cor'], ['mes_ref' => $mes, 'prof_ref' => $filtroProf, 'dia_ref' => $dia], !$filtroProf, true, true) ?>
         <?php endforeach; ?>
         <?php if (!$doDia): ?><li class="vazio"><?= $exp ? 'Nenhum horário marcado nesse dia.' : 'Ninguém trabalha nesse dia.' ?></li><?php endif; ?>
       </ol>
+      <a class="botao botao-peq marcar-dia" href="agendar.php?<?= e(http_build_query(array_filter(['data' => $dia, 'prof' => $filtroProf]))) ?>">+ Marcar horário nesse dia</a>
       <a class="botao botao-leve botao-peq bloquear-dia" href="ajustes.php?<?= e(http_build_query(array_filter(['data' => $dia, 'prof' => $filtroProf]))) ?>#bloqueios">Bloquear horário nesse dia</a>
     </div>
   </section>

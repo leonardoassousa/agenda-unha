@@ -1,6 +1,8 @@
 <?php
 // Ações e cartão de um atendimento: usados no painel da dona e na área da equipe.
 require_once __DIR__ . '/app.php';
+require_once __DIR__ . '/whatsapp.php';
+require_once __DIR__ . '/painel_agenda.php';
 
 /**
  * Executa uma ação num atendimento. $somenteProf limita à colaboradora logada (área da equipe).
@@ -59,21 +61,43 @@ function acaoAtendimento(string $acao, int $id, array $post, ?int $somenteProf =
 
         case 'cancelar':
             if ($a['status'] !== 'confirmado') return 'Só dá pra cancelar um horário ainda não concluído.';
+            $dados = dadosDoAgendamento($id);
             // Em dupla, cancela as duas partes (a cliente não vem pra nenhuma)
             db()->prepare("UPDATE agendamentos SET status = 'cancelado' WHERE (id = ? OR (grupo IS NOT NULL AND grupo = ?)) AND status = 'confirmado'")->execute([$id, $a['grupo']]);
+            $quem = quemCancelou($somenteProf);
+            depoisDaResposta(fn() => avisarCancelamento($dados, $quem));
             return $a['grupo'] ? 'Horário cancelado pras duas manicures. Ele ficou livre no link.' : 'Horário cancelado. Ele ficou livre no link.';
+
+        case 'cancelar_serie':
+            // Horário fixo: cancela este e todos os próximos (só no painel da dona)
+            if ($somenteProf) return 'Só o painel do estúdio desmarca o horário fixo inteiro.';
+            if ($a['status'] !== 'confirmado' || empty($a['serie'])) return 'Esse horário não é de um horário fixo.';
+            $dados = dadosDoAgendamento($id);
+            $n = cancelarSerieAPartir($id);
+            depoisDaResposta(fn() => avisarCancelamento($dados, quemCancelou(null), $n));
+            return 'Horário fixo de ' . $a['cliente_nome'] . ' desmarcado: ' . plural($n, 'horário cancelado', 'horários cancelados') . ' (esse e os próximos). Eles ficaram livres no link.';
     }
     return 'Ação desconhecida.';
 }
 
+/** Mesmo texto do lembrete automático (o botão "Lembrar no WhatsApp" abre ele pronto). */
+/** "pelo painel" (dona) ou "pela Ana" (área da equipe) */
+function quemCancelou(?int $somenteProf): string
+{
+    if (!$somenteProf) {
+        return 'pelo painel';
+    }
+    $st = db()->prepare('SELECT nome FROM profissionais WHERE id = ?');
+    $st->execute([$somenteProf]);
+    return 'pela ' . explode(' ', (string) $st->fetchColumn())[0] . ' (área da equipe)';
+}
+
 function mensagemLembrete(array $a): string
 {
-    $nome = preg_split('/\s+/', trim($a['cliente_nome']))[0];
-    $hoje = substr($a['inicio'], 0, 10) === date('Y-m-d');
-    $quando = $hoje ? 'hoje' : dataExtenso(substr($a['inicio'], 0, 10));
-    return "Oi, $nome! Passando pra lembrar do seu horário $quando, às " . substr($a['inicio'], 11, 5)
-        . ', com ' . $a['profissional'] . ' (' . $a['servico'] . '), no ' . cfg('nome_estudio') . '. '
-        . 'Se não puder vir, avise por aqui. Até já!';
+    if (!empty($a['parceira'])) {
+        $a['profissional'] = $a['profissional'] . ' e ' . $a['parceira'];
+    }
+    return mensagemLembreteCliente($a);
 }
 
 /** Link do WhatsApp da cliente com o lembrete pronto (funciona sem API nenhuma). */
@@ -87,8 +111,9 @@ function linkLembrete(array $a): string
  * $a precisa ter: id, inicio, fim, status, cliente_nome, cliente_telefone, observacao, preco, extra_valor, extra_obs,
  * servico, profissional, lembrete, aviso.  $ocultos: campos escondidos pra voltar pra mesma tela.
  */
-function cartaoAtendimento(array $a, string $cor, array $ocultos, bool $mostrarProf = true, bool $podeCancelar = true): string
+function cartaoAtendimento(array $a, string $cor, array $ocultos, bool $mostrarProf = true, bool $podeCancelar = true, bool $podeSerie = false): string
 {
+    $serie = !empty($a['serie']) ? dadosSerie((int) $a['serie']) : null;
     $agora = time();
     $ini = strtotime($a['inicio']);
     $status = $a['status'];
@@ -118,7 +143,8 @@ function cartaoAtendimento(array $a, string $cor, array $ocultos, bool $mostrarP
           <?php endif; ?>
         </p>
         <?php if ($a['extra_obs']): ?><p class="item-extra">A mais: <?= e($a['extra_obs']) ?></p><?php endif; ?>
-        <?php if ($a['observacao']): ?><p class="item-obs">Cliente pediu: <?= e($a['observacao']) ?></p><?php endif; ?>
+        <?php if ($serie): ?><p class="item-serie">Horário fixo: <?= e(mb_strtolower($serie['texto'])) ?></p><?php endif; ?>
+        <?php if ($a['observacao']): ?><p class="item-obs"><?= ($a['origem'] ?? 'site') === 'painel' ? 'Observação' : 'Cliente pediu' ?>: <?= e($a['observacao']) ?></p><?php endif; ?>
         <?php if (($a['aviso'] ?? '') === 'falhou'): ?><p class="item-obs">O aviso no WhatsApp do estúdio não foi enviado.</p><?php endif; ?>
         <?php if (($a['lembrete'] ?? '') === 'enviado'): ?><p class="item-obs">Lembrete enviado no WhatsApp da cliente.</p><?php endif; ?>
 
@@ -136,7 +162,13 @@ function cartaoAtendimento(array $a, string $cor, array $ocultos, bool $mostrarP
             <?php else: ?>
               <?php if ($ini <= $agora): ?><button class="link" name="acao" value="faltou">Faltou</button><?php endif; ?>
               <?php if ($podeCancelar): ?>
-                <button class="link link-perigo" name="acao" value="cancelar" onclick="return confirm('Cancelar o horário de <?= e(addslashes($a['cliente_nome'])) ?>? Ele fica livre de novo no link.')">Cancelar</button>
+                <button class="link link-perigo" name="acao" value="cancelar" onclick="return confirm('Cancelar o horário de <?= e(addslashes($a['cliente_nome'])) ?>? Ele fica livre de novo no link.')"><?= $serie ? 'Cancelar só esse dia' : 'Cancelar' ?></button>
+                <?php if ($serie && $podeSerie):
+                    $st = db()->prepare("SELECT COUNT(DISTINCT COALESCE(grupo, id)) FROM agendamentos WHERE serie = ? AND status = 'confirmado' AND inicio >= ?");
+                    $st->execute([$a['serie'], $a['inicio']]);
+                    $daqui = (int) $st->fetchColumn(); ?>
+                  <button class="link link-perigo" name="acao" value="cancelar_serie" onclick="return confirm('Desmarcar o horário fixo de <?= e(addslashes($a['cliente_nome'])) ?>? Cancela esse dia e os próximos (<?= $daqui ?> no total).')">Cancelar esse e os próximos</button>
+                <?php endif; ?>
               <?php endif; ?>
             <?php endif; ?>
           </form>

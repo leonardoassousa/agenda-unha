@@ -115,8 +115,8 @@ function headEquipe(string $titulo): void
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Gloock&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../assets/style.css">
-<link rel="stylesheet" href="../assets/admin.css">
+<link rel="stylesheet" href="../assets/style.css?v=1.9">
+<link rel="stylesheet" href="../assets/admin.css?v=1.9">
 </head>
 <body class="equipe">
 <main class="pagina admin">
@@ -125,7 +125,7 @@ function headEquipe(string $titulo): void
 
 function cabecalhoEquipe(string $ativa, array $c): void
 {
-    $abas = ['index.php' => 'Minha agenda', 'disponibilidade.php' => 'Meus horários', 'caixa.php' => 'Meu caixa'];
+    $abas = ['index.php' => 'Minha agenda', 'disponibilidade.php' => 'Meus horários']; // caixa: só no painel da dona
     ?>
   <header class="admin-topo topo-equipe" style="--cor: <?= e($c['cor']) ?>">
     <div class="equipe-topo">

@@ -8,6 +8,6 @@ if (PHP_SAPI !== 'cli') {
     exit('Só pela linha de comando.');
 }
 require __DIR__ . '/../includes/app.php';
-require __DIR__ . '/../includes/whatsapp.php';
+require_once __DIR__ . '/../includes/whatsapp.php';
 $n = rodarLembretes();
 echo date('Y-m-d H:i') . " lembretes enviados: $n\n";

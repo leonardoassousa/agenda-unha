@@ -1,8 +1,9 @@
 # Agenda de unhas · Studio Carina Aquino
 
-**Versão 1.8** (o número fica no arquivo `VERSION` e em tags no GitHub, ex.: `v1.8`)
+**Versão 1.9** (o número fica no arquivo `VERSION` e em tags no GitHub, ex.: `v1.9`)
 
 ## Versões
+- **1.9** (04/11/2026): pedidos da Carina depois da apresentação. **Marcar horário pelo painel**: busca ou cadastra a cliente (nome e celular), escolhe serviço, manicure, dia e horário e digita o valor combinado (é o que vai pro caixa). **Horário fixo**: "repetir toda semana até tal dia"; semana ocupada fica de fora e o painel avisa; dá pra cancelar só um dia ou esse e os próximos. **Dupla escolhida pela cliente**: no pé e mão com duas manicures ela marca as duas que quer, entre as que atendem no dia, e vê só os horários em que as duas estão livres. **Caixa só da dona**: a equipe não tem mais "Meu caixa" nem o caixa do dia. **WhatsApp**: aviso de cada horário marcado e cancelado no grupo da equipe (mensagem com cliente, visita, serviço, valor, dia, hora, quem atende, horário fixo, observação e link do painel), lembrete da cliente 2 h antes com endereço, envio com pausa entre mensagens. `servidor/evolution/` com o docker-compose da Evolution API.
 - **1.8** (03/11/2026): "Esqueci a senha" por e-mail. A cliente digita o e-mail da conta, recebe um link (vale 1 hora, uso único) e cria a senha nova sozinha, já entrando na conta. Continua dando pra Carina gerar senha nova pelo painel e mandar no WhatsApp. Envio por SMTP (Gmail do estúdio ou e-mail do domínio), bloco `email` no `config.php`. Barra de abas do computador com fundo sólido e vitrine compacta em tela de notebook.
 - **1.7** (03/11/2026): pronto pra VPS. `instalar.sh` + pasta `servidor/` (Nginx, regras de segurança, PHP com usuário próprio, sessões de 30 dias que o Ubuntu não apaga, backup diário, cron dos lembretes, HTTPS). Ícone na tela inicial do celular (app das clientes e app da equipe; pelo ícone a dona cai direto no painel). Login da equipe também trava por aparelho/rede depois de 20 erros. CSS e JS formatados no padrão (Prettier), com sumário de seções no topo de cada CSS.
 - **1.6** (02/11/2026): a equipe aparece em bolinhas redondas (antes era em formato de unha), na capa, na escolha da profissional e na confirmação.
@@ -73,6 +74,7 @@ Os `.htaccess` das pastas só valem no XAMPP (Apache). Na VPS quem bloqueia `inc
 
 ## Já tinha instalado uma versão anterior?
 Substitua os arquivos (menos o seu `config.php`; copie dele só o bloco novo `aviso_whatsapp` e `max_agendamentos_por_cliente`) e rode no phpMyAdmin, nesta ordem:
+- veio da 1.8: nada pra rodar; as colunas e a tabela novas (`atualizar-v11.sql`) são criadas sozinhas na primeira vez que o painel abre. No `config.php`, coloque `'grupo' => ''` no bloco `aviso_whatsapp` e mude `horas_antes` pra 2
 - veio da 1.7: nada pra rodar; as colunas do link de senha (`atualizar-v10.sql`) são criadas sozinhas. No `config.php`, copie os blocos novos `url_site` e `email`
 - veio da versão 8: nada pra rodar; a coluna `categoria` dos serviços (`atualizar-v9.sql`) é criada e preenchida sozinha na primeira vez que a tela da cliente abre. Serviço novo sem categoria aparece no grupo "Outros"
 - veio da versão 7: nada pra rodar; a coluna nova (`atualizar-v8.sql`, acesso ao painel) é criada sozinha na primeira vez que alguém abre o painel ou a área da equipe
@@ -86,7 +88,7 @@ Substitua os arquivos (menos o seu `config.php`; copie dele só o bloco novo `av
 ## Telas da cliente
 Barra de abas embaixo (onde o dedão alcança): **Agendar**, **Meus horários** e **Conta**.
 1. **Serviço**: capa com o nome do estúdio e se está aberto agora. Tocar no serviço já avança.
-2. **Horário**: escolhe o dia, toca na profissional (foto + quantas vagas ela tem no dia) e escolhe o horário dela. Se ela estiver sem vaga, tem o botão "Ver o próximo dia livre dela".
+2. **Horário**: escolhe o dia, toca na profissional (foto + quantas vagas ela tem no dia) e escolhe o horário dela. Se ela estiver sem vaga, tem o botão "Ver o próximo dia livre dela". No serviço em dupla, ela marca as **duas** manicures que quer (quem não atende no dia fica apagada) e aparecem só os horários em que as duas estão livres juntas.
 3. Se não estiver logada, abre **Falta pouco** (entrar ou criar conta), mostrando o horário escolhido.
 4. **Confira e confirme** e depois **Horário marcado!**
 O botão voltar do celular funciona entre as telas. Visual em `assets/cliente.css` (tem tema escuro automático).
@@ -96,18 +98,18 @@ O login é um só, em `/equipe/`: quem tem **acesso ao painel** (a dona, marcado
 - **Calendário**: o mês inteiro, com o número de horários marcados em cada dia e cor mais forte nos dias mais cheios. No topo escolhe **Todas** ou uma profissional. Tocando no dia aparecem: atendimentos, faturamento, faltas, ocupação da agenda, quantos de cada serviço, quanto cada uma fez e a lista de horários (com Concluir, valor a mais, Faltou, Cancelar e Lembrar no WhatsApp).
 - **Caixa**: escolhe a pessoa (ou Todas) e o mês. Mostra o caixa do mês, quanto cada uma fez e todos os serviços dia a dia, com o total de cada dia. Tocando num dia, aparece só ele, com o total do dia e do mês. Entra no caixa só o que foi **concluído** (valor do serviço + valor a mais).
 - **Resumo**: faturamento por período (hoje, semana, mês, mês passado ou datas escolhidas).
-- **Clientes**: busca e senha nova pra quem esqueceu.
+- **Marcar horário**: pra cliente que marcou por WhatsApp, telefone ou no balcão. Busca a cliente (ou cadastra com nome e celular), escolhe serviço, manicure (duas, se for em dupla), dia e horário (mostra os livres, mas dá pra digitar outro pra encaixar) e o **valor combinado**, que é o que entra no caixa. Marcando **Repetir toda semana** e o "até", vira horário fixo: o sistema marca todas as semanas e pula (e avisa) as que já estiverem ocupadas. Na agenda, o horário fixo mostra "Horário fixo: toda sexta, até 18/12" e os botões **Cancelar só esse dia** e **Cancelar esse e os próximos**. Também tem o botão **+ Marcar horário nesse dia** no detalhe do dia.
+- **Clientes**: busca, **Marcar horário** pra ela e senha nova pra quem esqueceu. Ficha feita pelo estúdio fica sem senha: quando a cliente for em "Criar conta" com o mesmo celular, ela cria a senha e continua com a mesma ficha e os mesmos horários.
 - **Ajustes**: acesso da equipe (criar senha de cada colaboradora), horários de cada uma, bloquear horário, fotos, teste do aviso no WhatsApp e sair.
 
 ## Área da equipe (`/equipe`)
 Cada colaboradora entra com o celular e a senha que a dona cria em **Ajustes → Equipe: acesso e horários** (a senha aparece uma vez, com botão pra mandar no WhatsApp dela).
 - **Minha agenda**: os atendimentos do dia. Ao terminar, ela toca em **Concluir**; se fez algo a mais, escreve o que foi e o valor, que soma no serviço. Também marca falta, cancela e manda **lembrete no WhatsApp** da cliente com um toque.
 - **Meus horários**: a **semana de trabalho** (dias, entrada, saída e pausa) e **dias específicos** (folga ou horário diferente numa data). O link da cliente só mostra horários dentro disso. Se ela nunca configurar, vale o horário do estúdio do `config.php`.
-- **Meu caixa**: o caixa dela no mês e por dia.
-Ela só enxerga e mexe nos atendimentos dela.
+Ela só enxerga e mexe nos atendimentos dela. O caixa e o faturamento ficam só no painel da dona (desde a 1.9).
 
 ## Lembrete no WhatsApp da cliente
-Algumas horas antes do horário (padrão 3 h, em `lembrete_cliente` no `config.php`) a cliente recebe: "Oi, Maria! Passando pra lembrar do seu horário hoje, às 14:00, com Ana…".
+2 horas antes do horário (`lembrete_cliente` no `config.php`) a cliente recebe, do número do estúdio: "Oi, Maria! 💅 Passando pra lembrar do seu horário *hoje* no *Studio Carina Aquino*", com serviço, hora, quem atende e o endereço. Se houver vários pra mandar, sai um de cada vez, com alguns segundos de pausa.
 - Precisa da **Evolution API** (o CallMeBot só manda pro número do estúdio).
 - Cada horário recebe um lembrete só. Quem marcou em cima da hora não recebe.
 - Dispara sozinho quando alguém usa o link de agendamento. Pra ficar no horário certinho mesmo sem visitas, agende o `cron/lembretes.php` a cada 10 minutos (VPS: crontab; Windows: Agendador de Tarefas com `C:\xampp\php\php.exe C:\xampp\htdocs\agenda-unhas\cron\lembretes.php`).
@@ -133,22 +135,18 @@ No `config.php`, bloco `email`, troque `'modo' => 'desligado'` por `'smtp'` e pr
 - Na VPS, o `instalar.sh` já preenche o `url_site` com o domínio (é o endereço que vai no link do e-mail). No XAMPP pode deixar vazio.
 - Se o e-mail não sair, o motivo fica no log do PHP (na VPS: `/var/log/agenda-unhas/php.log`, procure "e-mail de senha nova").
 
-## Aviso no WhatsApp do estúdio
-A cada horário marcado chega uma mensagem no WhatsApp do estúdio com cliente, telefone, serviço, valor, dia, hora e profissional.
-O aviso sai depois que a cliente já viu a confirmação, então se o WhatsApp estiver fora do ar o agendamento não trava.
+## WhatsApp: avisos no grupo da equipe
+A cada horário marcado (pelo link ou pelo painel) e a cada cancelamento chega uma mensagem no **grupo da equipe**, com cliente (e se é a primeira vez ou qual visita), WhatsApp dela, serviço, valor, duração, dia, horário, quem atende, horário fixo, observação, se foi marcado pelo site ou pelo painel e o link do painel naquele dia. O aviso sai depois que a tela já respondeu, então se o WhatsApp estiver fora do ar nada trava.
 
-Escolha um dos dois jeitos no `config.php`, bloco `aviso_whatsapp`:
+**Evolution API (o jeito escolhido: sai do número do estúdio)**
+1. Na VPS, com Docker instalado: copie `servidor/evolution/` pra `/opt/evolution`, crie o `.env` a partir do `.env.exemplo` (troque as duas senhas e confira a versão mais nova da imagem) e rode `docker compose up -d`. Ela fica só em `127.0.0.1:8080`, sem porta aberta pra internet.
+2. Crie a instância e conecte o WhatsApp do estúdio lendo o QR code (igual WhatsApp Web). O celular continua funcionando normal.
+3. No WhatsApp, crie o grupo da equipe com o número do estúdio e as três.
+4. No `config.php`, bloco `aviso_whatsapp`: `modo` = `evolution`, `evolution_url` = `http://127.0.0.1:8080`, `evolution_instancia` e `evolution_apikey`. Rode `php cron/whatsapp-grupos.php` pra ver o código do grupo (termina em `@g.us`) e coloque em `grupo`.
+5. No painel, Ajustes → WhatsApp → **Enviar mensagem de teste**.
+Sem `grupo`, o aviso vai pro número em `telefone`.
 
-**CallMeBot (grátis, mais simples)**
-1. No celular do estúdio, salve o contato do CallMeBot (o número atual está em callmebot.com, na página do WhatsApp).
-2. Mande pra ele: `I allow callmebot to send me messages`
-3. Ele responde com a sua apikey. Coloque em `callmebot_apikey`, o número do estúdio em `telefone` (55 + DDD + número) e `modo` = `callmebot`.
-A mensagem chega vinda do número do CallMeBot e pode demorar até 1 minuto.
-
-**Evolution API (se já tiver rodando na VPS)**
-Preencha `evolution_url`, `evolution_instancia`, `evolution_apikey`, o `telefone` que recebe e `modo` = `evolution`. A mensagem sai do número conectado na instância.
-
-Depois de configurar, entre no painel e toque em **Enviar mensagem de teste** (aba Ajustes). Se algum aviso falhar, o horário aparece marcado na agenda.
+**CallMeBot (alternativa grátis, só avisos, sem lembrete pra cliente)**: no celular que vai receber, mande `I allow callmebot to send me messages` pro contato do CallMeBot, coloque a apikey em `callmebot_apikey`, o número em `telefone` e `modo` = `callmebot`. Não manda pra grupo nem pra cliente.
 
 ## Resumo (painel)
 Em `/admin`, aba **Resumo**: faturamento, atendimentos, clientes, ticket médio e faltas, por hoje, ontem, semana, mês, mês passado ou um período escolhido. Mostra quanto cada profissional fez, os serviços que mais deram dinheiro e o dia a dia.
@@ -181,8 +179,9 @@ A pasta `uploads/profissionais` precisa ter permissão de escrita no servidor.
 - `admin/index.php`: calendário do mês e detalhe do dia
 - `admin/ajustes.php`: bloqueios, fotos, teste do aviso, sair
 - `admin/resumo.php`: resumo financeiro
+- `admin/agendar.php`, `assets/marcar.js` e `includes/painel_agenda.php`: marcar horário pelo painel e horário fixo
 - `includes/app.php`: regras da agenda
-- `includes/whatsapp.php`: aviso no WhatsApp
+- `includes/whatsapp.php`: mensagens e envio no WhatsApp (avisos no grupo e lembrete)
 - `includes/admin.php`: login e cabeçalho do painel
 - `includes/cliente.php`: contas das clientes
 - `admin/clientes.php`: lista de clientes e senha nova
@@ -191,6 +190,8 @@ A pasta `uploads/profissionais` precisa ter permissão de escrita no servidor.
 - `equipe/`: área da equipe (`includes/equipe.php`)
 - `includes/atendimento.php`: concluir, valor a mais, lembrete
 - `cron/lembretes.php`: envio dos lembretes
+- `cron/whatsapp-grupos.php`: lista os grupos do WhatsApp conectado (pra achar o código do grupo da equipe)
+- `servidor/evolution/`: Evolution API (WhatsApp) em Docker, só no próprio servidor
 - `assets/cliente.css` e `assets/app.js`: tela da cliente
 - `assets/style.css` e `assets/admin.css`: painel
 

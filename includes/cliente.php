@@ -108,6 +108,11 @@ function entrarCliente(string $telefone, string $senha): array
     $st = db()->prepare('SELECT id, senha_hash FROM clientes WHERE telefone = ?');
     $st->execute([$tel]);
     $c = $st->fetch();
+    if ($c && $c['senha_hash'] === '') {
+        throw new RuntimeException(
+            'O estúdio já fez sua ficha, só falta a senha. Toque em "Criar conta" com esse celular pra criar a sua.',
+        );
+    }
     if (!$c || !password_verify($senha, $c['senha_hash'])) {
         registrarErroLogin($tel);
         if (!$c) {
@@ -149,6 +154,22 @@ function cadastrarCliente(string $nome, string $telefone, string $email, string 
     }
     if (mb_strlen($senha) > 72) {
         throw new InvalidArgumentException('Senha muito longa.');
+    }
+
+    // Ficha criada pelo estúdio (sem senha) com esse celular: a cliente "assume" a ficha e cria a senha
+    $st = db()->prepare("SELECT id FROM clientes WHERE telefone = ? AND senha_hash = ''");
+    $st->execute([$tel]);
+    if ($fichaId = (int) $st->fetchColumn()) {
+        $st = db()->prepare('SELECT 1 FROM clientes WHERE email = ? AND id <> ?');
+        $st->execute([$email, $fichaId]);
+        if ($st->fetchColumn()) {
+            throw new RuntimeException('Esse e-mail já está em outra conta. Use outro ou toque em "Entrar".');
+        }
+        db()
+            ->prepare('UPDATE clientes SET nome = ?, email = ?, senha_hash = ? WHERE id = ?')
+            ->execute([$nome, $email, password_hash($senha, PASSWORD_DEFAULT), $fichaId]);
+        logarCliente($fichaId);
+        return clienteAtual();
     }
 
     $st = db()->prepare('SELECT telefone = ? tel, email = ? em FROM clientes WHERE telefone = ? OR email = ? LIMIT 1');
@@ -296,7 +317,7 @@ function horariosDaCliente(int $clienteId): array
 {
     // Serviço em dupla vira uma linha só (as duas profissionais juntas e o valor inteiro)
     $st = db()->prepare("SELECT MIN(a.id) id, MIN(a.inicio) inicio, SUM(a.preco) preco, MIN(s.nome) servico,
-               GROUP_CONCAT(p.nome ORDER BY a.id SEPARATOR '|') nomes, MIN(p.id) profissional_id, COUNT(*) partes
+               GROUP_CONCAT(p.nome ORDER BY a.id SEPARATOR '|') nomes, GROUP_CONCAT(p.id ORDER BY a.id) ids, MIN(p.id) profissional_id, COUNT(*) partes
         FROM agendamentos a JOIN servicos s ON s.id = a.servico_id JOIN profissionais p ON p.id = a.profissional_id
         WHERE a.cliente_id = ? AND a.status = 'confirmado' AND a.fim > NOW()
         GROUP BY COALESCE(a.grupo, a.id) ORDER BY inicio LIMIT 20");
@@ -308,6 +329,7 @@ function horariosDaCliente(int $clienteId): array
             'servico' => $a['servico'],
             'profissional' => nomesJuntos(explode('|', $a['nomes'])),
             'profissional_id' => (int) $a['partes'] > 1 ? 0 : (int) $a['profissional_id'],
+            'profissionais_ids' => array_map('intval', explode(',', $a['ids'])),
             'data_extenso' => dataExtenso(substr($a['inicio'], 0, 10)),
             'hora' => substr($a['inicio'], 11, 5),
             'preco_fmt' => preco((float) $a['preco']),
