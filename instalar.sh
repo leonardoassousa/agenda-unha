@@ -144,7 +144,20 @@ BKP
 chmod 700 /usr/local/bin/agenda-backup
 ( crontab -l 2>/dev/null | grep -v "agenda-backup" || true; echo "40 3 * * * /usr/local/bin/agenda-backup" ) | crontab -
 /usr/local/bin/agenda-backup || true
-verde "==> Lembretes (a cada 10 min) e backup diário (3h40, guarda 14 dias) ok"
+# Logs da agenda: gira toda semana e guarda 8 semanas compactadas (não enche o disco)
+cat > /etc/logrotate.d/agenda-unhas <<'LOGS'
+/var/log/agenda-unhas/*.log {
+    weekly
+    rotate 8
+    compress
+    delaycompress
+    missingok
+    notifempty
+    copytruncate
+    su agenda agenda
+}
+LOGS
+verde "==> Lembretes (a cada 10 min), backup diário (3h40, guarda 14 dias) e limpeza dos logs ok"
 
 # ---------- 9. DNS + HTTPS ----------
 IP_VPS="$(curl -4 -s --max-time 5 https://ifconfig.me || hostname -I | awk '{print $1}')"

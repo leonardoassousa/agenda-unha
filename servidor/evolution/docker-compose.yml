@@ -14,6 +14,11 @@ services:
       - redis
     volumes:
       - evolution_instances:/evolution/instances
+    logging: &logs
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
 
   postgres:
     image: postgres:16-alpine
@@ -25,6 +30,7 @@ services:
       POSTGRES_DB: evolution
     volumes:
       - evolution_pg:/var/lib/postgresql/data
+    logging: *logs
 
   redis:
     image: redis:7-alpine
@@ -33,6 +39,7 @@ services:
     command: redis-server --appendonly yes
     volumes:
       - evolution_redis:/data
+    logging: *logs
 
 volumes:
   evolution_instances:
